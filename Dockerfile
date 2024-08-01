@@ -9,7 +9,7 @@ COPY requirements.txt /app/
 
 # Install system dependencies and pip
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends gcc libmysqlclient-dev pkg-config && \
+    apt-get install -y --no-install-recommends gcc libmariadb-dev pkg-config && \
     rm -rf /var/lib/apt/lists/* && \
     pip install --no-cache-dir --upgrade pip
 
