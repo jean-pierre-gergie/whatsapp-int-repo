@@ -228,4 +228,5 @@ def index():
 #         return 'Error processing webhook data', 500
     
 if __name__ == '__main__':
-    app.run (host='0.0.0.0',port=5000)
+    app.run(host='0.0.0.0', port=5000, ssl_context=('/etc/letsencrypt/live/ocmymada.com/fullchain.pem',
+                                                   '/etc/letsencrypt/live/ocmymada.com/privkey.pem'))
