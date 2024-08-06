@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Send Single Message</title>
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./static/css/bootstrap.css">
+    <link rel="stylesheet" href="./static/vendors/iconly/bold.css">
+    <link rel="stylesheet" href="./static/vendors/perfect-scrollbar/perfect-scrollbar.css">
+    <link rel="stylesheet" href="./static/vendors/bootstrap-icons/bootstrap-icons.css">
+    <link rel="stylesheet" href="./static/css/app.css">
+    <link rel="shortcut icon" href="./static/images/favicon.svg" type="image/x-icon">
+    <style>
+        #template-preview, #single-template-preview {
+            background-color: #f8f9fa; /* Light grey background */
+            color: #000000; /* Black text */
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div id="main">
+            <div class="page-heading">
+                <div class="page-title">
+                    <div class="row">
+                        <div class="col-12 col-md-6 order-md-1 order-last">
+                            <h3>WhatsApp Integration</h3>
+                            <p class="text-subtitle text-muted">Manage your WhatsApp campaigns and messages.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Send Single Message Section -->
+                <section class="section">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4 class="card-title">Send Message to Single Number</h4>
+                        </div>
+                        <div class="card-body">
+                            <form id="single-message-form" enctype="multipart/form-data">
+                                <div class="row">
+                                    <div class="col-md-6 col-12">
+                                        <div class="form-group">
+                                            <label for="phone_number">Phone Number</label>
+                                            <input type="text" id="phone_number" name="phone_number" class="form-control" placeholder="Enter Phone Number" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 col-12">
+                                        <div class="form-group">
+                                            <label for="single_template">Template</label>
+                                            <select name="single_template" id="single_template" class="form-control" required onchange="updateTemplatePreview('single_template', 'single-template-preview')">
+                                                {% for template in templates %}
+                                                    <option value="{{ template.template_name }}">{{ template.template_name }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <!-- Variable input fields container -->
+                                    <div class="col-md-6 col-12">
+                                        <div id="variable-fields-container" class="form-group">
+                                            <!-- Variable fields will be inserted here -->
+                                        </div>
+                                    </div>
+                                    <div class="col-12">
+                                        <div class="form-group">
+                                            <label for="single-template-preview">Template Preview</label>
+                                            <div id="single-template-preview" class="alert alert-info">
+                                                Select a template to see a preview here.
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 col-12">
+                                        <div class="form-group" id="image-field" style="display: none;">
+                                            <label for="file">Image File</label>
+                                            <input type="file" id="file" name="file" class="form-control">
+                                        </div>
+                                    </div>
+                                    <div class="col-12 d-flex justify-content-end">
+                                        <button type="submit" class="btn btn-primary me-1 mb-1">Send Message</button>
+                                        <button type="reset" class="btn btn-light-secondary me-1 mb-1">Reset</button>
+                                    </div>
+                                    <div class="col-12">
+                                        <div id="response-container" class="mt-3"></div>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function updateTemplatePreview(selectId, previewId) {
+            const templateSelect = document.getElementById(selectId);
+            const previewContainer = document.getElementById(previewId);
+            const selectedTemplate = templateSelect.value;
+
+            fetch('/get_template_text', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ template_name: selectedTemplate })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    previewContainer.innerHTML = data.texts.join('<br>');
+                    updateVariableFields(data.variable_count);
+                    toggleImageField(data.has_image);
+                } else {
+                    previewContainer.textContent = 'Template not found.';
+                    updateVariableFields(0);
+                    toggleImageField(false);
+                }
+            })
+            .catch(error => {
+                previewContainer.textContent = 'An error occurred while fetching the template preview.';
+                console.error('Error fetching template preview:', error);
+                updateVariableFields(0);
+                toggleImageField(false);
+            });
+        }
+
+        function updateVariableFields(variableCount) {
+            const container = document.getElementById('variable-fields-container');
+            container.innerHTML = ''; // Clear existing fields
+
+            for (let i = 1; i <= variableCount; i++) {
+                const field = document.createElement('div');
+                field.className = 'form-group';
+                field.innerHTML = `
+                    <label for="variable_${i}">Variable ${i}</label>
+                    <input type="text" id="variable_${i}" name="variables[]" class="form-control" required>
+                `;
+                container.appendChild(field);
+            }
+        }
+
+        function toggleImageField(hasImage) {
+            const imageField = document.getElementById('image-field');
+            if (hasImage) {
+                imageField.style.display = 'block';
+            } else {
+                imageField.style.display = 'none';
+            }
+        }
+
+        document.getElementById('single-message-form').onsubmit = function(event) {
+            event.preventDefault(); 
+            if (confirm("Are you sure you want to send the message?")) {
+                const formData = new FormData(this);
+                fetch("{{ url_for('campaigns.send_single_message') }}", {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const responseContainer = document.getElementById('response-container');
+                    if (data.success && data.success.length > 0) {
+                        responseContainer.innerHTML = `
+                            <div class="alert alert-success">
+                                Message sent successfully!<br>
+                                Number: ${data.success[0].Number}<br>
+                                Message ID: ${data.success[0].MessageID}<br>
+                                Status: ${data.success[0].MessageStatus}<br>
+                                Time Taken: ${data.success[0].TimeTaken} seconds
+                            </div>`;
+                    } else if (data.failed && data.failed.length > 0) {
+                        responseContainer.innerHTML = `
+                            <div class="alert alert-danger">
+                                Failed to send message.<br>
+                                Number: ${data.failed[0].Number}<br>
+                                Error: ${data.failed[0].Title}<br>
+                                Details: ${data.failed[0].Details}<br>
+                                Time Taken: ${data.failed[0].TimeTaken} seconds
+                            </div>`;
+                    } else {
+                        responseContainer.innerHTML = `<div class="alert alert-warning">Unexpected response received.</div>`;
+                    }
+                })
+                .catch(error => {
+                    const responseContainer = document.getElementById('response-container');
+                    responseContainer.innerHTML = `<div class="alert alert-danger">An error occurred: ${error.message}</div>`;
+                });
+            }
+        };
+    </script>
+</body>
+</html>

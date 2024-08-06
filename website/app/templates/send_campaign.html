@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Send Campaign</title>
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./static/css/bootstrap.css">
+    <link rel="stylesheet" href="./static/vendors/iconly/bold.css">
+    <link rel="stylesheet" href="./static/vendors/perfect-scrollbar/perfect-scrollbar.css">
+    <link rel="stylesheet" href="./static/vendors/bootstrap-icons/bootstrap-icons.css">
+    <link rel="stylesheet" href="./static/css/app.css">
+    <link rel="shortcut icon" href="./static/images/favicon.svg" type="image/x-icon">
+</head>
+<body>
+    <div id="app">
+        <div id="main">
+            <div class="page-heading">
+                <div class="page-title">
+                    <div class="row">
+                        <div class="col-12 col-md-6 order-md-1 order-last">
+                            <h3>WhatsApp Integration</h3>
+                            <p class="text-subtitle text-muted">Manage your WhatsApp campaigns and messages.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <section class="section">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4 class="card-title">Send Campaign Messages</h4>
+                        </div>
+                        <div class="card-body">
+                            <form id="campaign-message-form" method="POST" enctype="multipart/form-data" action="{{ url_for('campaigns.send_campaign_messages') }}">
+                                <div class="form-group">
+                                    <label for="campaign">Campaign</label>
+                                    <select name="campaign" id="campaign" class="form-control" required>
+                                        {% for campaign in campaigns %}
+                                            <option value="{{ campaign.campaign_name }}">{{ campaign.campaign_name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-6 col-12">
+                                    <div class="form-group">
+                                        <label for="campaign_template">Template</label>
+                                        <select name="campaign_template" id="campaign_template" class="form-control" required onchange="updateTemplatePreview('campaign_template', 'campaign-template-preview')">
+                                            {% for template in templates %}
+                                                <option value="{{ template.template_name }}">{{ template.template_name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-group">
+                                        <label for="campaign-template-preview">Template Preview</label>
+                                        <div id="campaign-template-preview" class="alert alert-info">
+                                            Select a template to see a preview here.
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div id="variable-fields-container" class="form-group">
+                                        <!-- Variable fields will be inserted here -->
+                                    </div>
+                                </div>
+                                <div class="col-md-6 col-12">
+                                    <div class="form-group" id="image-field" style="display: none;">
+                                        <label for="file">Image File</label>
+                                        <input type="file" id="file" name="file" class="form-control">
+                                    </div>
+                                </div>
+                                <div class="col-12 d-flex justify-content-end">
+                                    <button type="submit" class="btn btn-primary me-1 mb-1">Send Campaign</button>
+                                    <button type="reset" class="btn btn-light-secondary me-1 mb-1">Reset</button>
+                                </div>
+                            </form>
+
+                            <div id="download-links" style="display: none;">
+                                <h5>Download Results</h5>
+                                <a id="success-download" href="#" class="btn btn-success">Download Success File</a>
+                                <a id="failed-download" href="#" class="btn btn-danger">Download Failed File</a>
+                                <a id="summary-download" href="#" class="btn btn-info">Download Summary File</a>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+
+<script>
+    const db_columns = ['id', 'first_name', 'last_name', 'mobile', 'code', 'tag', 'middle_name'];
+
+    function updateTemplatePreview(selectId, previewId) {
+        const templateSelect = document.getElementById(selectId);
+        const previewContainer = document.getElementById(previewId);
+        const selectedTemplate = templateSelect.value;
+
+        fetch('/get_template_text', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ template_name: selectedTemplate })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                previewContainer.innerHTML = data.texts.join('<br>');
+                updateVariableFields(data.variable_count);
+                toggleImageField(data.has_image);
+            } else {
+                previewContainer.textContent = 'Template not found.';
+                updateVariableFields(0);
+                toggleImageField(false);
+            }
+        })
+        .catch(error => {
+            previewContainer.textContent = 'An error occurred while fetching the template preview.';
+            console.error('Error fetching template preview:', error);
+            updateVariableFields(0);
+            toggleImageField(false);
+        });
+    }
+
+    function updateVariableFields(variableCount) {
+        const container = document.getElementById('variable-fields-container');
+        container.innerHTML = ''; // Clear existing fields
+
+        for (let i = 1; i <= variableCount; i++) {
+            const field = document.createElement('div');
+            field.className = 'form-group';
+            const label = document.createElement('label');
+            label.textContent = `Variable ${i}`;
+            const dropdown = createDropdown(i);
+            field.appendChild(label);
+            field.appendChild(dropdown);
+            container.appendChild(field);
+        }
+    }
+
+    function createDropdown(variableIndex) {
+        const select = document.createElement('select');
+        select.id = `variable_${variableIndex}`;
+        select.name = `variables[]`;
+        select.className = 'form-control';
+        select.required = true;
+
+        db_columns.forEach(column => {
+            const option = document.createElement('option');
+            option.value = column;
+            option.textContent = column.charAt(0).toUpperCase() + column.slice(1);
+            select.appendChild(option);
+        });
+
+        return select;
+    }
+
+    function toggleImageField(hasImage) {
+        const imageField = document.getElementById('image-field');
+        if (hasImage) {
+            imageField.style.display = 'block';
+        } else {
+            imageField.style.display = 'none';
+        }
+    }
+
+    document.getElementById('campaign-message-form').onsubmit = function(event) {
+        event.preventDefault(); 
+        if (confirm("Are you sure you want to send the campaign messages?")) {
+            fetch('{{ url_for("campaigns.send_campaign_messages") }}', {
+                method: 'POST',
+                body: new FormData(this)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.getElementById('download-links').style.display = 'block';
+                    document.getElementById('success-download').href = data.success_file;
+                    document.getElementById('failed-download').href = data.failed_file;
+                    document.getElementById('summary-download').href = data.summary_file;
+                } else {
+                    alert('An error occurred while sending messages.');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred while sending messages.');
+            });
+        }
+    };
+</script>
+</body>
+</html>

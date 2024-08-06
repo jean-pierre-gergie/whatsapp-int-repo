@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Map CSV Columns to Database Fields</title>
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./static/css/bootstrap.css">
+    <link rel="stylesheet" href="./static/vendors/iconly/bold.css">
+    <link rel="stylesheet" href="./static/vendors/perfect-scrollbar/perfect-scrollbar.css">
+    <link rel="stylesheet" href="./static/vendors/bootstrap-icons/bootstrap-icons.css">
+    <link rel="stylesheet" href="./static/css/app.css">
+    <link rel="shortcut icon" href="./static/images/favicon.svg" type="image/x-icon">
+    <style>
+        /* Add any additional styles you need here */
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div id="main">
+            <div class="page-heading">
+                <div class="page-title">
+                    <h1>Map CSV Columns to Database Fields</h1>
+                </div>
+                <section class="section">
+                    <div class="card">
+                        <div class="card-body">
+                            <form method="POST" action="{{ url_for('upload_data.map_columns') }}">
+                                <input type="hidden" name="temp_file_path" value="{{ temp_file_path }}">
+                                {{ csv_data|safe }}
+                                <div id="columnMapping">
+                                    {% for csv_col in csv_columns %}
+                                    <div class="form-group">
+                                        <label>{{ csv_col }}</label>
+                                        <select name="db_columns[]" class="form-control">
+                                            <option value="">Select DB Column</option>
+                                            {% for db_col in db_columns %}
+                                            <option value="{{ db_col }}">{{ db_col }}</option>
+                                            {% endfor %}
+                                        </select>
+                                        <input type="hidden" name="csv_columns[]" value="{{ csv_col }}">
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                <button type="submit" class="btn btn-primary mt-3">Submit</button>
+                            </form>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

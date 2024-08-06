@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create WhatsApp Template</title>
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./static/css/bootstrap.css">
+    <link rel="stylesheet" href="./static/vendors/iconly/bold.css">
+    <link rel="stylesheet" href="./static/vendors/perfect-scrollbar/perfect-scrollbar.css">
+    <link rel="stylesheet" href="./static/vendors/bootstrap-icons/bootstrap-icons.css">
+    <link rel="stylesheet" href="./static/css/app.css">
+    <link rel="shortcut icon" href="./static/images/favicon.svg" type="image/x-icon">
+</head>
+
+<body>
+    <div id="app">
+        <div id="sidebar" class="active">
+            <div class="sidebar-wrapper active">
+                <div class="sidebar-header">
+                    <div class="d-flex justify-content-between">
+                        <div class="toggler">
+                            <a href="#" class="sidebar-hide d-xl-none d-block"><i class="bi bi-x bi-middle"></i></a>
+                        </div>
+                    </div>
+                </div>
+                <div class="sidebar-menu">
+                    <ul class="menu">
+                        <li class="sidebar-title">Menu</li>
+                        <li class="sidebar-item active ">
+                            <a href="{{url_for('auth.index')}}" class='sidebar-link'>
+                                <i class="bi bi-grid-fill"></i>
+                                <span>Dashboard</span>
+                            </a>
+                        </li>
+
+                        <li class="sidebar-item  has-sub">
+                            <a href="#" class='sidebar-link'>
+                                <i class="bi bi-stack"></i>
+                                <span>Whatsapp Business</span>
+                            </a>
+                            <ul class="submenu ">
+                                <li class="submenu-item ">
+                                    <a href="{{url_for('campaigns.whatsapp')}}">Send Single Message</a>
+                                </li>
+                                <li class="submenu-item ">
+                                    <a href="{{url_for('campaigns.send_campaign')}}">Send Campaign</a>
+                                </li>
+                                <li class="submenu-item ">
+                                    <a href="{{url_for('templates.templates_list')}}">Templates</a>
+                                </li>
+                                <li class="submenu-item ">
+                                    <a href="{{url_for('upload_data.upload_file')}}">Add Members<a>
+                                </li>
+                            </ul>
+                        </li>
+                        <li class="sidebar-item">
+                            <a href="{{ url_for('auth.logout') }}" class='sidebar-link'>
+                                <i class="bi bi-box-arrow-right"></i>
+                                <span>Logout</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                <button class="sidebar-toggler btn x"><i data-feather="x"></i></button>
+            </div>
+        </div>
+
+        <div id="main">
+            <header class="mb-3">
+                <a href="#" class="burger-btn d-block d-xl-none">
+                    <i class="bi bi-justify fs-3"></i>
+                </a>
+            </header>
+            
+            <div class="page-heading">
+                <div class="page-title">
+                    <div class="row">
+                        <div class="col-12 col-md-6">
+                            <h3>Create WhatsApp Template</h3>
+                            <p class="text-subtitle text-muted">Fill in the details to create a new template.</p>
+                        </div>
+                    </div>
+                </div>
+                <section class="section">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4 class="card-title">New Template</h4>
+                        </div>
+                        <div class="card-body">
+                            <form method="POST" action="/create_template" class="form form-horizontal">
+                                <div class="row">
+                                    <div class="col-md-6 col-12">
+                                        <div class="form-group">
+                                            <label for="template_name">Template Name</label>
+                                            <input type="text" id="template_name" name="template_name" class="form-control" placeholder="Template Name" required>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 col-12">
+                                        <div class="form-group">
+                                            <label for="category">Category</label>
+                                            <select name="category" id="category" class="form-control" required>
+                                                <option value="MARKETING">Marketing</option>
+                                                <option value="UTILITY">Utility</option>
+                                                <option value="AUTHENTICATION">Authentication</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 col-12">
+                                        <div class="form-group">
+                                            <label for="language">Language</label>
+                                            <select name="language" id="language" class="form-control" required>
+                                                {% for lang in languages %}
+                                                    <option value="{{ lang.Code }}">{{ lang.Language }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Header Type Selection -->
+                                    <div class="col-md-6 col-12">
+                                        <div class="form-group">
+                                            <label for="header_type">Header Type</label>
+                                            <select name="header_type" id="header_type" class="form-control" onchange="updateHeaderFields()">
+                                                <option value="TEXT">Text</option>
+                                                <option value="IMAGE">Image</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <!-- Header Text Field -->
+                                    <div class="col-md-6 col-12" id="header_text_field">
+                                        <div class="form-group">
+                                            <label for="header_text">Header Text (optional)</label>
+                                            <input type="text" id="header_text" name="header_text" class="form-control" placeholder="Header Text">
+                                        </div>
+                                    </div>
+
+                                    <!-- The input for the image URL has been removed -->
+                                    
+                                    <div class="col-md-12 col-12">
+                                        <div class="form-group">
+                                            <label for="body_text">Body Text</label>
+                                            <textarea id="body_text" name="body_text" class="form-control" rows="4" placeholder="Body Text" required></textarea>
+                                        </div>
+                                        <div class="col-md-12 col-12" id="body_examples_container">
+                                            <!-- Example fields will be appended here -->
+                                        </div>
+                                    </div>
+                                    <div class="col-md-12 col-12">
+                                        <div class="form-group">
+                                            <label for="footer_text">Footer Text (optional)</label>
+                                            <input type="text" id="footer_text" name="footer_text" class="form-control" placeholder="Footer Text">
+                                        </div>
+                                    </div>
+
+                                    <!-- Allow Category Change -->
+                                    <div class="col-md-12 col-12">
+                                        <div class="form-group">
+                                            <label for="allow_category_change">Allow Category Change</label>
+                                            <input type="checkbox" id="allow_category_change" name="allow_category_change">
+                                        </div>
+                                    </div>
+
+                                    <!-- Buttons Section -->
+                                    <div class="col-md-12 col-12">
+                                        <h5>Buttons</h5>
+                                        <div id="buttons-container">
+                                            <div class="button-entry">
+                                                <div class="row">
+                                                    <div class="col-md-4 col-12">
+                                                        <div class="form-group">
+                                                            <label for="button_type">Button Type (optional)</label>
+                                                            <select name="button_type" class="form-control button-type" onchange="updateButtonFields(this)">
+                                                                <option value="">Select Button Type</option>
+                                                                <option value="PHONE_NUMBER">Phone Number</option>
+                                                                <option value="URL">URL</option>
+                                                                <option value="QUICK_REPLY">Quick Reply</option>
+                                                                <option value="COPY_CODE">Copy Code</option>
+                                                            </select>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-4 col-12">
+                                                        <div class="form-group">
+                                                            <label for="button_text">Button Text</label>
+                                                            <input type="text" name="button_text" class="form-control button-text" placeholder="Button Text">
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-4 col-12 button-field phone-number-field" style="display: none;">
+                                                        <div class="form-group">
+                                                            <label for="phone_number">Phone Number</label>
+                                                            <input type="text" name="phone_number" class="form-control phone-number" placeholder="Phone Number">
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-4 col-12 button-field url-field" style="display: none;">
+                                                        <div class="form-group">
+                                                            <label for="url">URL</label>
+                                                            <input type="text" name="url" class="form-control url" placeholder="URL">
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-4 col-12">
+                                                        <button type="button" class="btn btn-danger mt-3" onclick="deleteButtonEntry(this)">Delete</button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <button type="button" class="btn btn-secondary" onclick="addButtonEntry()">Add Another Button</button>
+                                    </div>
+
+                                    <div class="col-12 d-flex justify-content-end">
+                                        <button type="submit" class="btn btn-primary me-1 mb-1">Create Template</button>
+                                        <button type="reset" class="btn btn-light-secondary me-1 mb-1">Reset</button>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <script>
+         function updateBodyExamples() {
+            const bodyText = document.getElementById('body_text').value;
+            const variableCount = (bodyText.match(/\{\{\d+\}\}/g) || []).length;
+
+            const examplesContainer = document.getElementById('body_examples_container');
+            examplesContainer.innerHTML = ''; // Clear existing examples
+
+            for (let i = 0; i < variableCount; i++) {
+                const exampleEntry = document.createElement('div');
+                exampleEntry.className = 'form-group';
+                exampleEntry.innerHTML = `
+                    <label for="body_example_${i}">Example for ${i + 1}</label>
+                    <input type="text" id="body_example_${i}" name="body_example" class="form-control" placeholder="Example for variable ${i + 1}" />
+                `;
+                examplesContainer.appendChild(exampleEntry);
+            }
+        }
+
+        document.getElementById('body_text').addEventListener('input', updateBodyExamples);
+
+        function updateHeaderFields() {
+            const headerType = document.getElementById('header_type').value;
+            const headerTextField = document.getElementById('header_text_field');
+
+            if (headerType === 'IMAGE') {
+                headerTextField.style.display = 'none';
+            } else {
+                headerTextField.style.display = 'block';
+            }
+        }
+
+        function updateButtonFields(selectElement) {
+            const buttonType = selectElement.value;
+            const entry = selectElement.closest('.button-entry');
+            const phoneField = entry.querySelector('.phone-number-field');
+            const urlField = entry.querySelector('.url-field');
+
+            phoneField.style.display = 'none';
+            urlField.style.display = 'none';
+
+            if (buttonType === 'PHONE_NUMBER') {
+                phoneField.style.display = 'block';
+            } else if (buttonType === 'URL') {
+                urlField.style.display = 'block';
+            }
+        }
+
+        function addButtonEntry() {
+            const buttonsContainer = document.getElementById('buttons-container');
+            const newEntry = buttonsContainer.querySelector('.button-entry').cloneNode(true);
+
+            // Clear all input fields in the new entry
+            newEntry.querySelectorAll('input, select').forEach(input => {
+                input.value = '';
+            });
+
+            // Hide all additional fields in the new entry
+            newEntry.querySelectorAll('.button-field').forEach(field => {
+                field.style.display = 'none';
+            });
+
+            buttonsContainer.appendChild(newEntry);
+        }
+
+        function deleteButtonEntry(button) {
+            const buttonEntry = button.closest('.button-entry');
+            buttonEntry.remove();
+        }
+    </script>
+
+    <script src="./static/vendors/perfect-scrollbar/perfect-scrollbar.min.js"></script>
+    <script src="./static/js/bootstrap.bundle.min.js"></script>
+    <script src="./static/js/main.js"></script>
+</body>
+</html>
