@@ -1,232 +1,132 @@
-import os
-from flask import Flask, request, jsonify
-import requests
-import pandas as pd
-from datetime import datetime
+import hmac
+import hashlib
 import json
-
-
-
-
-# from dotenv import load_dotenv
-
-# load_dotenv()
-
-
-
-apiKey = "Pz1wL6a3xzRiJy3UjYMLjEIXAK"
-
-autoReplyMessage = "صباح الخير. للاستفسار يرجى الاتصال من الإثنين حتى الجمعة من الساعة التاسعة صباحا حتى الساعة الخامسة بعد الظهر على الرقم التالي 453444-05 أو ارسال رسالة خطية (WhatsApp) على الرقم 077082-03. شكراً لتواصلكم معنا."
+from flask import Flask, request, jsonify
+from pymongo import MongoClient
+from flask import abort
 
 app = Flask(__name__)
 
+# Ensure this is your correct app secret for webhook verification
+# API_SECRET = 'eyJhbGciOiJSUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6Ik1EZEZOVFk1UVVVMU9FSXhPRGN3UVVZME9EUTFRVFJDT1RSRU9VUTVNVGhDTURWRk9UUTNPQSJ9.eyJodHRwczovL3J0LjM2MGRpYWxvZy5pby8iOnsiY3JlYXRlIjpmYWxzZSwiZW52aXJvbm1lbnQiOiJwcm9kdWN0aW9uIiwib3JnYW5pemF0aW9uIjoiTWFkYW5hIFRlbGVjb20gTHRkLiIsIm92ZXJzZWVyIjpmYWxzZSwidXNlcl9oYXNoIjoiRkthWUh4VSJ9LCJpc3MiOiJodHRwczovLzM2MGRpYWxvZy5ldS5hdXRoMC5jb20vIiwic3ViIjoiYXV0aDB8NjQ3NDZhZWM5YWE0NWI3MmRlOGY1NGE0IiwiYXVkIjpbImh0dHA6Ly8zNjBkaWFsb2cuaW8vc2VydmljZXMveHJheS9jcm0vdjEiLCJodHRwczovLzM2MGRpYWxvZy5ldS5hdXRoMC5jb20vdXNlcmluZm8iXSwiaWF0IjoxNzIyOTMzNjE3LCJleHAiOjE3MjMwMjAwMTcsInNjb3BlIjoib3BlbmlkIHByb2ZpbGUgZW1haWwgYWRkcmVzcyBwaG9uZSBvZmZsaW5lX2FjY2VzcyIsImd0eSI6InBhc3N3b3JkIiwiYXpwIjoiSU1pbk1FdlRNM3BqMkVsbHd5dWNlWFpFZWM5aFM3Y2UifQ.p4Gm8NeWkuLlQ8aA48DQMya_Nvo0q0FSW5hfuX2QDH3vxwnQF_QeOqSp056RGtxbBeaOGrvupp1ITdbUiTSFu2u1ze-ZGIjzZF_XmYlua0BHt7eTRUfk-Jg6G88WEmv-a6P1LAq_VWL38mHFGvjXwcSEHiGY4cmUvKULmBMRJfiCMFLLQyMtwlZ48KV-TqQvEDlQrL-YKW6oSFVvTCyuTBynzHQV96YXg_YA-FBdD7v41IdFSy5uwDHWk2PJEFAILP7Ec1r-4I65FvvjqBgDvZ427urV20WtceqHO4cKKU_2phxIQ8E3elCWedWzn34mXwr_3_t9Pv6XSoSsyUX5Zg'
+API_SECRET='iHB20OJavj7OcHzCmfIKyCHlAK'
+# MongoDB configuration
+MONGO_URI = 'mongodb://localhost:27017/'
+DATABASE_NAME = 'whatsapp_data'
+RAW_COLLECTION = 'webhook_responses'
+BUSINESS_TO_USER_COLLECTION = 'webhook_latest_to_user'
+USER_TO_BUSINESS_COLLECTION = 'webhook_latest_from_user'
 
+# Connect to MongoDB
+client = MongoClient(MONGO_URI)
+db = client[DATABASE_NAME]
+raw_collection = db[RAW_COLLECTION]
+business_to_user_collection = db[BUSINESS_TO_USER_COLLECTION]
+user_to_business_collection = db[USER_TO_BUSINESS_COLLECTION]
 
-# def get_today_iso_format():
-#     return datetime.now().strftime('%Y-%m-%d')
+def verify_signature(payload_body, secret_token, signature_header):
+    """Verify that the payload was sent from GitHub by validating SHA256.
 
-# current_date = get_today_iso_format()
-# csv_primary_file = f'webhook_logs_{current_date}.csv'
+    Raise and return 403 if not authorized.
 
-# def create_csv_writer_for_date(date):
-#     return pd.DataFrame(columns=[
-#         'Status ID', 'Status', 'Timestamp', 'Recipient ID',
-#         'Conversation ID', 'Origin Type', 'Phone Number',
-#         'Message Type', 'Message Body', 'Contact Name'
-#     ])
-
-# csv_writer = create_csv_writer_for_date(current_date)
-
-
-# def rotate_log_file():
-#     global current_date, csv_writer
-#     new_date = get_today_iso_format()
-#     if new_date != current_date:
-#         current_date = new_date
-#         csv_writer = create_csv_writer_for_date(current_date)
-#         print(f"Log file rotated to webhook_logs_{current_date}.csv")
-
-
-# write_queue = []
-
-
-# def process_queue():
-#     global csv_writer
-#     if not write_queue:
-#         return
+    Args:
+        payload_body: original request body to verify (request.body())
+        secret_token: GitHub app webhook token (WEBHOOK_SECRET)
+        signature_header: header received from GitHub (x-hub-signature-256)
+    """
+    if not signature_header:
+        abort(403, description="x-hub-signature-256 header is missing!")
     
-#     record = write_queue.pop(0)
-#     csv_writer = pd.concat([csv_writer, pd.DataFrame([record])])
-#     csv_writer.to_csv(csv_primary_file, mode='a', index=False, header=False)
-#     print('Record appended to primary CSV log')
+    # Create HMAC digest using the secret token and raw payload
+    hash_object = hmac.new(secret_token.encode('utf-8'), msg=payload_body, digestmod=hashlib.sha256)
+    expected_signature = "sha256=" + hash_object.hexdigest()
 
-
-# def contains_arabic(text):
-#     return any('\u0600' <= c <= '\u06FF' for c in text)
-
-
-# def fetch_media_url(media_id):
-#     url = f'https://waba-v2.360dialog.io/{media_id}'
-#     headers = {
-#         "Content-Type": "application/json",
-#         "D360-API-KEY": apiKey
-#     }
-    
-#     try:
-#         response = requests.get(url, headers=headers)
-#         response.raise_for_status()
-#         return response.json()
-#     except requests.RequestException as error:
-#         print(f'Error fetching media URL: {error}')
-#         return None
-
-
-# def download_media_file(media_url, filename):
-#     download_dir = 'C:\\Users\\admn-rtenn\\Desktop\\webhook\\media'
-#     os.makedirs(download_dir, exist_ok=True)
-#     file_path = os.path.join(download_dir, filename)
-    
-#     headers = {
-#         "D360-API-KEY": apiKey
-#     }
-    
-#     try:
-#         response = requests.get(media_url, headers=headers, stream=True)
-#         response.raise_for_status()
-        
-#         with open(file_path, 'wb') as file:
-#             for chunk in response.iter_content(1024):
-#                 file.write(chunk)
-        
-#         print(f'Downloaded media file: {filename}')
-#     except requests.RequestException as error:
-#         print(f'Error downloading media file: {error}')
-
-
-# def send_auto_reply(recipient_id, message_text):
-#     url = 'https://waba-v2.360dialog.io/messages'
-#     headers = {
-#         "Content-Type": "application/json",
-#         "D360-API-KEY": apiKey
-#     }
-    
-#     data = {
-#         "recipient_type": "individual",
-#         "to": recipient_id,
-#         "messaging_product": "whatsapp",
-#         "type": "text",
-#         "text": {
-#             "body": message_text
-#         }
-#     }
-    
-#     try:
-#         response = requests.post(url, headers=headers, json=data)
-#         response.raise_for_status()
-#         print('Auto-reply sent:', response.json())
-#     except requests.RequestException as error:
-#         print(f'Error sending auto-reply: {error}')
-
+    # Securely compare the computed HMAC digest with the received signature
+    if not hmac.compare_digest(expected_signature, signature_header):
+        abort(403, description="Request signatures didn't match!")
 
 @app.route('/', methods=['GET'])
 def index():
     return 'Webhook server is running'
 
-# @app.route('/webhook', methods=['POST'])
-# def webhook():
-#     print('Received webhook data:', json.dumps(request.json, indent=2, ensure_ascii=False))
-    
-#     try:
-#         # Process the message and add to queue
-#         if 'entry' in request.json and request.json['entry']:
-#             for entry in request.json['entry']:
-#                 if 'changes' in entry and entry['changes']:
-#                     for change in entry['changes']:
-#                         if change['field'] == 'messages':
-#                             if 'messages' in change['value'] and change['value']['messages']:
-#                                 for message in change['value']['messages']:
-#                                     message_type = message.get('type', 'unknown')
+@app.route('/whatsapp', methods=['POST'])
+def webhook():
+    # Get the request payload and signature header
+    payload = request.get_data(as_text=True)
+    signature_sha256 = request.headers.get('X-Hub-Signature-256')
 
-#                                     if message_type in ['audio', 'image']:
-#                                         media_id = message.get('audio', {}).get('id') if message_type == 'audio' else message.get('image', {}).get('id')
-#                                         media_info = fetch_media_url(media_id)
-#                                         if media_info and 'url' in media_info:
-#                                             media_url = media_info['url'].replace('https://lookaside.fbsbx.com', 'https://waba-v2.360dialog.io')
-#                                             contact_name = change['value'].get('contacts', [{}])[0].get('profile', {}).get('name', 'unknown')
+    print(f"Signature Header: {signature_sha256}")
 
-#                                             record = {
-#                                                 'Status ID': message['id'],
-#                                                 'Status': 'received',
-#                                                 'Timestamp': datetime.fromtimestamp(int(message['timestamp'])).strftime('%Y-%m-%d %H:%M:%S'),
-#                                                 'Recipient ID': message['from'],
-#                                                 'Conversation ID': entry['id'],
-#                                                 'Origin Type': change['value'].get('metadata', {}).get('origin', {}).get('type', 'unknown'),
-#                                                 'Phone Number': change['value']['metadata']['display_phone_number'],
-#                                                 'Message Type': message_type,
-#                                                 'Message Body': media_url,
-#                                                 'Contact Name': contact_name
-#                                             }
+    # Verify the signature before processing the data
+    # verify_signature(payload.encode('utf-8'), API_SECRET, signature_sha256)
 
-#                                             write_queue.append(record)
-#                                             process_queue()  # Process the queue
-
-#                                             # Download the media file
-#                                             file_extension = 'ogg' if message_type == 'audio' else 'jpg'
-#                                             filename = f'{media_id}.{file_extension}'
-#                                             download_media_file(media_url, filename)
-
-#                                             # Send auto-reply
-#                                             print('Sending auto-reply to:', message['from'])
-#                                             send_auto_reply(message['from'], autoReplyMessage)
-#                                     else:
-#                                         message_body = message['text']['body'] if message_type == 'text' else json.dumps(message)
-#                                         contact_name = change['value'].get('contacts', [{}])[0].get('profile', {}).get('name', 'unknown')
-
-#                                         record = {
-#                                             'Status ID': message['id'],
-#                                             'Status': 'received',
-#                                             'Timestamp': datetime.fromtimestamp(int(message['timestamp'])).strftime('%Y-%m-%d %H:%M:%S'),
-#                                             'Recipient ID': message['from'],
-#                                             'Conversation ID': entry['id'],
-#                                             'Origin Type': change['value'].get('metadata', {}).get('origin', {}).get('type', 'unknown'),
-#                                             'Phone Number': change['value']['metadata']['display_phone_number'],
-#                                             'Message Type': message_type,
-#                                             'Message Body': message_body if contains_arabic(message_body) else json.dumps(message_body),
-#                                             'Contact Name': contact_name
-#                                         }
-
-#                                         write_queue.append(record)
-#                                         process_queue()  # Process the queue
-
-#                                         # Send auto-reply
-#                                         print('Sending auto-reply to:', message['from'])
-#                                         send_auto_reply(message['from'], autoReplyMessage)
-
-#                             if 'statuses' in change['value'] and change['value']['statuses']:
-#                                 for status in change['value']['statuses']:
-#                                     record = {
-#                                         'Status ID': status['id'],
-#                                         'Status': status['status'],
-#                                         'Timestamp': datetime.fromtimestamp(int(status['timestamp'])).strftime('%Y-%m-%d %H:%M:%S'),
-#                                         'Recipient ID': status['recipient_id'],
-#                                         'Conversation ID': status.get('conversation', {}).get('id', 'unknown'),
-#                                         'Origin Type': status.get('conversation', {}).get('origin', {}).get('type', 'unknown'),
-#                                         'Phone Number': change['value']['metadata']['display_phone_number'],
-#                                         'Message Type': 'status',
-#                                         'Message Body': json.dumps(status),
-#                                         'Contact Name': 'N/A'
-#                                     }
-
-#                                     write_queue.append(record)
-#                                     process_queue()  # Process the queue
-#         else:
-#             print('No valid entries found in webhook data:', request.json)
+    print("SHA256 Signature verified successfully.")
         
-#         return 'Message received', 200
-#     except Exception as error:
-#         print(f'Error processing webhook data: {error}')
-#         return 'Error processing webhook data', 500
-    
+    try:
+        # Parse the JSON payload
+        data = json.loads(payload)
+
+        # Store raw data in the raw collection
+        raw_result = raw_collection.insert_one(data)
+        print(f"Raw data inserted with id: {raw_result.inserted_id}")
+
+        # Iterate through each entry in the payload
+        for entry in data.get('entry', []):
+            for change in entry.get('changes', []):
+                value = change.get('value', {})
+
+                # Determine the direction of the message
+                if 'messages' in value and 'statuses' not in value:
+                    # Messages coming from users to the business
+                    for message in value.get('messages', []):
+                        wa_mid = message.get('id')
+                        print("User to Business wa_mid:", wa_mid)
+
+                        if wa_mid:
+                            # Check if wa_mid exists in the latest collection
+                            existing_record = user_to_business_collection.find_one({'id': wa_mid})
+                            if existing_record:
+                                # Update existing record
+                                update_result = user_to_business_collection.update_one(
+                                    {'id': wa_mid},
+                                    {'$set': message}
+                                )
+                                print(f"Updated record with id: {wa_mid}, modified count: {update_result.modified_count}")
+                            else:
+                                # Insert new record
+                                latest_result = user_to_business_collection.insert_one(message)
+                                print(f"New user-to-business message inserted with id: {latest_result.inserted_id}")
+
+                elif 'statuses' in value:
+                    # Messages going from the business to users
+                    for status in value.get('statuses', []):
+                        wa_mid = status.get('id')
+                        print("Business to User wa_mid:", wa_mid)
+
+                        if wa_mid:
+                            # Check if wa_mid exists in the latest collection
+                            existing_record = business_to_user_collection.find_one({'id': wa_mid})
+                            if existing_record:
+                                # Update existing record
+                                update_result = business_to_user_collection.update_one(
+                                    {'id': wa_mid},
+                                    {'$set': status}
+                                )
+                                print(f"Updated record with id: {wa_mid}, modified count: {update_result.modified_count}")
+                            else:
+                                # Insert new record
+                                latest_result = business_to_user_collection.insert_one(status)
+                                print(f"New business-to-user message inserted with id: {latest_result.inserted_id}")
+
+        return jsonify({"status": "success"}), 200
+
+    except json.JSONDecodeError:
+        print("Invalid JSON payload")
+        return jsonify({"status": "failure", "reason": "Invalid JSON payload"}), 400
+    except Exception as e:
+        print(f"Error processing data: {e}")
+        return jsonify({"status": "failure", "reason": "Processing error"}), 500
+        
+
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, ssl_context=('/etc/letsencrypt/live/ocmymada.com/fullchain.pem',
-                                                   '/etc/letsencrypt/live/ocmymada.com/privkey.pem'))
+    app.run(port=1313, debug=True)
