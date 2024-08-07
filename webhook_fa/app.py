@@ -1,18 +1,9 @@
-import hmac
-import hashlib
 import json
-import subprocess
-import time
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, abort
 from pymongo import MongoClient
-from flask import abort
 from init_mongo import create_collections
 
-
-
-
-
-create_collections() 
+create_collections()
 
 app = Flask(__name__)
 
@@ -23,8 +14,8 @@ RAW_COLLECTION = 'webhook_responses'
 BUSINESS_TO_USER_COLLECTION = 'webhook_latest_to_user'
 USER_TO_BUSINESS_COLLECTION = 'webhook_latest_from_user'
 
-# Ensure this is your correct app secret for webhook verification
-API_SECRET = 'iHB20OJavj7OcHzCmfIKyCHlAK'
+# Expected token for authentication (use environment variables for security)
+EXPECTED_TOKEN = 'dGVzdHVzZXI6dGVzdHBhc3M='  # This should be your actual token
 
 # Connect to MongoDB
 client = MongoClient(MONGO_URI)
@@ -33,26 +24,19 @@ raw_collection = db[RAW_COLLECTION]
 business_to_user_collection = db[BUSINESS_TO_USER_COLLECTION]
 user_to_business_collection = db[USER_TO_BUSINESS_COLLECTION]
 
-def verify_signature(payload_body, secret_token, signature_header):
-    """Verify that the payload was sent from GitHub by validating SHA256.
+def verify_token(auth_header):
+    """Verify the token from the Authorization header."""
+    if not auth_header:
+        return False
 
-    Raise and return 403 if not authorized.
+    try:
+        # Extract the token part after 'Basic ' or any prefix used
+        token = auth_header.split(' ')[1] if ' ' in auth_header else auth_header
 
-    Args:
-        payload_body: original request body to verify (request.body())
-        secret_token: GitHub app webhook token (WEBHOOK_SECRET)
-        signature_header: header received from GitHub (x-hub-signature-256)
-    """
-    if not signature_header:
-        abort(403, description="x-hub-signature-256 header is missing!")
-    
-    # Create HMAC digest using the secret token and raw payload
-    hash_object = hmac.new(secret_token.encode('utf-8'), msg=payload_body, digestmod=hashlib.sha256)
-    expected_signature = "sha256=" + hash_object.hexdigest()
-
-    # Securely compare the computed HMAC digest with the received signature
-    if not hmac.compare_digest(expected_signature, signature_header):
-        abort(403, description="Request signatures didn't match!")
+        # Compare the token with the expected token
+        return token == EXPECTED_TOKEN
+    except IndexError:
+        return False
 
 @app.route('/webhook_test', methods=['GET'])
 def index():
@@ -60,18 +44,19 @@ def index():
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
-    # Get the request payload and signature header
-    payload = request.get_data(as_text=True)
-    signature_sha256 = request.headers.get('X-Hub-Signature-256')
+    # Get the Authorization header
+    authorization_header = request.headers.get('Authorization')
 
-    print(f"Signature Header: {signature_sha256}")
+    # Verify the token
+    if not verify_token(authorization_header):
+        abort(401, description="Unauthorized access: Invalid token!")
 
-    # Verify the signature before processing the data
-    # verify_signature(payload.encode('utf-8'), API_SECRET, signature_sha256)
+    print("Token verified successfully.")
 
-    print("SHA256 Signature verified successfully.")
-        
     try:
+        # Get the request payload
+        payload = request.get_data(as_text=True)
+
         # Parse the JSON payload
         data = json.loads(payload)
 
@@ -135,9 +120,6 @@ def webhook():
     except Exception as e:
         print(f"Error processing data: {e}")
         return jsonify({"status": "failure", "reason": "Processing error"}), 500
-        
 
 if __name__ == '__main__':
-    
-    app.run(host="0.0.0.0",port=5000, debug=True)
-
+    app.run(host="0.0.0.0", port=5000, debug=True)
