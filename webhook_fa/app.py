@@ -54,11 +54,11 @@ def verify_signature(payload_body, secret_token, signature_header):
     if not hmac.compare_digest(expected_signature, signature_header):
         abort(403, description="Request signatures didn't match!")
 
-@app.route('/', methods=['GET'])
+@app.route('/webhook_test', methods=['GET'])
 def index():
     return 'Webhook server is running'
 
-@app.route('/whatsapp', methods=['POST'])
+@app.route('/webhook', methods=['POST'])
 def webhook():
     # Get the request payload and signature header
     payload = request.get_data(as_text=True)
