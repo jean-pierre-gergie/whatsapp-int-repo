@@ -1,14 +1,16 @@
 import json
-from flask import Flask, request, jsonify, abort
+from fastapi import FastAPI, Request, HTTPException, Header
 from pymongo import MongoClient
+from pydantic import BaseModel
 from init_mongo import create_collections
+from typing import Optional, Dict, Any
 
 create_collections()
 
-app = Flask(__name__)
+app = FastAPI()
 
 # MongoDB configuration
-MONGO_URI = 'mongodb://mongodb_container:27017/'  # Update to container name
+MONGO_URI = 'mongodb://localhost:27017/'  # Update to container name
 DATABASE_NAME = 'whatsapp_data'
 RAW_COLLECTION = 'webhook_responses'
 BUSINESS_TO_USER_COLLECTION = 'webhook_latest_to_user'
@@ -24,7 +26,7 @@ raw_collection = db[RAW_COLLECTION]
 business_to_user_collection = db[BUSINESS_TO_USER_COLLECTION]
 user_to_business_collection = db[USER_TO_BUSINESS_COLLECTION]
 
-def verify_token(auth_header):
+def verify_token(auth_header: Optional[str]) -> bool:
     """Verify the token from the Authorization header."""
     if not auth_header:
         return False
@@ -38,34 +40,31 @@ def verify_token(auth_header):
     except IndexError:
         return False
 
-@app.route('/webhook_test', methods=['GET'])
+class WebhookPayload(BaseModel):
+    entry: Optional[list[Dict[str, Any]]]
+
+@app.get("/webhook_test")
 def index():
-    return 'Webhook server is running'
+    return {"message": "Webhook server is running"}
 
-@app.route('/webhook', methods=['POST'])
-def webhook():
-    # Get the Authorization header
-    authorization_header = request.headers.get('Authorization')
-
+@app.post("/webhook")
+async def webhook(request: Request, authorization: Optional[str] = Header(None)):
     # Verify the token
-    if not verify_token(authorization_header):
-        abort(401, description="Unauthorized access: Invalid token!")
+    if not verify_token(authorization):
+        raise HTTPException(status_code=401, detail="Unauthorized access: Invalid token!")
 
     print("Token verified successfully.")
 
     try:
         # Get the request payload
-        payload = request.get_data(as_text=True)
-
-        # Parse the JSON payload
-        data = json.loads(payload)
+        payload = await request.json()
 
         # Store raw data in the raw collection
-        raw_result = raw_collection.insert_one(data)
+        raw_result = raw_collection.insert_one(payload)
         print(f"Raw data inserted with id: {raw_result.inserted_id}")
 
         # Iterate through each entry in the payload
-        for entry in data.get('entry', []):
+        for entry in payload.get('entry', []):
             for change in entry.get('changes', []):
                 value = change.get('value', {})
 
@@ -112,14 +111,15 @@ def webhook():
                                 latest_result = business_to_user_collection.insert_one(status)
                                 print(f"New business-to-user message inserted with id: {latest_result.inserted_id}")
 
-        return jsonify({"status": "success"}), 200
+        return {"status": "success"}
 
     except json.JSONDecodeError:
         print("Invalid JSON payload")
-        return jsonify({"status": "failure", "reason": "Invalid JSON payload"}), 400
+        raise HTTPException(status_code=400, detail="Invalid JSON payload")
     except Exception as e:
         print(f"Error processing data: {e}")
-        return jsonify({"status": "failure", "reason": "Processing error"}), 500
+        raise HTTPException(status_code=500, detail="Processing error")
 
 if __name__ == '__main__':
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=5001, log_level="debug")
