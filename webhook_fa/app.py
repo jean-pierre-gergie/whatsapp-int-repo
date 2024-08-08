@@ -4,6 +4,7 @@ from pymongo import MongoClient
 from pydantic import BaseModel
 from init_mongo import create_collections
 from typing import Optional, Dict, Any
+from fastapi.responses import JSONResponse
 
 create_collections()
 app = FastAPI()
@@ -59,29 +60,51 @@ async def webhook(request: Request, authorization: Optional[str] = Header(None))
         for entry in payload.get('entry', []):
             for change in entry.get('changes', []):
                 value = change.get('value', {})
-                messages = value.get('messages', [])
 
-                for message in messages:
-                    if 'from' in message and 'id' in message:
-                        user_id = message['from']
-                        message_id = message['id']
-                        message_data = {
-                            'user_id': user_id,
-                            'message_id': message_id,
-                            'message': message,
-                        }
-                        status = business_to_user_collection.find_one_and_replace(
-                            {"user_id": user_id, "message_id": message_id},
-                            message_data,
-                            upsert=True
-                        )
-                        if status:
-                            print(f"Updated business-to-user message with id: {message_id}")
-                        else:
-                            latest_result = business_to_user_collection.insert_one(message_data)
-                            print(f"New business-to-user message inserted with id: {latest_result.inserted_id}")
+                # Determine the direction of the message
+                if 'messages' in value and 'statuses' not in value:
+                    # Messages coming from users to the business
+                    for message in value.get('messages', []):
+                        wa_mid = message.get('id')
+                        print("User to Business wa_mid:", wa_mid)
 
-        return {"status": "success"}
+                        if wa_mid:
+                            # Check if wa_mid exists in the latest collection
+                            existing_record = user_to_business_collection.find_one({'id': wa_mid})
+                            if existing_record:
+                                # Update existing record
+                                update_result = user_to_business_collection.update_one(
+                                    {'id': wa_mid},
+                                    {'$set': message}
+                                )
+                                print(f"Updated record with id: {wa_mid}, modified count: {update_result.modified_count}")
+                            else:
+                                # Insert new record
+                                latest_result = user_to_business_collection.insert_one(message)
+                                print(f"New user-to-business message inserted with id: {latest_result.inserted_id}")
+
+                elif 'statuses' in value:
+                    # Messages going from the business to users
+                    for status in value.get('statuses', []):
+                        wa_mid = status.get('id')
+                        print("Business to User wa_mid:", wa_mid)
+
+                        if wa_mid:
+                            # Check if wa_mid exists in the latest collection
+                            existing_record = business_to_user_collection.find_one({'id': wa_mid})
+                            if existing_record:
+                                # Update existing record
+                                update_result = business_to_user_collection.update_one(
+                                    {'id': wa_mid},
+                                    {'$set': status}
+                                )
+                                print(f"Updated record with id: {wa_mid}, modified count: {update_result.modified_count}")
+                            else:
+                                # Insert new record
+                                latest_result = business_to_user_collection.insert_one(status)
+                                print(f"New business-to-user message inserted with id: {latest_result.inserted_id}")
+
+        return JSONResponse(content={"status": "success"}, status_code=200)
 
     except json.JSONDecodeError:
         print("Invalid JSON payload")
@@ -92,4 +115,4 @@ async def webhook(request: Request, authorization: Optional[str] = Header(None))
 
 if __name__ == '__main__':
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=5001, log_level="debug")
+    uvicorn.run(app, host="0.0.0.0", port=5000, log_level="debug")
