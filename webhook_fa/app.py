@@ -39,6 +39,7 @@ class WebhookPayload(BaseModel):
 
 @app.get("/webhook_test")
 def index():
+    # return JSONResponse(content={"status": "success"}, status_code=200)
     return {"message": "Webhook server is running"}
 
 @app.post("/webhook")
