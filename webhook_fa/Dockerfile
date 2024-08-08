@@ -19,14 +19,14 @@ RUN apt-get update && \
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the current directory contents into the container at /app
-# COPY . /app/
+# Copy the FastAPI app file into the container
+COPY app.py /app/
 
-# Make port 5000 available to the world outside this container
+# Make port 5001 available to the world outside this container
 EXPOSE 5000
 
-# Define environment variable
-ENV FLASK_APP=app.py
+# Define environment variable (not needed for FastAPI, optional to keep)
+ENV APP_MODULE=app:app
 
-# Run init script and then start the Flask app
-CMD ["python", "app.py"]
+# Run the FastAPI app with uvicorn
+CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "5000", "--log-level", "info"]
