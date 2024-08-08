@@ -157,8 +157,10 @@ def create_template():
     
     response = requests.post("https://waba-v2.360dialog.io/v1/configs/templates", headers=headers, data=json.dumps(template_data))
     
-    if response.status_code == 200:
-        return jsonify(message="Template created successfully"), 200
+    
+    response_data = response.json()
+    if response_data.get('status') == 'submitted':
+        return jsonify(message="Template created and submitted successfully"), 200
     else:
-        print(f"Error: {response.json()}")
-        return jsonify(status_code=response.status_code, response=response.json()), 400
+        print(f"Error: {response_data}")
+        return jsonify(status_code=response.status_code, response=response_data), 400

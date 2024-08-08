@@ -28,6 +28,7 @@
                 <div class="sidebar-menu">
                     <ul class="menu">
                         <li class="sidebar-title">Menu</li>
+
                         <li class="sidebar-item active ">
                             <a href="{{url_for('auth.index')}}" class='sidebar-link'>
                                 <i class="bi bi-grid-fill"></i>
@@ -42,7 +43,7 @@
                             </a>
                             <ul class="submenu ">
                                 <li class="submenu-item ">
-                                    <a href="{{url_for('campaigns.whatsapp')}}">Send Single Message</a>
+                                    <a href="{{ url_for('campaigns.generate_report_page') }}">Generate Report</a>
                                 </li>
                                 <li class="submenu-item ">
                                     <a href="{{url_for('campaigns.send_campaign')}}">Send Campaign</a>
@@ -53,6 +54,7 @@
                                 <li class="submenu-item ">
                                     <a href="{{url_for('upload_data.upload_file')}}">Add Members<a>
                                 </li>
+                                                               
                             </ul>
                         </li>
                         <li class="sidebar-item">

@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generate Report</title>
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendors/iconly/bold.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendors/perfect-scrollbar/perfect-scrollbar.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendors/bootstrap-icons/bootstrap-icons.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.svg') }}" type="image/x-icon">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div id="app">
+        <div id="sidebar" class="active">
+            <div class="sidebar-wrapper active">
+                <div class="sidebar-header">
+                    <div class="d-flex justify-content-between">
+                        <div class="toggler">
+                            <a href="#" class="sidebar-hide d-xl-none d-block"><i class="bi bi-x bi-middle"></i></a>
+                        </div>
+                    </div>
+                </div>
+                <div class="sidebar-menu">
+                    <ul class="menu">
+                        <li class="sidebar-title">Menu</li>
+
+                        <li class="sidebar-item active ">
+                            <a href="{{url_for('auth.index')}}" class='sidebar-link'>
+                                <i class="bi bi-grid-fill"></i>
+                                <span>Dashboard</span>
+                            </a>
+                        </li>
+
+                        <li class="sidebar-item  has-sub">
+                            <a href="#" class='sidebar-link'>
+                                <i class="bi bi-stack"></i>
+                                <span>Whatsapp Business</span>
+                            </a>
+                            <ul class="submenu ">
+                                <li class="submenu-item ">
+                                    <a href="{{ url_for('campaigns.generate_report_page') }}">Generate Report</a>
+                                </li>
+                                <li class="submenu-item ">
+                                    <a href="{{url_for('campaigns.send_campaign')}}">Send Campaign</a>
+                                </li>
+                                <li class="submenu-item ">
+                                    <a href="{{url_for('templates.templates_list')}}">Templates</a>
+                                </li>
+                                <li class="submenu-item ">
+                                    <a href="{{url_for('upload_data.upload_file')}}">Add Members<a>
+                                </li>
+                                                               
+                            </ul>
+                        </li>
+                        <li class="sidebar-item">
+                            <a href="{{ url_for('auth.logout') }}" class='sidebar-link'>
+                                <i class="bi bi-box-arrow-right"></i>
+                                <span>Logout</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                <button class="sidebar-toggler btn x"><i data-feather="x"></i></button>
+            </div>
+        </div>
+        <div id="main">
+            <div class="page-heading">
+                <div class="page-title">
+                    <div class="row">
+                        <div class="col-12 col-md-6 order-md-1 order-last">
+                            <h3>WhatsApp Integration</h3>
+                            <p class="text-subtitle text-muted">Generate a report for your WhatsApp campaigns.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <section class="section">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4 class="card-title">Generate Campaign Report</h4>
+                        </div>
+                        <div class="card-body">
+                            <form id="report-form" method="POST" action="{{ url_for('campaigns.generate_report') }}">
+                                <div class="form-group">
+                                    <label for="campaign_name">Campaign Name</label>
+                                    <input type="text" id="campaign_name" name="campaign_name" class="form-control" required>
+                                </div>
+                                <div class="col-12 d-flex justify-content-end">
+                                    <button type="submit" class="btn btn-primary me-1 mb-1">Generate Report</button>
+                                    <button type="reset" class="btn btn-light-secondary me-1 mb-1">Reset</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="section" id="report-section" style="display: none;">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4 class="card-title">Report Results</h4>
+                        </div>
+                        <div class="card-body">
+                            <div id="report-results">
+                                <canvas id="report-chart" width="400" height="200"></canvas>
+                                <p><strong>Sent:</strong> <span id="sent-count">0</span> <a href="#" id="download-sent">Download CSV</a></p>
+                                <p><strong>Delivered:</strong> <span id="delivered-count">0</span> <a href="#" id="download-delivered">Download CSV</a></p>
+                                <p><strong>Read:</strong> <span id="read-count">0</span> <a href="#" id="download-read">Download CSV</a></p>
+                                <p><strong>Failed:</strong> <span id="failed-count">0</span> <a href="#" id="download-failed">Download CSV</a></p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+
+<script>
+document.getElementById('report-form').onsubmit = function(event) {
+    event.preventDefault(); 
+    const campaignName = document.getElementById('campaign_name').value;
+    generateReport(campaignName);
+};
+
+function generateReport(campaignName) {
+    fetch('/generate_report', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ campaign_name: campaignName })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Report generated successfully.');
+
+            const sentCount = data.status_counts.sent || 0;
+            const deliveredCount = data.status_counts.delivered || 0;
+            const readCount = data.status_counts.read || 0;
+            const failedCount = data.status_counts.failed || 0;
+
+            const totalCount = sentCount + deliveredCount + readCount + failedCount;
+
+            const sentPercent = totalCount ? ((sentCount / totalCount) * 100).toFixed(2) : 0;
+            const deliveredPercent = totalCount ? ((deliveredCount / totalCount) * 100).toFixed(2) : 0;
+            const readPercent = totalCount ? ((readCount / totalCount) * 100).toFixed(2) : 0;
+            const failedPercent = totalCount ? ((failedCount / totalCount) * 100).toFixed(2) : 0;
+
+            document.getElementById('sent-count').innerText = `${sentPercent}% (${sentCount})`;
+            document.getElementById('delivered-count').innerText = `${deliveredPercent}% (${deliveredCount})`;
+            document.getElementById('read-count').innerText = `${readPercent}% (${readCount})`;
+            document.getElementById('failed-count').innerText = `${failedPercent}% (${failedCount})`;
+
+            document.getElementById('report-section').style.display = 'block';
+
+            updateChart(sentPercent, deliveredPercent, readPercent, failedPercent);
+
+            document.getElementById('download-sent').href = `/download_csv/sent?campaign_name=${campaignName}`;
+            document.getElementById('download-delivered').href = `/download_csv/delivered?campaign_name=${campaignName}`;
+            document.getElementById('download-read').href = `/download_csv/read?campaign_name=${campaignName}`;
+            document.getElementById('download-failed').href = `/download_csv/failed?campaign_name=${campaignName}`;
+        } else {
+            alert(data.message || 'An error occurred while generating the report.');
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while generating the report.');
+    });
+}
+
+function updateChart(sent, delivered, read, failed) {
+    const ctx = document.getElementById('report-chart').getContext('2d');
+    if (window.reportChart) {
+        window.reportChart.destroy();
+    }
+    window.reportChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Sent', 'Delivered', 'Read', 'Failed'],
+            datasets: [{
+                label: 'Message Status (%)',
+                data: [sent, delivered, read, failed],
+                backgroundColor: [
+                    'rgba(75, 192, 192, 0.2)',
+                    'rgba(54, 162, 235, 0.2)',
+                    'rgba(255, 206, 86, 0.2)',
+                    'rgba(255, 99, 132, 0.2)'
+                ],
+                borderColor: [
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(255, 206, 86, 1)',
+                    'rgba(255, 99, 132, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100
+                }
+            }
+        }
+    });
+}
+</script>
+<script src="./static/vendors/perfect-scrollbar/perfect-scrollbar.min.js"></script>
+<script src="./static/js/bootstrap.bundle.min.js"></script>
+
+<script src="./static/vendors/apexcharts/apexcharts.js"></script>
+<script src="./static/js/pages/dashboard.js"></script>
+
+<script src="./static/js/main.js"></script>
+
+</body>
+</html>

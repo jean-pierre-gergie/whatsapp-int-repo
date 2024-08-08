@@ -3,6 +3,13 @@ import requests
 import pandas as pd
 from app.config import Config  
 from flask import current_app
+from pymongo.errors import BulkWriteError
+from pymongo import UpdateOne
+import copy
+from flask import Flask, current_app
+from pymongo import MongoClient
+import threading
+
 
 api_key_360 =Config.API_KEY
 

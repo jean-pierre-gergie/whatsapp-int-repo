@@ -71,7 +71,7 @@ def map_columns():
 
             column_mapping = dict(zip(csv_columns, db_columns))
 
-            unique_fields = ['first_name', 'last_name', 'mobile']
+            unique_fields = ['first_name', 'last_name', 'mobile','tag']
 
             mongo_db = current_app.mongo
             collection = mongo_db.members
