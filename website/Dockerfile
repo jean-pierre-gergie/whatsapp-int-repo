@@ -12,7 +12,7 @@ RUN apt-get update && \
 
 RUN pip install --no-cache-dir -r requirements.txt
 
-EXPOSE 8765
+EXPOSE 1313
 
 ENV FLASK_APP=app.py
 
