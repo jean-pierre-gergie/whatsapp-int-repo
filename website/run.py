@@ -14,4 +14,4 @@ if __name__ == '__main__':
     template_updater_thread = threading.Thread(target=start_template_updater ,  args=(app,))
     template_updater_thread.daemon = True 
     template_updater_thread.start()
-    app.run(debug=True, port=8765)
+    app.run(host="0.0.0.0",debug=True, port=1313)
