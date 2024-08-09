@@ -62,7 +62,6 @@
                                         <li class="submenu-item ">
                                             <a href="{{url_for('upload_data.upload_file')}}">Add Members<a>
                                         </li>
-                                                                       
                                     </ul>
                                 </li>
                                 <li class="sidebar-item">
@@ -76,7 +75,7 @@
                         <button class="sidebar-toggler btn x"><i data-feather="x"></i></button>
                     </div>
                 </div>
-            
+            </div>
         </div>
         <div id="main">
             <div class="page-heading">
@@ -95,6 +94,7 @@
                             <h4 class="card-title">Send Campaign Messages</h4>
                         </div>
                         <div class="card-body">
+                            <div id="send-status" class="alert alert-info" style="display:none;">Sending...</div>
                             <form id="campaign-message-form" method="POST" enctype="multipart/form-data" action="{{ url_for('campaigns.send_campaign_messages') }}">
                                 <div class="form-group">
                                     <label for="campaign">Campaign</label>
@@ -143,13 +143,6 @@
                                     <button type="reset" class="btn btn-light-secondary me-1 mb-1">Reset</button>
                                 </div>
                             </form>
-
-                            <div id="download-links" style="display: none;">
-                                <h5>Download Results</h5>
-                                <a id="success-download" href="#" class="btn btn-success">Download Success File</a>
-                                <a id="failed-download" href="#" class="btn btn-danger">Download Failed File</a>
-                                <a id="summary-download" href="#" class="btn btn-info">Download Summary File</a>
-                            </div>
                         </div>
                     </div>
                 </section>
@@ -234,9 +227,15 @@
         }
     }
 
+    
     document.getElementById('campaign-message-form').onsubmit = function(event) {
         event.preventDefault(); 
+
         if (confirm("Are you sure you want to send the campaign messages?")) {
+            // Display "Sending..." message immediately
+            document.getElementById('send-status').style.display = 'block';
+            document.getElementById('send-status').textContent = "Sending...";
+
             fetch('{{ url_for("campaigns.send_campaign_messages") }}', {
                 method: 'POST',
                 body: new FormData(this)
@@ -244,20 +243,30 @@
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
-                    document.getElementById('download-links').style.display = 'block';
-                    document.getElementById('success-download').href = data.success_file;
-                    document.getElementById('failed-download').href = data.failed_file;
-                    document.getElementById('summary-download').href = data.summary_file;
+                    // Update the status to "Send Complete" after sending
+                    document.getElementById('send-status').textContent = "Send Complete";
+                    alert("Campaign sent successfully.");
+                } else if (data.error) {
+                    // Hide the "Sending..." message if there's an error
+                    document.getElementById('send-status').style.display = 'none';
+                    alert(data.error);  // Display the error message
                 } else {
+                    // Hide the "Sending..." message if there's a generic error
+                    document.getElementById('send-status').style.display = 'none';
                     alert('An error occurred while sending messages.');
                 }
             })
             .catch(error => {
+                // Hide the "Sending..." message if there's an error
+                document.getElementById('send-status').style.display = 'none';
                 console.error('Error:', error);
                 alert('An error occurred while sending messages.');
             });
+        } else {
+            // Do nothing if the user cancels
         }
     };
+
 </script>
 
 <script src="./static/vendors/perfect-scrollbar/perfect-scrollbar.min.js"></script>

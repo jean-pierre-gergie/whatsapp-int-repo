@@ -88,8 +88,12 @@
                             <form id="report-form" method="POST" action="{{ url_for('campaigns.generate_report') }}">
                                 <div class="form-group">
                                     <label for="campaign_name">Campaign Name</label>
-                                    <input type="text" id="campaign_name" name="campaign_name" class="form-control" required>
-                                </div>
+                                    <select id="campaign_name" name="campaign_name" class="form-control" required>
+                                        {% for campaign in campaign_names %}
+                                            <option value="{{ campaign.name }}">{{ campaign.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>                                
                                 <div class="col-12 d-flex justify-content-end">
                                     <button type="submit" class="btn btn-primary me-1 mb-1">Generate Report</button>
                                     <button type="reset" class="btn btn-light-secondary me-1 mb-1">Reset</button>
@@ -111,6 +115,9 @@
                                 <p><strong>Delivered:</strong> <span id="delivered-count">0</span> <a href="#" id="download-delivered">Download CSV</a></p>
                                 <p><strong>Read:</strong> <span id="read-count">0</span> <a href="#" id="download-read">Download CSV</a></p>
                                 <p><strong>Failed:</strong> <span id="failed-count">0</span> <a href="#" id="download-failed">Download CSV</a></p>
+                                
+                                <!-- New Refresh Button -->
+                                <button id="refresh-report" class="btn btn-success mt-3">Refresh Report</button>
                             </div>
                         </div>
                     </div>
@@ -122,6 +129,12 @@
 <script>
 document.getElementById('report-form').onsubmit = function(event) {
     event.preventDefault(); 
+    const campaignName = document.getElementById('campaign_name').value;
+    generateReport(campaignName);
+};
+
+// Event listener for the refresh button
+document.getElementById('refresh-report').onclick = function() {
     const campaignName = document.getElementById('campaign_name').value;
     generateReport(campaignName);
 };
