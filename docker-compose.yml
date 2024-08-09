@@ -36,14 +36,15 @@ services:
     ports:
       - "27017:27017"  # Exposes MongoDB on port 27017
     volumes:
-      - ./mongo_data:/data/db  # Mounts the named volume to the MongoDB data directory
+      - mongo_data:/data/db  # Mounts the named volume to the MongoDB data directory
     environment:
       MONGO_INITDB_DATABASE: whatsapp_data  # Set the initial database to create
-    healthcheck:
-      test: ["CMD", "mongo", "--eval", "printjson(db.serverStatus())"]
-      interval: 30s
-      timeout: 20s
-      retries: 112
+    # healthcheck:
+    #   test: ["CMD", "mongo", "--eval", "printjson(db.serverStatus())"]
+    #   interval: 30s
+    #   timeout: 20s
+    #   retries: 112
 
 volumes:
   mongo_data:
+    driver: local 
