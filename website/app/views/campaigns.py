@@ -96,7 +96,15 @@ def send_campaign_messages():
     selected_template = request.form['campaign_template']
     campaign_name = request.form['campaign_name']
 
+    # MongoDB connection
+    mongo_db = current_app.mongo
+    campaign_name_collection = mongo_db.campaign_name
+    
+    # Check if the campaign_name already exists
+    if campaign_name_collection.find_one({"name": campaign_name}):
+        return jsonify({"success": False, "error": "Campaign name already exists. Please choose a different name."}), 400
 
+    # Proceed with the rest of the process if campaign_name does not exist
     template_details = get_template_details(selected_template)
     template_json = transform_template_json(template_details)
 
@@ -108,14 +116,15 @@ def send_campaign_messages():
         media_id = upload_image(file_path)
         print('The media ID is:', media_id)
 
-    mongo_db = current_app.mongo
     members_collection = mongo_db.members
     members = list(members_collection.find({"tag": selected_campaign}))
     
     variables = request.form.getlist('variables[]')
     
-    response = send_message_campaign(members, template_json, variables, media_id, selected_campaign,campaign_name)
+    response = send_message_campaign(members, template_json, variables, media_id, selected_campaign, campaign_name)
     return response
+
+
 
 @bp.route('/download/<filename>')
 def download_file(filename):
@@ -127,12 +136,25 @@ def download_file(filename):
     return send_file(path, as_attachment=True)
 
 
+
+
 @bp.route('/generate_report_page')
 @jwt_required()
 @role_required('admin')
 def generate_report_page():
     current_user = get_jwt_identity()
-    return render_template('generate_report.html')
+    mongo_db = current_app.mongo
+    campaign_name_collection = mongo_db.campaign_name
+    campaign_names = list(campaign_name_collection.find())
+    for cn in campaign_names:
+        cn['_id'] = str(cn['_id'])
+    return render_template('generate_report.html', campaign_names=campaign_names)
+
+
+
+
+
+
 
 @bp.route('/generate_report', methods=['POST'])
 @jwt_required()

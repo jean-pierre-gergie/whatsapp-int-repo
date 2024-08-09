@@ -54,7 +54,6 @@ def get_template_text():
     else:
         return jsonify({'success': False, 'error': 'Template not found or error retrieving template.'})
 
-
 @bp.route('/create_template', methods=['POST'])
 @jwt_required()
 @role_required('admin')
@@ -157,10 +156,9 @@ def create_template():
     
     response = requests.post("https://waba-v2.360dialog.io/v1/configs/templates", headers=headers, data=json.dumps(template_data))
     
-    
     response_data = response.json()
     if response_data.get('status') == 'submitted':
-        return jsonify(message="Template created and submitted successfully"), 200
+        return jsonify(template_data=template_data, message="Template created and submitted successfully"), 200
     else:
         print(f"Error: {response_data}")
         return jsonify(status_code=response.status_code, response=response_data), 400

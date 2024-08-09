@@ -183,7 +183,6 @@ def transform_template_json(input_json):
         payload_json = payload_json.replace(f'"PLACEHOLDER_VAR_{var}"', f'"Variable_{var}"')
     return payload_json
 
-
 def send_message_campaign(members, template_json, variables, media_id=None, campaign=None , campaign_name=None):
     success_rows = []
     failed_rows = []
@@ -215,6 +214,10 @@ def send_message_campaign(members, template_json, variables, media_id=None, camp
 
         mongo_db = current_app.mongo
         collection = mongo_db.campaign_responses
+        campaign_name_collection = mongo_db.campaign_name
+
+        if campaign_name and not campaign_name_collection.find_one({"name": campaign_name}):
+           campaign_name_collection.insert_one({"name": campaign_name})
 
         data_to_insert = {
             'campaign': campaign,
@@ -267,28 +270,6 @@ def send_message_campaign(members, template_json, variables, media_id=None, camp
                 'TimeTaken': response_time
             })
     
-    output_dir = os.path.join(os.getcwd(), 'output_files')
-    os.makedirs(output_dir, exist_ok=True)
-    success_file = os.path.join(output_dir, 'successful_messages.csv')
-    failed_file = os.path.join(output_dir, 'failed_messages.csv')
-    summary_file = os.path.join(output_dir, 'summary.csv')
-    
-    success_df = pd.DataFrame(success_rows)
-    failed_df = pd.DataFrame(failed_rows)
-    summary_df = pd.DataFrame({
-        'Statistic': ['Total', 'Successful', 'Failed'],
-        'Count': [len(members), len(success_rows), len(failed_rows)],
-        'Percentage': ['100%', f'{(len(success_rows) / len(members)) * 100:.2f}%', f'{(len(failed_rows) / len(members)) * 100:.2f}%']
-    })
-    
-    success_df.to_csv(success_file, index=False)
-    failed_df.to_csv(failed_file, index=False)
-    summary_df.to_csv(summary_file, index=False, header=False)
-    
-    if not all(os.path.exists(f) for f in [success_file, failed_file, summary_file]):
-        missing_files = [f for f in [success_file, failed_file, summary_file] if not os.path.exists(f)]
-        return jsonify(error="One or more files were not created successfully.", missing_files=missing_files), 500
-    
     return jsonify(
         success=success_rows,
         failed=failed_rows,
@@ -298,11 +279,9 @@ def send_message_campaign(members, template_json, variables, media_id=None, camp
             'failed': len(failed_rows),
             'success_percentage': f'{(len(success_rows) / len(members)) * 100:.2f}%',
             'failed_percentage': f'{(len(failed_rows) / len(members)) * 100:.2f}%'
-        },
-        success_file=url_for('campaigns.download_file', filename='successful_messages.csv'),
-        failed_file=url_for('campaigns.download_file', filename='failed_messages.csv'),
-        summary_file=url_for('campaigns.download_file', filename='summary.csv')
+        }
     )
+
 
 
 def get_report(campaign_name):
