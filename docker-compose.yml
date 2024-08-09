@@ -40,7 +40,9 @@ services:
     volumes:
       - ./mongo_data:/data/db  # Mounts the named volume to the MongoDB data directory
     environment:
-      MONGO_INITDB_DATABASE: whatsapp_data  # Set the initial database to create
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: password
+      MONGO_INITDB_DATABASE: whatsapp_data # Set the initial database to create
     # healthcheck:
     #   test: ["CMD", "mongosh", "--eval", "printjson(db.serverStatus())"]
     #   interval: 30s
