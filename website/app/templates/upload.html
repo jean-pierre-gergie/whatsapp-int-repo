@@ -105,3 +105,16 @@
 <script src="./static/vendors/perfect-scrollbar/perfect-scrollbar.min.js"></script>
 <script src="./static/js/bootstrap.bundle.min.js"></script>
 <script src="./static/js/main.js"></script>
+
+<script>
+// Disable drag-and-drop for the entire document
+document.addEventListener('dragover', function(event) {
+    event.preventDefault();
+    event.stopPropagation();
+});
+
+document.addEventListener('drop', function(event) {
+    event.preventDefault();
+    event.stopPropagation();
+});
+</script>
