@@ -11,9 +11,10 @@ services:
       - "5000:5000"  # Exposes the Flask app on port 5000
     environment:
       FLASK_APP: app.py  # Set the Flask app environment variable
-    # Ensures MongoDB is healthy before starting the Flask app
     volumes:
       - ./webhook_fa:/app  # Mounts the current directory to the container's /app directory
+    depends_on:
+      - mongodb
 
   website:
     build: 
@@ -22,12 +23,13 @@ services:
     container_name: website_container
     restart: unless-stopped
     ports:
-      - "1313:1313"  # Exposes the Flask app on port 5000
+      - "1313:1313"  # Exposes the Flask app on port 1313
     environment:
       FLASK_APP: app.py  # Set the Flask app environment variable
-     # Ensures MongoDB is healthy before starting the Flask app
     volumes:
       - ./website:/app  # Mounts the current directory to the container's /app directory
+    depends_on:
+      - mongodb
 
   mongodb:
     image: mongodb/mongodb-community-server:latest
@@ -40,11 +42,11 @@ services:
     environment:
       MONGO_INITDB_DATABASE: whatsapp_data  # Set the initial database to create
     # healthcheck:
-    #   test: ["CMD", "mongo", "--eval", "printjson(db.serverStatus())"]
+    #   test: ["CMD", "mongosh", "--eval", "printjson(db.serverStatus())"]
     #   interval: 30s
     #   timeout: 20s
-    #   retries: 112
+    #   retries: 3
 
 volumes:
   mongo_data:
-    driver: local 
+    driver: local
