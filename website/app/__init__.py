@@ -11,7 +11,6 @@ def create_app():
 
     jwt.init_app(app)
 
-    # Setup MongoDB
     client = MongoClient(app.config['MONGODB_URI'])
     app.mongo = client[app.config['MONGODB_NAME']]
 

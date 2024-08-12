@@ -4,10 +4,8 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from ..utils.decorators import role_required
 from ..utils.helper_functions import send_message, upload_image,get_report,transform_template_json, get_template_details, send_message_campaign
 import os
-
 import csv
 from io import StringIO
-
 
 bp = Blueprint('campaigns', __name__)
 
@@ -124,8 +122,6 @@ def send_campaign_messages():
     response = send_message_campaign(members, template_json, variables, media_id, selected_campaign, campaign_name)
     return response
 
-
-
 @bp.route('/download/<filename>')
 def download_file(filename):
     path = os.path.join(os.getcwd(), 'output_files', filename)
@@ -134,9 +130,6 @@ def download_file(filename):
         print(f"Error: File not found: {path}")
         return jsonify(error="File not found"), 404
     return send_file(path, as_attachment=True)
-
-
-
 
 @bp.route('/generate_report_page')
 @jwt_required()
@@ -149,12 +142,6 @@ def generate_report_page():
     for cn in campaign_names:
         cn['_id'] = str(cn['_id'])
     return render_template('generate_report.html', campaign_names=campaign_names)
-
-
-
-
-
-
 
 @bp.route('/generate_report', methods=['POST'])
 @jwt_required()
@@ -179,8 +166,6 @@ def generate_report():
     except Exception as e:
         current_app.logger.error(f"Error generating report: {e}")
         return jsonify({'success': False, 'message': 'An error occurred while generating the report'}), 500
-
-
 
 @bp.route('/download_csv/<status>', methods=['GET'])
 @jwt_required()

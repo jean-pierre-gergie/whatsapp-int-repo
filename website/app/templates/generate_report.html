@@ -147,7 +147,15 @@ function generateReport(campaignName) {
         },
         body: JSON.stringify({ campaign_name: campaignName })
     })
-    .then(response => response.json())
+    .then(response => {
+        if (!response.ok) {
+            // If the response status is not OK, handle it accordingly
+            return response.json().then(data => {
+                throw new Error(data.message || 'An error occurred while generating the report.');
+            });
+        }
+        return response.json();
+    })
     .then(data => {
         if (data.success) {
             alert('Report generated successfully.');
@@ -178,12 +186,22 @@ function generateReport(campaignName) {
             document.getElementById('download-read').href = `/download_csv/read?campaign_name=${campaignName}`;
             document.getElementById('download-failed').href = `/download_csv/failed?campaign_name=${campaignName}`;
         } else {
+            // Handle the case where data.success is false
             alert(data.message || 'An error occurred while generating the report.');
+
+            // Clear the report section if the report generation fails
+            document.getElementById('sent-count').innerText = "0";
+            document.getElementById('delivered-count').innerText = "0";
+            document.getElementById('read-count').innerText = "0";
+            document.getElementById('failed-count').innerText = "0";
+
+            document.getElementById('report-chart').style.display = 'none';
+            document.getElementById('report-section').style.display = 'none';
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        alert('An error occurred while generating the report.');
+        alert(error.message);
     });
 }
 
@@ -224,6 +242,7 @@ function updateChart(sent, delivered, read, failed) {
         }
     });
 }
+
 </script>
 <script src="./static/vendors/perfect-scrollbar/perfect-scrollbar.min.js"></script>
 <script src="./static/js/bootstrap.bundle.min.js"></script>

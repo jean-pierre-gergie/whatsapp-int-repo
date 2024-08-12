@@ -12,7 +12,7 @@ def login():
     if request.method == 'POST':
         username = request.form['username']
         print(username)
-        password = request.form['password'].encode('utf-8')  
+        password = request.form['password'].encode('utf-8') 
         print(password)
         
         user = collection.find_one({'username': username})
@@ -21,7 +21,7 @@ def login():
             stored_password = user.get('user_password')
             if isinstance(stored_password, str):
                 stored_password = stored_password.encode('utf-8')  
-            if bcrypt.checkpw(password, stored_password):  
+            if bcrypt.checkpw(password, stored_password):
                 access_token = create_access_token(identity={'username': user['username'], 'role': user['role']})
                 response = make_response(jsonify({"msg": "Login successful"}), 200)
                 response.set_cookie('access_token_cookie', access_token, httponly=True, secure=True, samesite='None')
@@ -29,16 +29,13 @@ def login():
         return jsonify({"msg": "Invalid username or password"}), 401
     
     return render_template('login.html')
-
  
-
 @bp.route('/logout')
 def logout():
     session.clear() 
     response = make_response(redirect(url_for('auth.login')))
     response.set_cookie('access_token_cookie', '', expires=0)  
     return redirect(url_for('auth.login'))
-
 
 @bp.before_request
 def before_request():
@@ -47,22 +44,18 @@ def before_request():
         request.headers.environ['HTTP_AUTHORIZATION'] = f'Bearer {token}'
 
 
-
 @bp.route('/index')
 @jwt_required()
 def index():
     current_user = get_jwt_identity()
     print(current_user)
     
-    # Access MongoDB
     mongo_db = current_app.mongo
     
-    # Fetch campaigns from MongoDB
     campaigns_collection = mongo_db.campaign
     campaigns = list(campaigns_collection.find())
     campaigns_data = [{"id": campaign.get('campaign_id'), "name": campaign.get('campaign_name')} for campaign in campaigns]
     
-    # Fetch templates from MongoDB
     templates_collection = mongo_db.templates
     templates = list(templates_collection.find())
     templates_data = [{"id": template.get('template_id'), "name": template.get('template_name')} for template in templates]
