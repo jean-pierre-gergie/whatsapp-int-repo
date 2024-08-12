@@ -2,13 +2,13 @@
     {
         "user_id": "2",
         "username": "jpgergie",
-        "user_password": "$2b$12$E885T3DV.tTs.8725r6/xurhP/VsSZ8F0KhfNEFd7MvYeu7e1Xtgy",
+        "user_password": "123456",
         "role": "admin"
     },
     {
         "user_id": "3",
         "username": "rtenn",
-        "user_password": "$2b$12$E885T3DV.tTs.8725r6/xurhP/VsSZ8F0KhfNEFd7MvYeu7e1Xtgy",
+        "user_password": "123456",
         "role": "admin"
     }
 ]
