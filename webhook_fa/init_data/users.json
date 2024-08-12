@@ -4,7 +4,8 @@
         "username": "jpgergie",
         "user_password": "123456",
         "role": "admin"
-    },
+    }
+    ,
     {
         "user_id": "3",
         "username": "rtenn",
