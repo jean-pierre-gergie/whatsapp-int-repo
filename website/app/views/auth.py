@@ -1,8 +1,8 @@
 from flask import Blueprint, request, jsonify, make_response, render_template, redirect, url_for, session , current_app
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
-import bcrypt
 
 bp = Blueprint('auth', __name__)
+
 
 @bp.route('/', methods=['GET', 'POST'])
 def login():
@@ -11,22 +11,17 @@ def login():
     
     if request.method == 'POST':
         username = request.form['username']
-        print(username)
-        password = request.form['password'].encode('utf-8') 
-        print(password)
+        password = request.form['password']
         
         user = collection.find_one({'username': username})
         
-        if user:
-            stored_password = user.get('user_password')
-            if isinstance(stored_password, str):
-                stored_password = stored_password.encode('utf-8')  
-            if bcrypt.checkpw(password, stored_password):
-                access_token = create_access_token(identity={'username': user['username'], 'role': user['role']})
-                response = make_response(jsonify({"msg": "Login successful"}), 200)
-                response.set_cookie('access_token_cookie', access_token, httponly=True, secure=True, samesite='None')
-                return response
-        return jsonify({"msg": "Invalid username or password"}), 401
+        if user and user.get('user_password') == password:
+            access_token = create_access_token(identity={'username': user['username'], 'role': user['role']})
+            response = make_response(jsonify({"msg": "Login successful"}), 200)
+            response.set_cookie('access_token_cookie', access_token, httponly=True, secure=True, samesite='None')
+            return response
+        else:
+            return jsonify({"msg": "Invalid username or password"}), 401
     
     return render_template('login.html')
  
