@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database Collections Viewer</title>
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./static/css/bootstrap.css">
+
+    <link rel="stylesheet" href="./static/vendors/iconly/bold.css">
+
+    <link rel="stylesheet" href="./static/vendors/perfect-scrollbar/perfect-scrollbar.css">
+    <link rel="stylesheet" href="./static/vendors/bootstrap-icons/bootstrap-icons.css">
+    <link rel="stylesheet" href="./static/css/app.css">
+    <link rel="shortcut icon" href="./static/images/favicon.svg" type="image/x-icon">
+    <style>
+        pre {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            max-height: 400px;
+            overflow-y: scroll;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div id="main">
+            <div class="page-heading">
+                <div class="page-title">
+                    <div class="row">
+                        <div class="col-12 col-md-6 order-md-1 order-last">
+                            <h3>Database Collections Viewer</h3>
+                            <p class="text-subtitle text-muted">View the content of all collections in the database.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <section class="section">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4 class="card-title">Collections Content</h4>
+                        </div>
+                        <div class="card-body">
+                            <form id="collections-form">
+                                <div class="form-group">
+                                    <label for="collection_name">Collection Name</label>
+                                    <select id="collection_name" name="collection_name" class="form-control" required>
+                                        {% for collection in collections %}
+                                            <option value="{{ collection }}">{{ collection }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>                                
+                                <div class="col-12 d-flex justify-content-end">
+                                    <button type="submit" class="btn btn-primary me-1 mb-1">View Content</button>
+                                    <button type="reset" class="btn btn-light-secondary me-1 mb-1">Reset</button>
+                                </div>
+                            </form>
+                            
+                            <section id="collection-content-section" style="display: none;">
+                                <h5>Collection Content:</h5>
+                                <pre id="collection-content"></pre>
+                            </section>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+
+<script>
+document.getElementById('collections-form').onsubmit = function(event) {
+    event.preventDefault(); 
+    const collectionName = document.getElementById('collection_name').value;
+    fetchCollectionContent(collectionName);
+};
+
+function fetchCollectionContent(collectionName) {
+    fetch('/view_collection_content', {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ collection_name: collectionName })
+})
+.then(response => response.json())
+.then(data => {
+    if (data.success) {
+        document.getElementById('collection-content').innerText = JSON.stringify(data.content, null, 4);
+        document.getElementById('collection-content-section').style.display = 'block';
+    } else {
+        alert(data.message || 'An error occurred while retrieving the collection content.');
+    }
+})
+.catch(error => {
+    console.error('Error:', error);
+    alert(error.message);
+});
+}
+
+</script>
+<script src="{{ url_for('static', filename='vendors/perfect-scrollbar/perfect-scrollbar.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+
+</body>
+</html>

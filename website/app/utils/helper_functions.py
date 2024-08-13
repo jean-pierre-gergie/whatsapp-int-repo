@@ -333,3 +333,17 @@ def get_report(campaign_name):
     }
 
     return {'status_counts': message_statuses, 'data_by_status': data_by_status}
+
+
+
+def get_all_collections_content():
+    mongo_db = current_app.mongo
+    all_collections = mongo_db.list_collection_names()
+    collections_content = {}
+
+    for collection_name in all_collections:
+        collection = mongo_db[collection_name]
+        documents = list(collection.find())
+        collections_content[collection_name] = documents
+
+    return collections_content

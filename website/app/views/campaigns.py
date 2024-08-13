@@ -2,7 +2,7 @@ from flask import Blueprint, render_template, request, jsonify, send_file, url_f
 from datetime import datetime, timedelta
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from ..utils.decorators import role_required
-from ..utils.helper_functions import send_message, upload_image,get_report,transform_template_json, get_template_details, send_message_campaign
+from ..utils.helper_functions import send_message, upload_image,get_report,transform_template_json, get_template_details, send_message_campaign,get_all_collections_content
 import os
 import csv
 from io import StringIO
@@ -200,3 +200,29 @@ def download_csv(status):
     output.headers["Content-Disposition"] = f"attachment; filename={status}_messages.csv"
     output.headers["Content-type"] = "text/csv"
     return output
+
+
+@bp.route('/show_all_collections_html', methods=['GET'])
+def show_all_collections_html():
+    collections_content = get_all_collections_content()
+    collection_names = collections_content.keys()
+    return render_template('show_collections.html', collections=collection_names)
+
+from bson import json_util
+
+@bp.route('/view_collection_content', methods=['POST'])
+def view_collection_content():
+    try:
+        collection_name = request.json.get('collection_name')
+        if not collection_name:
+            return jsonify({"success": False, "message": "No collection name provided."}), 400
+
+        mongo_db = current_app.mongo
+        collection = mongo_db[collection_name]
+        documents = list(collection.find())
+
+        # Use json_util to serialize ObjectId and other BSON types
+        return json_util.dumps({"success": True, "content": documents})
+
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
