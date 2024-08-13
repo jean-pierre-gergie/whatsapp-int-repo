@@ -139,6 +139,7 @@ document.getElementById('refresh-report').onclick = function() {
     generateReport(campaignName);
 };
 
+
 function generateReport(campaignName) {
     fetch('/generate_report', {
         method: 'POST',
@@ -149,7 +150,6 @@ function generateReport(campaignName) {
     })
     .then(response => {
         if (!response.ok) {
-            // If the response status is not OK, handle it accordingly
             return response.json().then(data => {
                 throw new Error(data.message || 'An error occurred while generating the report.');
             });
@@ -181,15 +181,36 @@ function generateReport(campaignName) {
 
             updateChart(sentPercent, deliveredPercent, readPercent, failedPercent);
 
-            document.getElementById('download-sent').href = `/download_csv/sent?campaign_name=${campaignName}`;
-            document.getElementById('download-delivered').href = `/download_csv/delivered?campaign_name=${campaignName}`;
-            document.getElementById('download-read').href = `/download_csv/read?campaign_name=${campaignName}`;
-            document.getElementById('download-failed').href = `/download_csv/failed?campaign_name=${campaignName}`;
+            if (sentCount > 0) {
+                document.getElementById('download-sent').style.display = 'inline';
+                document.getElementById('download-sent').href = `/download_csv/sent?campaign_name=${campaignName}`;
+            } else {
+                document.getElementById('download-sent').style.display = 'none';
+            }
+
+            if (deliveredCount > 0) {
+                document.getElementById('download-delivered').style.display = 'inline';
+                document.getElementById('download-delivered').href = `/download_csv/delivered?campaign_name=${campaignName}`;
+            } else {
+                document.getElementById('download-delivered').style.display = 'none';
+            }
+
+            if (readCount > 0) {
+                document.getElementById('download-read').style.display = 'inline';
+                document.getElementById('download-read').href = `/download_csv/read?campaign_name=${campaignName}`;
+            } else {
+                document.getElementById('download-read').style.display = 'none';
+            }
+
+            if (failedCount > 0) {
+                document.getElementById('download-failed').style.display = 'inline';
+                document.getElementById('download-failed').href = `/download_csv/failed?campaign_name=${campaignName}`;
+            } else {
+                document.getElementById('download-failed').style.display = 'none';
+            }
         } else {
-            // Handle the case where data.success is false
             alert(data.message || 'An error occurred while generating the report.');
 
-            // Clear the report section if the report generation fails
             document.getElementById('sent-count').innerText = "0";
             document.getElementById('delivered-count').innerText = "0";
             document.getElementById('read-count').innerText = "0";
@@ -204,6 +225,7 @@ function generateReport(campaignName) {
         alert(error.message);
     });
 }
+
 
 function updateChart(sent, delivered, read, failed) {
     const ctx = document.getElementById('report-chart').getContext('2d');
