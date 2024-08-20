@@ -105,5 +105,3 @@ def create_collections():
         print(f"Could not connect to MongoDB: {e}")
     except Exception as e:
         print(f"An error occurred: {e}")
-
-create_collections()
