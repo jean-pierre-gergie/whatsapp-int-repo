@@ -2,7 +2,6 @@ from flask import Flask
 from flask_jwt_extended import JWTManager
 from pymongo import MongoClient
 from .config import Config
-import os
 
 jwt = JWTManager()
 
@@ -12,10 +11,7 @@ def create_app():
 
     jwt.init_app(app)
 
-    mongodb_username = os.getenv("MONGODB_USERNAME")
-    mongodb_password = os.getenv("MONGODB_PASSWORD")
-
-    client = MongoClient(f"mongodb://{mongodb_username}:{mongodb_password}@mongodb_container:27017/whatsapp_data")
+    client = MongoClient(app.config['MONGODB_URI'])
     app.mongo = client[app.config['MONGODB_NAME']]
 
     with app.app_context():

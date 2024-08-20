@@ -64,7 +64,7 @@ def create_template():
     template_name = request.form['template_name']
     category = request.form['category']
     language_code = request.form['language']
-    
+    header_image_url = request.form.get('header_image_url') 
     header_type = request.form.get('header_type')
     header_text = request.form.get('header_text')
     header_example = request.form.get('header_example')
@@ -87,7 +87,6 @@ def create_template():
                 button_data["text"] = "Copy offer code"
             else:
                 button_data["text"] = button_texts[i]
-                
             if button_types[i] == "PHONE_NUMBER" and i < len(phone_numbers) and phone_numbers[i]:
                 button_data["phone_number"] = phone_numbers[i]
             elif button_types[i] == "URL" and i < len(urls) and urls[i]:
@@ -105,14 +104,14 @@ def create_template():
         if header_example:
             header_component["example"] = {"header_text": [header_example]}
         components.append(header_component)
-    elif header_type == 'IMAGE':
+    elif header_type == 'IMAGE' and header_image_url: 
         header_component = {
             "type": "HEADER",
             "format": "IMAGE",
             "example": {
                 "header_handle": [
-                    'https://scontent.fpfo1-1.fna.fbcdn.net/v/t39.30808-6/452897352_876576197844165_4529346611977142382_n.jpg?_nc_cat=109&ccb=1-7&_nc_sid=cc71e4&_nc_ohc=1P8oWlpoBvkQ7kNvgFD1WJP&_nc_ht=scontent.fpfo1-1.fna&gid=AeycThSsBSem_su8TMgQHP2&oh=00_AYDIxxYUkfGMdaJnYk-nMaAczP5VtBYn5R1Pxnrm9BA28Q&oe=66AFAB4D'
-                ]
+                     header_image_url                 
+                 ]
             }
         }
         components.append(header_component)

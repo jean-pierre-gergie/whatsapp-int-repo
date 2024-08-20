@@ -36,27 +36,27 @@
                             </a>
                         </li>
 
-                        <li class="sidebar-item  has-sub">
+                        <li class="sidebar-item has-sub">
                             <a href="#" class='sidebar-link'>
                                 <i class="bi bi-stack"></i>
-                                <span>Whatsapp Business</span>
+                                <span>WhatsApp Business</span>
                             </a>
-                            <ul class="submenu ">
-                                <li class="submenu-item ">
+                            <ul class="submenu">
+                                <li class="submenu-item">
                                     <a href="{{ url_for('campaigns.generate_report_page') }}">Generate Report</a>
                                 </li>
-                                <li class="submenu-item ">
+                                <li class="submenu-item">
                                     <a href="{{url_for('campaigns.send_campaign')}}">Send Campaign</a>
                                 </li>
-                                <li class="submenu-item ">
+                                <li class="submenu-item">
                                     <a href="{{url_for('templates.templates_list')}}">Templates</a>
                                 </li>
-                                <li class="submenu-item ">
+                                <li class="submenu-item">
                                     <a href="{{url_for('upload_data.upload_file')}}">Add Members<a>
                                 </li>
-                                                               
                             </ul>
                         </li>
+
                         <li class="sidebar-item">
                             <a href="{{ url_for('auth.logout') }}" class='sidebar-link'>
                                 <i class="bi bi-box-arrow-right"></i>
@@ -139,8 +139,14 @@
                                         </div>
                                     </div>
 
-                                    <!-- The input for the image URL has been removed -->
-                                    
+                                    <!-- Header Image URL Field (Initially hidden) -->
+                                    <div class="col-md-6 col-12" id="header_image_url_field" style="display:none;">
+                                        <div class="form-group">
+                                            <label for="header_image_url">Header Image URL (required for image header)</label>
+                                            <input type="url" id="header_image_url" name="header_image_url" class="form-control" placeholder="Image URL">
+                                        </div>
+                                    </div>
+
                                     <div class="col-md-12 col-12">
                                         <div class="form-group">
                                             <label for="body_text">Body Text</label>
@@ -250,11 +256,14 @@
         function updateHeaderFields() {
             const headerType = document.getElementById('header_type').value;
             const headerTextField = document.getElementById('header_text_field');
+            const headerImageUrlField = document.getElementById('header_image_url_field');
 
             if (headerType === 'IMAGE') {
                 headerTextField.style.display = 'none';
+                headerImageUrlField.style.display = 'block';
             } else {
                 headerTextField.style.display = 'block';
+                headerImageUrlField.style.display = 'none';
             }
         }
 

@@ -5,18 +5,28 @@ from pydantic import BaseModel
 from init_mongo import create_collections
 from typing import Optional, Dict, Any
 from fastapi.responses import JSONResponse
+import os
+
+from dotenv import load_dotenv
+load_dotenv()
 
 create_collections()
 app = FastAPI()
 
+username = os.getenv('MONGO_INITDB_ROOT_USERNAME')
+password = os.getenv('MONGO_INITDB_ROOT_PASSWORD')
+host = os.getenv('MONGO_HOST')
+port = os.getenv('MONGO_PORT')
+database_name = 'whatsapp_data'
+client = MongoClient(f"mongodb://{username}:{password}@{host}:{port}/")
+
 # MongoDB configuration
-MONGO_URI = 'mongodb://mongodb_container:27017/'  # Update to container name
 DATABASE_NAME = 'whatsapp_data'
 RAW_COLLECTION = 'webhook_responses'
 BUSINESS_TO_USER_COLLECTION = 'webhook_latest_to_user'
 USER_TO_BUSINESS_COLLECTION = 'webhook_latest_from_user'
 
-client = MongoClient(MONGO_URI)
+#client = MongoClient(MONGO_URI)
 db = client[DATABASE_NAME]
 raw_collection = db[RAW_COLLECTION]
 business_to_user_collection = db[BUSINESS_TO_USER_COLLECTION]

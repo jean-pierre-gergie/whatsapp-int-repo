@@ -1,37 +1,33 @@
-#version: '3.8'
+version: '3.8'
 
 services:
   webhook_fa:
     build: 
-      context: ./webhook_fa
-      dockerfile: Dockerfile
+      context: ./webhook_fa  # This specifies the directory containing your Dockerfile
+      dockerfile: Dockerfile  # This specifies the Dockerfile to use (optional if named 'Dockerfile')
     container_name: webhook_fa_container
     restart: unless-stopped
     ports:
-      - "5000:5000"
+      - "5000:5000"  # Exposes the Flask app on port 5000
     environment:
-      FLASK_APP: app.py
-      MONGODB_USERNAME: ${MONGODB_USERNAME}
-      MONGODB_PASSWORD: ${MONGODB_PASSWORD}
+      FLASK_APP: app.py  # Set the Flask app environment variable
     volumes:
-      - ./webhook_fa:/app
+      - ./webhook_fa:/app  # Mounts the current directory to the container's /app directory
     depends_on:
       - mongodb
 
   website:
     build: 
-      context: ./website
-      dockerfile: Dockerfile
+      context: ./website  # This specifies the directory containing your Dockerfile
+      dockerfile: Dockerfile  # This specifies the Dockerfile to use (optional if named 'Dockerfile')
     container_name: website_container
     restart: unless-stopped
     ports:
-      - "1313:1313"
+      - "1313:1313"  # Exposes the Flask app on port 1313
     environment:
-      FLASK_APP: app.py
-      MONGODB_USERNAME: ${MONGODB_USERNAME}
-      MONGODB_PASSWORD: ${MONGODB_PASSWORD}
+      FLASK_APP: app.py  # Set the Flask app environment variable
     volumes:
-      - ./website:/app
+      - ./website:/app  # Mounts the current directory to the container's /app directory
     depends_on:
       - mongodb
 
@@ -40,13 +36,19 @@ services:
     container_name: mongodb_container
     restart: unless-stopped
     ports:
-      - "27017:27017"
+      - "27017:27017"  # Exposes MongoDB on port 27017
     volumes:
-      - mongo_data:/data/db:z
-      - ./mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+      - mongo_data:/data/db:z  # Mounts the named volume to the MongoDB data directory
     environment:
-      MONGO_INITDB_DATABASE: whatsapp_data
-    command: ["mongod", "--auth"]
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD}
+      MONGO_INITDB_DATABASE: whatsapp_data 
+
+    # healthcheck:
+    #   test: ["CMD", "mongosh", "--eval", "printjson(db.serverStatus())"]
+    #   interval: 30s
+    #   timeout: 20s
+    #   retries: 3
 
 volumes:
   mongo_data:
