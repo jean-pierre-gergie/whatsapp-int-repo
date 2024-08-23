@@ -9,10 +9,10 @@ class Config:
     
     from dotenv import load_dotenv
     load_dotenv()
-    username = os.getenv('MONGO_INITDB_ROOT_USERNAME')
-    password = os.getenv('MONGO_INITDB_ROOT_PASSWORD')
-    host = os.getenv('MONGO_HOST') 
-    port = os.getenv('MONGO_PORT')      
-    
+    username = os.getenv('MONGO_INITDB_ROOT_USERNAME','rtenn')
+    password = os.getenv('MONGO_INITDB_ROOT_PASSWORD','123456')
+    host = os.getenv('MONGO_HOST','mongodb_container')
+    port = os.getenv('MONGO_PORT',27017)
+    database_name = 'whatsapp_data'
     MONGODB_URI = f"mongodb://{username}:{password}@{host}:{port}/"
     MONGODB_NAME = 'whatsapp_data'

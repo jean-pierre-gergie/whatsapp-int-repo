@@ -11,7 +11,7 @@ def create_collections():
         username = os.getenv('MONGO_INITDB_ROOT_USERNAME')
         password = os.getenv('MONGO_INITDB_ROOT_PASSWORD')
         host = os.getenv('MONGO_HOST')
-        port = os.getenv('MONGO_PORT')
+        port = os.getenv('MONGO_PORT',27017)
         database_name = 'whatsapp_data'
         client = MongoClient(f"mongodb://{username}:{password}@{host}:{port}/")
         
@@ -105,3 +105,5 @@ def create_collections():
         print(f"Could not connect to MongoDB: {e}")
     except Exception as e:
         print(f"An error occurred: {e}")
+
+create_collections()
