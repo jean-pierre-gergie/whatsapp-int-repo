@@ -97,7 +97,7 @@
                             <div id="send-status" class="alert alert-info" style="display:none;">Sending...</div>
                             <form id="campaign-message-form" method="POST" enctype="multipart/form-data" action="{{ url_for('campaigns.send_campaign_messages') }}">
                                 <div class="form-group">
-                                    <label for="campaign">Campaign</label>
+                                    <label for="campaign">Tag</label>
                                     <select name="campaign" id="campaign" class="form-control" required>
                                         {% for campaign in campaigns %}
                                             <option value="{{ campaign.tag }}">{{ campaign.tag }}</option>
