@@ -12,6 +12,12 @@
     <link rel="stylesheet" href="./static/vendors/bootstrap-icons/bootstrap-icons.css">
     <link rel="stylesheet" href="./static/css/app.css">
     <link rel="shortcut icon" href="./static/images/favicon.svg" type="image/x-icon">
+    <style>
+        .btn-active {
+            background-color: #007bff; /* Example: Bootstrap primary color */
+            color: white;
+        }
+    </style>
 </head>
 
 <body>
@@ -150,7 +156,15 @@
                                     <div class="col-md-12 col-12">
                                         <div class="form-group">
                                             <label for="body_text">Body Text</label>
-                                            <textarea id="body_text" name="body_text" class="form-control" rows="4" placeholder="Body Text" required></textarea>
+                                            <div id="body_text" contenteditable="true" class="form-control" style="height: 100px; overflow:auto; border: 1px solid #ced4da; padding: 10px;"></div>
+                                            <input type="hidden" id="body_text_hidden" name="body_text" required>
+                                            <!-- Buttons to format text and align text -->
+                                            <div class="mt-2">
+                                                <button type="button" class="btn btn-secondary" onclick="formatText('bold')">Bold</button>
+                                                <button type="button" class="btn btn-secondary" onclick="formatText('italic')">Italic</button>
+                                                <button type="button" class="btn btn-secondary" onclick="alignText('left')">Align Left</button>
+                                                <button type="button" class="btn btn-secondary" onclick="alignText('right')">Align Right</button>
+                                            </div>
                                         </div>
                                         <div class="col-md-12 col-12" id="body_examples_container">
                                             <!-- Example fields will be appended here -->
@@ -233,8 +247,8 @@
     </div>
 
     <script>
-         function updateBodyExamples() {
-            const bodyText = document.getElementById('body_text').value;
+        function updateBodyExamples() {
+            const bodyText = document.getElementById('body_text').innerHTML;
             const variableCount = (bodyText.match(/\{\{\d+\}\}/g) || []).length;
 
             const examplesContainer = document.getElementById('body_examples_container');
@@ -251,7 +265,62 @@
             }
         }
 
-        document.getElementById('body_text').addEventListener('input', updateBodyExamples);
+        function formatText(type) {
+            if (type === 'bold') {
+                document.execCommand('bold');
+                toggleActiveButton('bold');
+            } else if (type === 'italic') {
+                document.execCommand('italic');
+                toggleActiveButton('italic');
+            }
+            updateHiddenInput();
+        }
+
+        function toggleActiveButton(type) {
+            const boldButton = document.querySelector("button[onclick=\"formatText('bold')\"]");
+            const italicButton = document.querySelector("button[onclick=\"formatText('italic')\"]");
+
+            if (type === 'bold') {
+                if (document.queryCommandState('bold')) {
+                    boldButton.classList.add('btn-active');
+                } else {
+                    boldButton.classList.remove('btn-active');
+                }
+            } else if (type === 'italic') {
+                if (document.queryCommandState('italic')) {
+                    italicButton.classList.add('btn-active');
+                } else {
+                    italicButton.classList.remove('btn-active');
+                }
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            toggleActiveButton('bold');
+            toggleActiveButton('italic');
+        });
+
+        function alignText(direction) {
+            const textArea = document.getElementById('body_text');
+            if (direction === 'right') {
+                textArea.style.direction = 'rtl';
+                textArea.style.textAlign = 'right';
+            } else {
+                textArea.style.direction = 'ltr';
+                textArea.style.textAlign = 'left';
+            }
+        }
+
+        document.getElementById('body_text').addEventListener('input', () => {
+            updateHiddenInput();
+            toggleActiveButton('bold');
+            toggleActiveButton('italic');
+        });
+
+        document.getElementById('body_text').addEventListener('click', () => {
+            toggleActiveButton('bold');
+            toggleActiveButton('italic');
+        });
 
         function updateHeaderFields() {
             const headerType = document.getElementById('header_type').value;
@@ -305,9 +374,42 @@
             buttonEntry.remove();
         }
 
+        function updateHiddenInput() {
+            const bodyTextDiv = document.getElementById('body_text');
+            const hiddenInput = document.getElementById('body_text_hidden');
+
+            let textWithMarkdown = bodyTextDiv.innerHTML
+                .replace(/<b>\s*(.*?)\s*<\/b>/gi, (match, p1) => {
+                    const trimmedText = p1.replace(/^\s+|\s+$/g, ''); 
+                    return `*${trimmedText}*`;
+                })
+                .replace(/<i.*?>\s*(.*?)\s*<\/i>/gi, (match, p1) => {
+                    const trimmedText = p1.replace(/^\s+|\s+$/g, ''); 
+                    return `_${trimmedText}_`;
+                })
+                .replace(/<em.*?>\s*(.*?)\s*<\/em>/gi, (match, p1) => {
+                    const trimmedText = p1.replace(/^\s+|\s+$/g, ''); 
+                    return `_${trimmedText}_`;
+                })
+                .replace(/<div.*?>\s*(.*?)\s*<\/div>/gi, '$1\n')
+                .replace(/&nbsp;/g, ' ')
+                .replace(/<br\s*\/?>/gi, '\n')
+                .replace(/(\*)\s+/g, '$1')   
+                .replace(/\s+(\*)/g, '$1')   
+                .replace(/(_)\s+/g, '$1')   
+                .replace(/\s+(_)/g, '$1')    
+                .trim();
+
+            hiddenInput.value = textWithMarkdown;
+        }
+
+
+
         document.querySelector('form').addEventListener('submit', function(event) {
             event.preventDefault();
             
+            updateHiddenInput(); 
+
             const form = event.target;
             const formData = new FormData(form);
             

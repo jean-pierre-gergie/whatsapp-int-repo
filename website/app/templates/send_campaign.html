@@ -171,6 +171,7 @@
                 previewContainer.innerHTML = data.texts.join('<br>');
                 updateVariableFields(data.variable_count);
                 toggleImageField(data.has_image);
+                alignTextBasedOnLanguage(previewContainer);  // Align text based on language
             } else {
                 previewContainer.textContent = 'Template not found.';
                 updateVariableFields(0);
@@ -227,7 +228,17 @@
         }
     }
 
-    
+    function alignTextBasedOnLanguage(element) {
+        const text = element.textContent.trim();
+        if (text.length > 0 && /[\u0600-\u06FF]/.test(text[0])) {
+            element.style.direction = 'rtl';
+            element.style.textAlign = 'right';
+        } else {
+            element.style.direction = 'ltr';
+            element.style.textAlign = 'left';
+        }
+    }
+
     document.getElementById('campaign-message-form').onsubmit = function(event) {
         event.preventDefault(); 
 
