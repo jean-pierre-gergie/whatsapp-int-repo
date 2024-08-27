@@ -19,7 +19,7 @@
         }
     </style>
 </head>
-
+ 
 <body>
     <div id="app">
         <div id="sidebar" class="active">
@@ -34,14 +34,14 @@
                 <div class="sidebar-menu">
                     <ul class="menu">
                         <li class="sidebar-title">Menu</li>
-
-                        <li class="sidebar-item active ">
+ 
+                        <li class="sidebar-item active">
                             <a href="{{url_for('auth.index')}}" class='sidebar-link'>
                                 <i class="bi bi-grid-fill"></i>
                                 <span>Dashboard</span>
                             </a>
                         </li>
-
+ 
                         <li class="sidebar-item has-sub">
                             <a href="#" class='sidebar-link'>
                                 <i class="bi bi-stack"></i>
@@ -62,7 +62,7 @@
                                 </li>
                             </ul>
                         </li>
-
+ 
                         <li class="sidebar-item">
                             <a href="{{ url_for('auth.logout') }}" class='sidebar-link'>
                                 <i class="bi bi-box-arrow-right"></i>
@@ -74,14 +74,14 @@
                 <button class="sidebar-toggler btn x"><i data-feather="x"></i></button>
             </div>
         </div>
-
+ 
         <div id="main">
             <header class="mb-3">
                 <a href="#" class="burger-btn d-block d-xl-none">
                     <i class="bi bi-justify fs-3"></i>
                 </a>
             </header>
-            
+           
             <div class="page-heading">
                 <div class="page-title">
                     <div class="row">
@@ -102,12 +102,17 @@
                                     <div class="col-md-6 col-12">
                                         <div class="form-group">
                                             <label for="template_name">Template Name</label>
+                                            <br><small class="form-text text-muted">
+                                                Enter a name consisting of lower case letters, digits, and underscores (_). Do not use other characters or spaces.                                            </small>
                                             <input type="text" id="template_name" name="template_name" class="form-control" placeholder="Template Name" required>
                                         </div>
                                     </div>
                                     <div class="col-md-6 col-12">
                                         <div class="form-group">
                                             <label for="category">Category</label>
+                                            <br><small class="form-text text-muted">
+                                                You can’t change the category of a template after the template is registered
+                                               </small>
                                             <select name="category" id="category" class="form-control" required>
                                                 <option value="MARKETING">Marketing</option>
                                                 <option value="UTILITY">Utility</option>
@@ -117,7 +122,11 @@
                                     </div>
                                     <div class="col-md-6 col-12">
                                         <div class="form-group">
-                                            <label for="language">Language</label>
+                                            <label for="language">Language</label><br>
+                                            <!-- Add description text below the label -->
+                                            <small class="form-text text-muted">
+                                                Select a language that matches the language of the template text. If the languages don’t match, the template will be rejected.
+                                            </small>
                                             <select name="language" id="language" class="form-control" required>
                                                 {% for lang in languages %}
                                                     <option value="{{ lang.Code }}">{{ lang.Language }}</option>
@@ -125,18 +134,18 @@
                                             </select>
                                         </div>
                                     </div>
-                                    
+                                   
                                     <!-- Header Type Selection -->
                                     <div class="col-md-6 col-12">
                                         <div class="form-group">
-                                            <label for="header_type">Header Type</label>
+                                            <br><label for="header_type">Header Type</label>
                                             <select name="header_type" id="header_type" class="form-control" onchange="updateHeaderFields()">
                                                 <option value="TEXT">Text</option>
                                                 <option value="IMAGE">Image</option>
                                             </select>
                                         </div>
                                     </div>
-
+ 
                                     <!-- Header Text Field -->
                                     <div class="col-md-6 col-12" id="header_text_field">
                                         <div class="form-group">
@@ -144,7 +153,7 @@
                                             <input type="text" id="header_text" name="header_text" class="form-control" placeholder="Header Text">
                                         </div>
                                     </div>
-
+ 
                                     <!-- Header Image URL Field (Initially hidden) -->
                                     <div class="col-md-6 col-12" id="header_image_url_field" style="display:none;">
                                         <div class="form-group">
@@ -152,7 +161,7 @@
                                             <input type="url" id="header_image_url" name="header_image_url" class="form-control" placeholder="Image URL">
                                         </div>
                                     </div>
-
+ 
                                     <div class="col-md-12 col-12">
                                         <div class="form-group">
                                             <label for="body_text">Body Text</label>
@@ -176,7 +185,7 @@
                                             <input type="text" id="footer_text" name="footer_text" class="form-control" placeholder="Footer Text">
                                         </div>
                                     </div>
-
+ 
                                     <!-- Allow Category Change -->
                                     <div class="col-md-12 col-12">
                                         <div class="form-group">
@@ -184,7 +193,7 @@
                                             <input type="checkbox" id="allow_category_change" name="allow_category_change">
                                         </div>
                                     </div>
-
+ 
                                     <!-- Buttons Section -->
                                     <div class="col-md-12 col-12">
                                         <h5>Buttons</h5>
@@ -229,10 +238,10 @@
                                         </div>
                                         <button type="button" class="btn btn-secondary" onclick="addButtonEntry()">Add Another Button</button>
                                     </div>
-
+ 
                                     <div class="col-12 d-flex justify-content-end">
                                         <button type="submit" class="btn btn-primary me-1 mb-1">Create Template</button>
-                                        <button type="reset" class="btn btn-light-secondary me-1 mb-1">Reset</button>
+                                        <button type="button" class="btn btn-light-secondary me-1 mb-1" onclick="resetForm()">Reset</button>
                                     </div>
                                 </div>
                             </form>
@@ -245,41 +254,32 @@
             </div>
         </div>
     </div>
-
+ 
     <script>
         function updateBodyExamples() {
-            const bodyText = document.getElementById('body_text').innerHTML;
-            const variableCount = (bodyText.match(/\{\{\d+\}\}/g) || []).length;
-
-            const examplesContainer = document.getElementById('body_examples_container');
-            examplesContainer.innerHTML = ''; // Clear existing examples
-
-            for (let i = 0; i < variableCount; i++) {
-                const exampleEntry = document.createElement('div');
-                exampleEntry.className = 'form-group';
-                exampleEntry.innerHTML = `
-                    <label for="body_example_${i}">Example for ${i + 1}</label>
-                    <input type="text" id="body_example_${i}" name="body_example" class="form-control" placeholder="Example for variable ${i + 1}" />
-                `;
-                examplesContainer.appendChild(exampleEntry);
-            }
-        }
-
-        function formatText(type) {
-            if (type === 'bold') {
-                document.execCommand('bold');
-                toggleActiveButton('bold');
-            } else if (type === 'italic') {
-                document.execCommand('italic');
-                toggleActiveButton('italic');
-            }
-            updateHiddenInput();
-        }
-
+    const bodyText = document.getElementById('body_text').innerText;
+    const variableCount = (bodyText.match(/\{\{\d+\}\}/g) || []).length;
+ 
+    console.log("Number of variables found: ", variableCount);  // Debugging line
+ 
+    const examplesContainer = document.getElementById('body_examples_container');
+    examplesContainer.innerHTML = ''; // Clear existing examples
+ 
+    for (let i = 0; i < variableCount; i++) {
+        const exampleEntry = document.createElement('div');
+        exampleEntry.className = 'form-group';
+        exampleEntry.innerHTML = `
+            <label for="body_example_${i}">Example for ${i + 1}</label>
+            <input type="text" id="body_example_${i}" name="body_example" class="form-control" placeholder="Example for variable ${i + 1}" />
+        `;
+        examplesContainer.appendChild(exampleEntry);
+    }
+}
+ 
         function toggleActiveButton(type) {
             const boldButton = document.querySelector("button[onclick=\"formatText('bold')\"]");
             const italicButton = document.querySelector("button[onclick=\"formatText('italic')\"]");
-
+ 
             if (type === 'bold') {
                 if (document.queryCommandState('bold')) {
                     boldButton.classList.add('btn-active');
@@ -294,12 +294,24 @@
                 }
             }
         }
-
+ 
         document.addEventListener('DOMContentLoaded', () => {
             toggleActiveButton('bold');
             toggleActiveButton('italic');
         });
-
+ 
+          function formatText(type) {
+            if (type === 'bold') {
+                document.execCommand('bold');
+                toggleActiveButton('bold');
+            } else if (type === 'italic') {
+                document.execCommand('italic');
+                toggleActiveButton('italic');
+            }
+            updateHiddenInput();
+            updateBodyExamples();  // Add this line
+        }
+ 
         function alignText(direction) {
             const textArea = document.getElementById('body_text');
             if (direction === 'right') {
@@ -309,24 +321,26 @@
                 textArea.style.direction = 'ltr';
                 textArea.style.textAlign = 'left';
             }
+            updateHiddenInput();
+            updateBodyExamples();  // Add this line
         }
-
+ 
         document.getElementById('body_text').addEventListener('input', () => {
             updateHiddenInput();
             toggleActiveButton('bold');
             toggleActiveButton('italic');
         });
-
+ 
         document.getElementById('body_text').addEventListener('click', () => {
             toggleActiveButton('bold');
             toggleActiveButton('italic');
         });
-
+ 
         function updateHeaderFields() {
             const headerType = document.getElementById('header_type').value;
             const headerTextField = document.getElementById('header_text_field');
             const headerImageUrlField = document.getElementById('header_image_url_field');
-
+ 
             if (headerType === 'IMAGE') {
                 headerTextField.style.display = 'none';
                 headerImageUrlField.style.display = 'block';
@@ -335,84 +349,83 @@
                 headerImageUrlField.style.display = 'none';
             }
         }
-
+ 
         function updateButtonFields(selectElement) {
             const buttonType = selectElement.value;
             const entry = selectElement.closest('.button-entry');
             const phoneField = entry.querySelector('.phone-number-field');
             const urlField = entry.querySelector('.url-field');
-
+ 
             phoneField.style.display = 'none';
             urlField.style.display = 'none';
-
+ 
             if (buttonType === 'PHONE_NUMBER') {
                 phoneField.style.display = 'block';
             } else if (buttonType === 'URL') {
                 urlField.style.display = 'block';
             }
         }
-
+ 
         function addButtonEntry() {
             const buttonsContainer = document.getElementById('buttons-container');
             const newEntry = buttonsContainer.querySelector('.button-entry').cloneNode(true);
-
-            // Clear all input fields in the new entry
+ 
             newEntry.querySelectorAll('input, select').forEach(input => {
                 input.value = '';
             });
-
-            // Hide all additional fields in the new entry
+ 
             newEntry.querySelectorAll('.button-field').forEach(field => {
                 field.style.display = 'none';
             });
-
+ 
             buttonsContainer.appendChild(newEntry);
         }
-
+ 
         function deleteButtonEntry(button) {
             const buttonEntry = button.closest('.button-entry');
             buttonEntry.remove();
         }
-
+ 
         function updateHiddenInput() {
             const bodyTextDiv = document.getElementById('body_text');
             const hiddenInput = document.getElementById('body_text_hidden');
-
+ 
             let textWithMarkdown = bodyTextDiv.innerHTML
                 .replace(/<b>\s*(.*?)\s*<\/b>/gi, (match, p1) => {
-                    const trimmedText = p1.replace(/^\s+|\s+$/g, ''); 
+                    const trimmedText = p1.replace(/^\s+|\s+$/g, '');
                     return `*${trimmedText}*`;
                 })
                 .replace(/<i.*?>\s*(.*?)\s*<\/i>/gi, (match, p1) => {
-                    const trimmedText = p1.replace(/^\s+|\s+$/g, ''); 
+                    const trimmedText = p1.replace(/^\s+|\s+$/g, '');
                     return `_${trimmedText}_`;
                 })
-                .replace(/<em.*?>\s*(.*?)\s*<\/em>/gi, (match, p1) => {
-                    const trimmedText = p1.replace(/^\s+|\s+$/g, ''); 
-                    return `_${trimmedText}_`;
-                })
-                .replace(/<div.*?>\s*(.*?)\s*<\/div>/gi, '$1\n')
+                // Ensure placeholders like {{1}}, {{2}}, etc., are preserved
+                .replace(/<[^>]*>?/gm, '')
+                .replace(/\{\{\d+\}\}/g, (match) => match)  // Preserve variable placeholders
                 .replace(/&nbsp;/g, ' ')
                 .replace(/<br\s*\/?>/gi, '\n')
-                .replace(/(\*)\s+/g, '$1')   
-                .replace(/\s+(\*)/g, '$1')   
-                .replace(/(_)\s+/g, '$1')   
-                .replace(/\s+(_)/g, '$1')    
+                .replace(/\n/g, ' ')
                 .trim();
-
+ 
             hiddenInput.value = textWithMarkdown;
         }
-
-
-
+ 
+        document.getElementById('body_text').addEventListener('input', () => {
+    updateHiddenInput();
+    toggleActiveButton('bold');
+    toggleActiveButton('italic');
+    updateBodyExamples();  // Ensure it gets called
+});
+ 
+ 
         document.querySelector('form').addEventListener('submit', function(event) {
             event.preventDefault();
-            
-            updateHiddenInput(); 
-
+ 
+            updateHiddenInput();
+ 
             const form = event.target;
             const formData = new FormData(form);
-            
+           
             fetch(form.action, {
                 method: 'POST',
                 body: formData
@@ -421,21 +434,80 @@
             .then(data => {
                 const responseMessage = document.getElementById('responseMessage');
                 const responseJson = document.getElementById('responseJson');
-                
-                if (data.message) {
-                    responseJson.textContent = JSON.stringify(data.template_data, null, 4);
+ 
+                let errorMessage = '';
+ 
+                if (data.status_code === 400 && data.response && data.response.meta) {
+                    const meta = data.response.meta;
+                   
+                    if (meta.developer_message && meta.developer_message.includes('Invalid payload')) {
+                        try {
+                            const jsonStart = meta.developer_message.indexOf('{');
+                            const errorJsonString = meta.developer_message.substring(jsonStart);
+                            const errorJson = JSON.parse(errorJsonString);
+ 
+                            errorMessage = errorJson.error.error_user_title;
+                        } catch (e) {
+                            console.error("Error parsing nested JSON:", e);
+                            errorMessage = 'Invalid Template Name.The message template name can only have lowercase letters and underscores.';
+                        }
+                    } else {
+                        errorMessage = meta.developer_message;
+                    }
+                } else if (data.message) {
+                    responseJson.textContent = 'Template submitted successfully.';
                     responseMessage.style.display = 'block';
+                    return;
                 } else {
-                    responseJson.textContent = `Error: ${JSON.stringify(data, null, 4)}`;
-                    responseMessage.style.display = 'block';
+                    errorMessage = `Unexpected error: ${JSON.stringify(data, null, 4)}`;
                 }
+                responseJson.textContent = errorMessage;
+                responseMessage.style.display = 'block';
             })
             .catch(error => {
                 console.error('Error:', error);
             });
         });
+ 
+        function resetForm() {
+            const form = document.querySelector('form');
+            form.reset();
+ 
+            const bodyTextDiv = document.getElementById('body_text');
+            bodyTextDiv.innerHTML = '';
+ 
+            const hiddenInput = document.getElementById('body_text_hidden');
+            hiddenInput.value = '';
+ 
+            const headerImageUrlField = document.getElementById('header_image_url_field');
+            headerImageUrlField.style.display = 'none';
+ 
+            const headerTextField = document.getElementById('header_text_field');
+            headerTextField.style.display = 'block';
+ 
+            const buttonsContainer = document.getElementById('buttons-container');
+            const buttonEntries = buttonsContainer.querySelectorAll('.button-entry');
+            buttonEntries.forEach((entry, index) => {
+                if (index > 0) {
+                    entry.remove();
+                } else {
+                    entry.querySelector('.phone-number-field').style.display = 'none';
+                    entry.querySelector('.url-field').style.display = 'none';
+                    entry.querySelector('.button-type').value = '';
+                    entry.querySelector('.button-text').value = '';
+                }
+            });
+ 
+            const responseMessage = document.getElementById('responseMessage');
+            responseMessage.style.display = 'none';
+            const responseJson = document.getElementById('responseJson');
+            responseJson.textContent = '';
+ 
+            const examplesContainer = document.getElementById('body_examples_container');
+            examplesContainer.innerHTML = '';
+        }
     </script>
-
+ 
     <script src="./static/vendors/perfect-scrollbar/perfect-scrollbar.min.js"></script>
     <script src="./static/js/bootstrap.bundle.min.js"></script>
     <script src="./static/js/main.js"></script>
