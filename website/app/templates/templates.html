@@ -17,8 +17,16 @@
     <style>
         #template-preview, #single-template-preview {
             background-color: #f8f9fa; /* Light grey background */
-            color: #000000; 
+            color: #000000;
+            padding: 10px;
+            margin-top: 20px;
+            border: 1px solid #ddd;
+            display: none; /* Initially hidden */
         }
+        .clickable-template {
+            cursor: pointer; 
+        }
+
     </style>
 </head>
 
@@ -110,6 +118,10 @@
                          </div>
                          {% endif %}
                          {% endwith %}
+
+                         <!-- Template Preview Section -->
+                         <div id="template-preview"></div>
+
                         <table class="table table-striped" id="table1">
                             <thead>
                                 <tr>
@@ -124,7 +136,11 @@
                             <tbody>
                                 {% for template in templates %}
                                 <tr>
-                                    <td>{{ template.template_name }}</td>
+                                    <!-- Hover event added to show template preview -->
+                                    <td class="clickable-template" onclick="toggleTemplatePreview(this, '{{ template.template_name }}')">
+                                        {{ template.template_name }}
+                                    </td>
+                                    
                                     <td>{{ template.service_category }}</td>
                                     <td>
                                         {% if template.status == 'approved' %}
@@ -163,7 +179,54 @@
                 event.preventDefault(); 
             }
         }
+    
+        function toggleTemplatePreview(element, templateName) {
+            // Check if the preview is already shown for this template
+            let existingPreviewRow = element.parentElement.nextElementSibling;
+            if (existingPreviewRow && existingPreviewRow.classList.contains('template-preview-row')) {
+                // If it's already shown, hide it
+                existingPreviewRow.remove();
+                return;
+            }
+    
+            // Remove any other open previews
+            document.querySelectorAll('.template-preview-row').forEach(row => row.remove());
+    
+            fetch('/get_template_text', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ template_name: templateName })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const previewRow = document.createElement('tr');
+                    previewRow.className = 'template-preview-row';
+    
+                    const previewCell = document.createElement('td');
+                    previewCell.colSpan = element.parentElement.children.length; // Span the entire row width
+    
+                    previewCell.innerHTML = `
+                        <div id="single-template-preview" style="display: block; background-color: #f8f9fa; padding: 10px; border: 1px solid #ddd;">
+                            <strong>Text Preview:</strong><br>
+                            ${data.texts.join('<br>')}
+                            <br><br>
+                            <strong>Variable Count:</strong> ${data.variable_count}<br>
+                            <strong>Has Image:</strong> ${data.has_image ? 'Yes' : 'No'}
+                        </div>
+                    `;
+                    previewRow.appendChild(previewCell);
+    
+                    // Insert the preview row after the current row
+                    element.parentElement.parentNode.insertBefore(previewRow, element.parentElement.nextSibling);
+                }
+            })
+            .catch(error => console.error('Error fetching template preview:', error));
+        }
     </script>
+    
 </body>
 
 </html>
