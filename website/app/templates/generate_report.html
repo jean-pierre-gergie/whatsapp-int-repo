@@ -54,7 +54,12 @@
                                 <li class="submenu-item ">
                                     <a href="{{url_for('upload_data.upload_file')}}">Add Members<a>
                                 </li>
-                                                               
+                                <li class="submenu-item ">
+                                    <a href="{{url_for('campaigns.show_all_collections_html')}}">Show Collections</a>
+                                </li> 
+                                <li class="submenu-item ">
+                                    <a href="{{url_for('campaigns.audience')}}">Audience</a>
+                                </li>                         
                             </ul>
                         </li>
                         <li class="sidebar-item">
@@ -116,6 +121,9 @@
                                 <p><strong>Read:</strong> <span id="read-count">0</span> <a href="#" id="download-read">Download CSV</a></p>
                                 <p><strong>Failed:</strong> <span id="failed-count">0</span> <a href="#" id="download-failed">Download CSV</a></p>
                                 
+                                <!-- New Total Messages Paragraph -->
+                                <p><strong>Total Messages:</strong> <span id="total-count">0</span></p>
+
                                 <!-- New Refresh Button -->
                                 <button id="refresh-report" class="btn btn-success mt-3">Refresh Report</button>
                             </div>
@@ -133,12 +141,10 @@ document.getElementById('report-form').onsubmit = function(event) {
     generateReport(campaignName);
 };
 
-// Event listener for the refresh button
 document.getElementById('refresh-report').onclick = function() {
     const campaignName = document.getElementById('campaign_name').value;
     generateReport(campaignName);
 };
-
 
 function generateReport(campaignName) {
     fetch('/generate_report', {
@@ -176,6 +182,8 @@ function generateReport(campaignName) {
             document.getElementById('delivered-count').innerText = `${deliveredPercent}% (${deliveredCount})`;
             document.getElementById('read-count').innerText = `${readPercent}% (${readCount})`;
             document.getElementById('failed-count').innerText = `${failedPercent}% (${failedCount})`;
+
+            document.getElementById('total-count').innerText = `${totalCount}`;
 
             document.getElementById('report-section').style.display = 'block';
 
@@ -226,7 +234,6 @@ function generateReport(campaignName) {
     });
 }
 
-
 function updateChart(sent, delivered, read, failed) {
     const ctx = document.getElementById('report-chart').getContext('2d');
     if (window.reportChart) {
@@ -273,7 +280,6 @@ function updateChart(sent, delivered, read, failed) {
 <script src="./static/js/pages/dashboard.js"></script>
 
 <script src="./static/js/main.js"></script>
-
 
 </body>
 </html>

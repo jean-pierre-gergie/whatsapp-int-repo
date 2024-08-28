@@ -9,6 +9,30 @@ from io import StringIO
 
 bp = Blueprint('campaigns', __name__)
 
+
+@bp.route('/audience', methods=['GET'])
+@jwt_required()
+@role_required('admin')
+def audience():
+    current_user = get_jwt_identity()
+    mongo_db = current_app.mongo
+    audience_collection = mongo_db.members
+    
+    selected_tag = request.args.get('tag', None)
+
+    if selected_tag:
+        audience_list = list(audience_collection.find({'tag': selected_tag}))
+    else:
+        audience_list = list(audience_collection.find())
+
+    for audience in audience_list:
+        audience['_id'] = str(audience['_id'])
+
+    tags = audience_collection.distinct('tag')
+    
+    return render_template('audience.html', audience_list=audience_list, tags=tags, selected_tag=selected_tag)
+
+
 @bp.route('/whatsapp')
 @jwt_required()
 @role_required('admin')

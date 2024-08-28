@@ -1,9 +1,11 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Map CSV Columns to Database Fields</title>
+    <title>Audience</title>
+
     <link rel="preconnect" href="https://fonts.gstatic.com">
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="./static/css/bootstrap.css">
@@ -13,9 +15,13 @@
     <link rel="stylesheet" href="./static/css/app.css">
     <link rel="shortcut icon" href="./static/images/favicon.svg" type="image/x-icon">
     <style>
-        /* Add any additional styles you need here */
+        #template-preview, #single-template-preview {
+            background-color: #f8f9fa; /* Light grey background */
+            color: #000000; 
+        }
     </style>
 </head>
+
 <body>
     <div id="app">
         <div id="sidebar" class="active">
@@ -74,42 +80,60 @@
                 </div>
                 <button class="sidebar-toggler btn x"><i data-feather="x"></i></button>
             </div>
-        </div>
+
         <div id="main">
-            <div class="page-heading">
-                <div class="page-title">
-                    <h1>Map CSV Columns to Database Fields</h1>
-                </div>
-                <section class="section">
-                    <div class="card">
-                        <div class="card-body">
-                            <form method="POST" action="{{ url_for('upload_data.map_columns') }}">
-                                <input type="hidden" name="temp_file_path" value="{{ temp_file_path }}">
-                                {{ csv_data|safe }}
-                                <div id="columnMapping">
-                                    {% for csv_col in csv_columns %}
-                                    <div class="form-group">
-                                        <label>{{ csv_col }}</label>
-                                        <select name="db_columns[]" class="form-control">
-                                            <option value="">Select DB Column</option>
-                                            {% for db_col in db_columns %}
-                                            <option value="{{ db_col }}">{{ db_col }}</option>
-                                            {% endfor %}
-                                        </select>
-                                        <input type="hidden" name="csv_columns[]" value="{{ csv_col }}">
-                                    </div>
+            <header class="mb-3">
+                <a href="#" class="burger-btn d-block d-xl-none">
+                    <i class="bi bi-justify fs-3"></i>
+                </a>
+            </header>
+
+            <section class="section">
+                <div class="card">
+                    <div class="card-header">
+                        Audience Members
+                        <form action="{{ url_for('campaigns.audience') }}" method="get" class="d-inline">
+                            <div class="input-group">
+                                <select name="tag" class="form-select" onchange="this.form.submit()">
+                                    <option value="" {% if not selected_tag %}selected{% endif %}>All Tags</option>
+                                    {% for tag in tags %}
+                                        <option value="{{ tag }}" {% if selected_tag == tag %}selected{% endif %}>{{ tag }}</option>
                                     {% endfor %}
-                                </div>
-                                <button type="submit" class="btn btn-primary mt-3">Submit</button>
-                            </form>
-                        </div>
+                                </select>
+                            </div>
+                        </form>
                     </div>
-                </section>
-            </div>
+
+                    <div class="card-body">
+                        <table class="table table-striped" id="table1">
+                            <thead>
+                                <tr>
+                                    <th>First Name</th>
+                                    <th>Last Name</th>
+                                    <th>Mobile Number</th>
+                                    <th>Tag</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for member in audience_list %}
+                                <tr>
+                                    <td>{{ member.first_name }}</td>
+                                    <td>{{ member.last_name }}</td>
+                                    <td>{{ member.mobile }}</td>
+                                    <td>{{ member.tag }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
         </div>
     </div>
+
+    <script src="./static/vendors/perfect-scrollbar/perfect-scrollbar.min.js"></script>
+    <script src="./static/js/bootstrap.bundle.min.js"></script>
+    <script src="./static/js/main.js"></script>
 </body>
+
 </html>
-<script src="./static/vendors/perfect-scrollbar/perfect-scrollbar.min.js"></script>
-<script src="./static/js/bootstrap.bundle.min.js"></script>
-<script src="./static/js/main.js"></script>

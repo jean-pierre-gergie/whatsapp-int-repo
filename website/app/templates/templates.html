@@ -33,58 +33,53 @@
                         </div>
                     </div>
                 </div>
-                <div id="sidebar" class="active">
-                    <div class="sidebar-wrapper active">
-                        <div class="sidebar-header">
-                            <div class="d-flex justify-content-between">
-                                <div class="toggler">
-                                    <a href="#" class="sidebar-hide d-xl-none d-block"><i class="bi bi-x bi-middle"></i></a>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="sidebar-menu">
-                            <ul class="menu">
-                                <li class="sidebar-title">Menu</li>
-        
-                                <li class="sidebar-item active ">
-                                    <a href="{{url_for('auth.index')}}" class='sidebar-link'>
-                                        <i class="bi bi-grid-fill"></i>
-                                        <span>Dashboard</span>
-                                    </a>
+                <div class="sidebar-menu">
+                    <ul class="menu">
+                        <li class="sidebar-title">Menu</li>
+
+                        <li class="sidebar-item active ">
+                            <a href="{{url_for('auth.index')}}" class='sidebar-link'>
+                                <i class="bi bi-grid-fill"></i>
+                                <span>Dashboard</span>
+                            </a>
+                        </li>
+
+                        <li class="sidebar-item  has-sub">
+                            <a href="#" class='sidebar-link'>
+                                <i class="bi bi-stack"></i>
+                                <span>Whatsapp Business</span>
+                            </a>
+                            <ul class="submenu ">
+                                <li class="submenu-item ">
+                                    <a href="{{ url_for('campaigns.generate_report_page') }}">Generate Report</a>
                                 </li>
-        
-                                <li class="sidebar-item  has-sub">
-                                    <a href="#" class='sidebar-link'>
-                                        <i class="bi bi-stack"></i>
-                                        <span>Whatsapp Business</span>
-                                    </a>
-                                    <ul class="submenu ">
-                                        <li class="submenu-item ">
-                                            <a href="{{ url_for('campaigns.generate_report_page') }}">Generate Report</a>
-                                        </li>
-                                        <li class="submenu-item ">
-                                            <a href="{{url_for('campaigns.send_campaign')}}">Send Campaign</a>
-                                        </li>
-                                        <li class="submenu-item ">
-                                            <a href="{{url_for('templates.templates_list')}}">Templates</a>
-                                        </li>
-                                        <li class="submenu-item ">
-                                            <a href="{{url_for('upload_data.upload_file')}}">Add Members<a>
-                                        </li>
-                                                                       
-                                    </ul>
+                                <li class="submenu-item ">
+                                    <a href="{{url_for('campaigns.send_campaign')}}">Send Campaign</a>
                                 </li>
-                                <li class="sidebar-item">
-                                    <a href="{{ url_for('auth.logout') }}" class='sidebar-link'>
-                                        <i class="bi bi-box-arrow-right"></i>
-                                        <span>Logout</span>
-                                    </a>
+                                <li class="submenu-item ">
+                                    <a href="{{url_for('templates.templates_list')}}">Templates</a>
                                 </li>
+                                <li class="submenu-item ">
+                                    <a href="{{url_for('upload_data.upload_file')}}">Add Members<a>
+                                </li>
+                                <li class="submenu-item ">
+                                    <a href="{{url_for('campaigns.show_all_collections_html')}}">Show Collections</a>
+                                </li> 
+                                <li class="submenu-item ">
+                                    <a href="{{url_for('campaigns.audience')}}">Audience</a>
+                                </li>                         
                             </ul>
-                        </div>
-                        <button class="sidebar-toggler btn x"><i data-feather="x"></i></button>
-                    </div>
+                        </li>
+                        <li class="sidebar-item">
+                            <a href="{{ url_for('auth.logout') }}" class='sidebar-link'>
+                                <i class="bi bi-box-arrow-right"></i>
+                                <span>Logout</span>
+                            </a>
+                        </li>
+                    </ul>
                 </div>
+                <button class="sidebar-toggler btn x"><i data-feather="x"></i></button>
+            </div>
         </div>
 
         <div id="main">
@@ -99,9 +94,22 @@
                     <div class="card-header">
                         Templates
                     </div>
-                    <a href="{{url_for('templates.create_template_page')}}" class="btn btn-primary" style="float: right;">+ Create New Template</a>
+                    <a href="{{url_for('templates.create_template_page')}}" class="btn btn-primary" style="float: right;">+ Create New Template</a><br>
 
                     <div class="card-body">
+                         <!-- Flash messages section -->
+                         {% with messages = get_flashed_messages(with_categories=true) %}
+                         {% if messages %}
+                         <div class="alert-container">
+                             {% for category, message in messages %}
+                             <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                 {{ message }}
+                                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                             </div>
+                             {% endfor %}
+                         </div>
+                         {% endif %}
+                         {% endwith %}
                         <table class="table table-striped" id="table1">
                             <thead>
                                 <tr>
@@ -110,6 +118,7 @@
                                     <th>Status</th>
                                     <th>Language</th>
                                     <th>Created Date</th>
+                                    <th>Action</th> <!-- Add Action column for delete button -->
                                 </tr>
                             </thead>
                             <tbody>
@@ -128,6 +137,13 @@
                                     </td>
                                     <td>{{ template.language }}</td>
                                     <td>{{ template.created_day.strftime('%Y-%m-%d') if template.created_day else 'N/A' }}</td>
+                                    <td>
+                                        <!-- Form for deleting a template -->
+                                        <form action="{{ url_for('templates.remove_template') }}" method="post" style="display: inline;">
+                                            <input type="hidden" name="template_name" value="{{ template.template_name }}">
+                                            <button type="submit" class="btn btn-danger btn-sm" onclick="confirmDeletion(event)" >Delete</button>
+                                        </form>
+                                    </td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -141,6 +157,13 @@
     <script src="./static/vendors/perfect-scrollbar/perfect-scrollbar.min.js"></script>
     <script src="./static/js/bootstrap.bundle.min.js"></script>
     <script src="./static/js/main.js"></script>
+    <script>
+        function confirmDeletion(event) {
+            if (!confirm('Are you sure you want to delete the template?')) {
+                event.preventDefault(); 
+            }
+        }
+    </script>
 </body>
 
 </html>

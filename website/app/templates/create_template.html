@@ -34,43 +34,51 @@
 					</div>
 				</div>
 				<div class="sidebar-menu">
-					<ul class="menu">
-						<li class="sidebar-title">Menu</li>
-						<li class="sidebar-item active">
-							<a href="{{url_for('auth.index')}}" class='sidebar-link'>
-								<i class="bi bi-grid-fill"></i>
-								<span>Dashboard</span>
-							</a>
-						</li>
-						<li class="sidebar-item has-sub">
-							<a href="#" class='sidebar-link'>
-								<i class="bi bi-stack"></i>
-								<span>WhatsApp Business</span>
-							</a>
-							<ul class="submenu">
-								<li class="submenu-item">
-									<a href="{{ url_for('campaigns.generate_report_page') }}">Generate Report</a>
-								</li>
-								<li class="submenu-item">
-									<a href="{{url_for('campaigns.send_campaign')}}">Send Campaign</a>
-								</li>
-								<li class="submenu-item">
-									<a href="{{url_for('templates.templates_list')}}">Templates</a>
-								</li>
-								<li class="submenu-item">
-									<a href="{{url_for('upload_data.upload_file')}}">Add Members<a>
-								</li>
-							</ul>
-						</li>
-						<li class="sidebar-item">
-							<a href="{{ url_for('auth.logout') }}" class='sidebar-link'>
-								<i class="bi bi-box-arrow-right"></i>
-								<span>Logout</span>
-							</a>
-						</li>
-					</ul>
-				</div>
-				<button class="sidebar-toggler btn x"><i data-feather="x"></i></button>
+                    <ul class="menu">
+                        <li class="sidebar-title">Menu</li>
+
+                        <li class="sidebar-item active ">
+                            <a href="{{url_for('auth.index')}}" class='sidebar-link'>
+                                <i class="bi bi-grid-fill"></i>
+                                <span>Dashboard</span>
+                            </a>
+                        </li>
+
+                        <li class="sidebar-item  has-sub">
+                            <a href="#" class='sidebar-link'>
+                                <i class="bi bi-stack"></i>
+                                <span>Whatsapp Business</span>
+                            </a>
+                            <ul class="submenu ">
+                                <li class="submenu-item ">
+                                    <a href="{{ url_for('campaigns.generate_report_page') }}">Generate Report</a>
+                                </li>
+                                <li class="submenu-item ">
+                                    <a href="{{url_for('campaigns.send_campaign')}}">Send Campaign</a>
+                                </li>
+                                <li class="submenu-item ">
+                                    <a href="{{url_for('templates.templates_list')}}">Templates</a>
+                                </li>
+                                <li class="submenu-item ">
+                                    <a href="{{url_for('upload_data.upload_file')}}">Add Members<a>
+                                </li>
+                                <li class="submenu-item ">
+                                    <a href="{{url_for('campaigns.show_all_collections_html')}}">Show Collections</a>
+                                </li> 
+                                <li class="submenu-item ">
+                                    <a href="{{url_for('campaigns.audience')}}">Audience</a>
+                                </li>                         
+                            </ul>
+                        </li>
+                        <li class="sidebar-item">
+                            <a href="{{ url_for('auth.logout') }}" class='sidebar-link'>
+                                <i class="bi bi-box-arrow-right"></i>
+                                <span>Logout</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                <button class="sidebar-toggler btn x"><i data-feather="x"></i></button>
 			</div>
 		</div>
 		<div id="main">
@@ -409,53 +417,61 @@
 		updateBodyExamples();
 	});
 	document.querySelector('form').addEventListener('submit', function(event) {
-		event.preventDefault();
-		updateHiddenInput();
-		const form = event.target;
-		const formData = new FormData(form);
-		fetch(form.action, {
-			method: 'POST',
-			body: formData
-		}).then(response => response.json()).then(data => {
-			let message = '';
-			if(data.status_code === 400 && data.response && data.response.meta) {
-				const meta = data.response.meta;
-				if(meta.developer_message && meta.developer_message.includes('Invalid payload')) {
-					try {
-						const jsonStart = meta.developer_message.indexOf('{');
-						const errorJsonString = meta.developer_message.substring(jsonStart);
-						const errorJson = JSON.parse(errorJsonString);
-						message = errorJson.error.error_user_title;
-					} catch (e) {
-						console.error("Error parsing nested JSON:", e);
-						message = 'An error occured. Please check your template name or example fields if any.';
-					}
-				} else {
-					message = meta.developer_message;
-				}
-			} else if(data.message) {
-				message = 'Template submitted successfully.';
-				document.getElementById('modalMessageBody').textContent = message;
-				const modal = new bootstrap.Modal(document.getElementById('responseModal'));
-				modal.show();
-				setTimeout(function() {
-					resetForm();
-				}, 2000);
-				document.getElementById('responseModal').addEventListener('hidden.bs.modal', function() {
-					document.body.classList.remove('modal-open');
-					document.querySelector('.modal-backdrop').remove();
-				});
-			} else {
-				message = `Unexpected error: ${JSON.stringify(data, null, 4)}`;
-			}
-			document.getElementById('modalMessageBody').textContent = message;
-			new bootstrap.Modal(document.getElementById('responseModal')).show();
-		}).catch(error => {
-			console.error('Error:', error);
-			document.getElementById('modalMessageBody').textContent = 'An error occurred while submitting the form. Please try again.';
-			new bootstrap.Modal(document.getElementById('responseModal')).show();
-		});
-	});
+    event.preventDefault();
+    updateHiddenInput();
+    const form = event.target;
+    const formData = new FormData(form);
+
+    fetch(form.action, {
+        method: 'POST',
+        body: formData
+    }).then(response => response.json()).then(data => {
+        let message = '';
+        if (data.status_code === 400 && data.response && data.response.meta) {
+            const meta = data.response.meta;
+            if (meta.developer_message && meta.developer_message.includes('Invalid payload')) {
+                try {
+                    const jsonStart = meta.developer_message.indexOf('{');
+                    const errorJsonString = meta.developer_message.substring(jsonStart);
+                    const errorJson = JSON.parse(errorJsonString);
+                    message = errorJson.error.error_user_title;
+                } catch (e) {
+                    console.error("Error parsing nested JSON:", e);
+                    message = 'An error occurred. Please check your template name or example fields if any.';
+                }
+            } else {
+                message = meta.developer_message;
+            }
+        } else if (data.message) {
+            message = 'Template submitted successfully.';
+            document.getElementById('modalMessageBody').textContent = message;
+            const modal = new bootstrap.Modal(document.getElementById('responseModal'));
+            modal.show();
+
+            // Reset the form and modal on success
+            resetForm();
+            document.getElementById('responseModal').addEventListener('hidden.bs.modal', function() {
+                // Ensure modal backdrop is removed
+                if (document.querySelector('.modal-backdrop')) {
+                    document.querySelector('.modal-backdrop').remove();
+                }
+                // Reset any other state here
+                document.body.classList.remove('modal-open');
+				location.reload();  // Add this line to force a page reload
+
+            });
+        } else {
+            message = `Unexpected error: ${JSON.stringify(data, null, 4)}`;
+        }
+        document.getElementById('modalMessageBody').textContent = message;
+        new bootstrap.Modal(document.getElementById('responseModal')).show();
+    }).catch(error => {
+        console.error('Error:', error);
+        document.getElementById('modalMessageBody').textContent = 'An error occurred while submitting the form. Please try again.';
+        new bootstrap.Modal(document.getElementById('responseModal')).show();
+    });
+});
+
 
 	function resetForm() {
 		const form = document.querySelector('form');
@@ -501,23 +517,37 @@
 		}
 	}
 	document.getElementById('language').addEventListener('change', alignTextBasedOnLanguage);
-	let variableCount = 0; // Initialize a variable count
+	let variableCount = 0; 
 	function insertVariable() {
-		variableCount++; // Increment the variable count
-		// Use {% raw %} and {% endraw %} to escape Jinja2 syntax
-		const variableText = `{% raw %}{{${variableCount}}}{% endraw %}`; // Create the variable text
-		const bodyTextDiv = document.getElementById('body_text');
-		// Insert the variable at the current cursor position
-		const selection = window.getSelection();
-		const range = selection.getRangeAt(0);
-		range.deleteContents();
-		const textNode = document.createTextNode(variableText);
-		range.insertNode(textNode);
-		// Update the hidden input and body examples
-		updateHiddenInput();
-		updateBodyExamples();
-		checkSequentialOrder(); // Check if variables are in sequential order
-	}
+    variableCount++; 
+    const variableText = `{% raw %}{{${variableCount}}}{% endraw %}`;
+    const bodyTextDiv = document.getElementById('body_text');
+    
+    const selection = window.getSelection();
+    let range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+
+    if (!range || !bodyTextDiv.contains(range.commonAncestorContainer)) {
+        bodyTextDiv.focus();
+        range = document.createRange();
+        range.selectNodeContents(bodyTextDiv);
+        range.collapse(false);
+        selection.removeAllRanges();
+        selection.addRange(range);
+    }
+    
+    range.deleteContents();
+    const textNode = document.createTextNode(variableText);
+    range.insertNode(textNode);
+    
+    range.setStartAfter(textNode);
+    range.setEndAfter(textNode);
+    selection.removeAllRanges();
+    selection.addRange(range);
+    
+    updateHiddenInput();
+    updateBodyExamples();
+    checkSequentialOrder(); 
+}
 
 	function checkSequentialOrder() {
 		const bodyText = document.getElementById('body_text').innerText;
@@ -542,6 +572,8 @@
 			alert('Variables must be in sequential order. Please correct them before submitting.');
 		}
 	});
+
+	
 	</script>
 	<script src="./static/vendors/perfect-scrollbar/perfect-scrollbar.min.js"></script>
 	<script src="./static/js/bootstrap.bundle.min.js"></script>

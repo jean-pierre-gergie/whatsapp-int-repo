@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, jsonify,current_app
+from flask import Blueprint, render_template, request, jsonify,current_app,flash,redirect,url_for
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from ..utils.decorators import role_required
 from ..utils.helper_functions import get_template_texts
@@ -24,6 +24,36 @@ def templates_list():
         template['_id'] = str(template['_id'])  
 
     return render_template('templates.html', templates=templates)
+
+
+
+@bp.route('/remove_template', methods=['POST'])
+@jwt_required()
+@role_required('admin')
+def remove_template():
+    current_user = get_jwt_identity()
+
+    template_name = request.form.get('template_name')  # Get the template name from the form
+
+    if template_name:
+        url = f"https://waba-v2.360dialog.io/v1/configs/templates/{template_name}"
+        api_key = api_key_360
+
+        headers = {
+            "Content-Type": "application/json",
+            "D360-API-KEY": api_key
+        }
+
+        response = requests.delete(url, headers=headers)
+
+        if response.status_code == 200:
+            flash('Template deleted successfully!', 'success')
+        else:
+            flash('Failed to delete template. Please try again.', 'danger')
+    else:
+        flash('No template selected for deletion.', 'warning')
+
+    return redirect(url_for('templates.templates_list')) 
 
 
 @bp.route('/create_template_html')
@@ -146,7 +176,7 @@ def create_template():
         "allow_category_change": allow_category_change
     }
     
-    print(json.dumps(template_data, indent=4))
+    json.dumps(template_data, indent=4)
     
     headers = {
         "Content-Type": "application/json",
