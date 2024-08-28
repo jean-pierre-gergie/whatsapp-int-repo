@@ -71,4 +71,4 @@ def start_template_updater(app):
     while True:
         with app.app_context():
             fetch_and_update_templates()
-        time.sleep(10000)
+        time.sleep(30)
