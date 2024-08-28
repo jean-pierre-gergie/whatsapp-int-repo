@@ -44,31 +44,37 @@
                             </a>
                         </li>
 
-                        <li class="sidebar-item  has-sub">
+                        <li class="sidebar-item has-sub">
                             <a href="#" class='sidebar-link'>
                                 <i class="bi bi-stack"></i>
                                 <span>Whatsapp Business</span>
                             </a>
-                            <ul class="submenu ">
-                                <li class="submenu-item ">
+                            <ul class="submenu">
+                                <li class="submenu-item">
                                     <a href="{{ url_for('campaigns.generate_report_page') }}">Generate Report</a>
                                 </li>
-                                <li class="submenu-item ">
+                                <li class="submenu-item">
                                     <a href="{{url_for('campaigns.send_campaign')}}">Send Campaign</a>
                                 </li>
-                                <li class="submenu-item ">
+                                <li class="submenu-item">
                                     <a href="{{url_for('templates.templates_list')}}">Templates</a>
                                 </li>
-                                <li class="submenu-item ">
-                                    <a href="{{url_for('upload_data.upload_file')}}">Add Members<a>
+                                <li class="submenu-item">
+                                    <a href="{{url_for('upload_data.upload_file')}}">Add Members</a>
                                 </li>
-                                <li class="submenu-item ">
+                                <li class="submenu-item">
                                     <a href="{{url_for('campaigns.show_all_collections_html')}}">Show Collections</a>
                                 </li> 
-                                <li class="submenu-item ">
+                                <li class="submenu-item">
                                     <a href="{{url_for('campaigns.audience')}}">Audience</a>
                                 </li>                         
                             </ul>
+                        </li>
+                        <li class="sidebar-item">
+                            <a href="{{ url_for('auth.change_password') }}" class='sidebar-link'>
+                                <i class="bi bi-lock"></i>
+                                <span>Change Password</span>
+                            </a>
                         </li>
                         <li class="sidebar-item">
                             <a href="{{ url_for('auth.logout') }}" class='sidebar-link'>
@@ -80,7 +86,7 @@
                 </div>
                 <button class="sidebar-toggler btn x"><i data-feather="x"></i></button>
             </div>
-
+        </div>
         <div id="main">
             <header class="mb-3">
                 <a href="#" class="burger-btn d-block d-xl-none">

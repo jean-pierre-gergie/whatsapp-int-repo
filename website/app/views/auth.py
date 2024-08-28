@@ -1,4 +1,4 @@
-from flask import Blueprint, request, jsonify, make_response, render_template, redirect, url_for, session , current_app
+from flask import Blueprint, request, jsonify, make_response, render_template, redirect, url_for, session , current_app,flash
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 import bcrypt
 
@@ -43,7 +43,6 @@ def before_request():
     if token:
         request.headers.environ['HTTP_AUTHORIZATION'] = f'Bearer {token}'
 
-
 @bp.route('/index')
 @jwt_required()
 def index():
@@ -61,3 +60,39 @@ def index():
     templates_data = [{"id": template.get('template_id'), "name": template.get('template_name')} for template in templates]
     
     return render_template('index.html', current_user=current_user, campaigns=campaigns_data, templates=templates_data)
+
+
+@bp.route('/change_password', methods=['GET', 'POST'])
+@jwt_required()
+def change_password():
+    if request.method == 'POST':
+        new_password = request.form.get('new_password')
+        confirm_password = request.form.get('confirm_password')
+
+        if not new_password or not confirm_password:
+            flash('Please fill out all fields', 'error')
+            return redirect(url_for('auth.change_password'))
+
+        if new_password != confirm_password:
+            flash('Passwords do not match', 'error')
+            return redirect(url_for('auth.change_password'))
+
+        hashed_password = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt())
+
+        current_user = get_jwt_identity()
+        username = current_user['username']
+
+        mongo_db = current_app.mongo
+        user_credentials_collection = mongo_db.user_credentials
+
+        result = user_credentials_collection.update_one(
+            {'username': username},
+            {'$set': {'user_password': hashed_password}}
+        )
+
+        if result.matched_count > 0:
+            flash('Password updated successfully', 'success')
+        else:
+            flash('Error updating password', 'error')
+                    
+    return render_template('change_password.html')
