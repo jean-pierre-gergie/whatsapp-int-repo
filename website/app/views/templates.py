@@ -25,8 +25,6 @@ def templates_list():
 
     return render_template('templates.html', templates=templates)
 
-
-
 @bp.route('/remove_template', methods=['POST'])
 @jwt_required()
 @role_required('admin')

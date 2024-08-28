@@ -91,7 +91,7 @@
             <section class="section">
                 <div class="card">
                     <div class="card-header">
-                        Audience Members
+                        Select a tag to view members associated with it                        
                         <form action="{{ url_for('campaigns.audience') }}" method="get" class="d-inline">
                             <div class="input-group">
                                 <select name="tag" class="form-select" onchange="this.form.submit()">
@@ -102,7 +102,18 @@
                                 </select>
                             </div>
                         </form>
+                        <!-- New dropdown and button for deleting by tag -->
+                        <div class="input-group mt-3">
+                           <select id="delete-tag-select" class="form-select">
+                                <option value="" selected>Select Tag to Delete members associated with it</option>
+                                {% for tag in tags %}
+                                    <option value="{{ tag }}">{{ tag }}</option>
+                                {% endfor %}
+                            </select>
+                            <button class="btn btn-danger ms-2" onclick="deleteByTag()">Delete by Tag</button>
+                        </div>
                     </div>
+                    
 
                     <div class="card-body">
                         <table class="table table-striped" id="table1">
@@ -121,6 +132,9 @@
                                     <td>{{ member.last_name }}</td>
                                     <td>{{ member.mobile }}</td>
                                     <td>{{ member.tag }}</td>
+                                    <td>
+                                        <button class="btn btn-danger btn-sm" onclick="removeMember('{{ member._id }}')">Remove</button>
+                                    </td>
                                 </tr>
                                 {% endfor %}
                             </tbody>
@@ -134,6 +148,59 @@
     <script src="./static/vendors/perfect-scrollbar/perfect-scrollbar.min.js"></script>
     <script src="./static/js/bootstrap.bundle.min.js"></script>
     <script src="./static/js/main.js"></script>
+    <script>
+        function removeMember(memberId) {
+            if (confirm('Are you sure you want to remove this member?')) {
+                fetch(`/audience/${memberId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('jwt_token')}` // Adjust if JWT is stored differently
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Member removed successfully.');
+                        location.reload(); // Reload to update list
+                    } else {
+                        alert('Failed to remove member.');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            }
+        }
+        
+        function deleteByTag() {
+            const selectedTag = document.getElementById('delete-tag-select').value;
+            if (!selectedTag) {
+                alert('Please select a tag to delete.');
+                return;
+            }
+        
+            if (confirm(`Are you sure you want to delete all members with the tag "${selectedTag}"?`)) {
+                fetch(`/audience/tag/${selectedTag}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('jwt_token')}` // Adjust if JWT is stored differently
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Members with tag deleted successfully.');
+                        location.reload(); // Reload to update list
+                    } else {
+                        alert('Failed to delete members by tag.');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            }
+        }
+        </script>
+        
+        
 </body>
 
 </html>

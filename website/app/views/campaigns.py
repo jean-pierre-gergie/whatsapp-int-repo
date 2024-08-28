@@ -6,6 +6,8 @@ from ..utils.helper_functions import send_message, upload_image,get_report,trans
 import os
 import csv
 from io import StringIO
+from bson import ObjectId
+
 
 bp = Blueprint('campaigns', __name__)
 
@@ -31,6 +33,34 @@ def audience():
     tags = audience_collection.distinct('tag')
     
     return render_template('audience.html', audience_list=audience_list, tags=tags, selected_tag=selected_tag)
+
+@bp.route('/audience/<member_id>', methods=['DELETE'])
+@jwt_required()
+@role_required('admin')
+def remove_member(member_id):
+    mongo_db = current_app.mongo
+    audience_collection = mongo_db.members
+
+    result = audience_collection.delete_one({'_id': ObjectId(member_id)})
+
+    if result.deleted_count > 0:
+        return jsonify({'success': True}), 200
+    else:
+        return jsonify({'success': False, 'error': 'Member not found'}), 404
+
+@bp.route('/audience/tag/<tag>', methods=['DELETE'])
+@jwt_required()
+@role_required('admin')
+def remove_members_by_tag(tag):
+    mongo_db = current_app.mongo
+    audience_collection = mongo_db.members
+
+    result = audience_collection.delete_many({'tag': tag})
+
+    if result.deleted_count > 0:
+        return jsonify({'success': True, 'deleted_count': result.deleted_count}), 200
+    else:
+        return jsonify({'success': False, 'error': 'No members found with this tag'}), 404
 
 
 @bp.route('/whatsapp')
