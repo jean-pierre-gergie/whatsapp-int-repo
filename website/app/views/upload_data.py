@@ -5,7 +5,6 @@ import os
 from pymongo import MongoClient
 
 bp = Blueprint('upload_data', __name__)
-
 @bp.route('/upload_file', methods=['GET', 'POST'])
 def upload_file():
     if request.method == 'POST':
@@ -21,15 +20,19 @@ def upload_file():
             print(f"Temporary file created at: {temp_file_path}")
 
             df = pd.read_csv(temp_file_path)
+
             if df.empty:
                 flash('The uploaded file is empty.', 'error')
                 os.remove(temp_file_path)
                 return render_template('upload.html')
 
+            df_preview = df.head(10)
+
             csv_columns = df.columns.tolist()
             db_columns = ['id', 'first_name', 'last_name', 'mobile', 'code', 'tag', 'middle_name']
 
-            csv_data_html = df.to_html(classes='data', header="true", index=False)
+            # Convert only the first 10 rows to HTML
+            csv_data_html = df_preview.to_html(classes='data', header="true", index=False)
 
             return render_template('mapping.html', 
                                    csv_columns=csv_columns, 
@@ -44,7 +47,6 @@ def upload_file():
             flash(f'An error occurred: {str(e)}', 'error')
             return render_template('upload.html')
     return render_template('upload.html')
-
 
 @bp.route('/map_columns', methods=['POST'])
 def map_columns():

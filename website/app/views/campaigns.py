@@ -20,19 +20,29 @@ def audience():
     mongo_db = current_app.mongo
     audience_collection = mongo_db.members
     
+    page = int(request.args.get('page', 1))  
+    per_page = 15  
+    offset = (page - 1) * per_page
+
     selected_tag = request.args.get('tag', None)
 
     if selected_tag:
-        audience_list = list(audience_collection.find({'tag': selected_tag}))
+        audience_list = list(audience_collection.find({'tag': selected_tag}).skip(offset).limit(per_page))
+        total_audience = audience_collection.count_documents({'tag': selected_tag})
     else:
-        audience_list = list(audience_collection.find())
+        audience_list = list(audience_collection.find().skip(offset).limit(per_page))
+        total_audience = audience_collection.count_documents({})
 
     for audience in audience_list:
         audience['_id'] = str(audience['_id'])
 
     tags = audience_collection.distinct('tag')
-    
-    return render_template('audience.html', audience_list=audience_list, tags=tags, selected_tag=selected_tag)
+
+    total_pages = (total_audience + per_page - 1) // per_page  
+
+    return render_template('audience.html', audience_list=audience_list, tags=tags, selected_tag=selected_tag, page=page, total_pages=total_pages)
+
+
 
 @bp.route('/audience/<member_id>', methods=['DELETE'])
 @jwt_required()
@@ -48,14 +58,18 @@ def remove_member(member_id):
     else:
         return jsonify({'success': False, 'error': 'Member not found'}), 404
 
+
 @bp.route('/audience/tag/<tag>', methods=['DELETE'])
 @jwt_required()
 @role_required('admin')
 def remove_members_by_tag(tag):
     mongo_db = current_app.mongo
     audience_collection = mongo_db.members
+    campaign_collection = mongo_db.campaign
 
     result = audience_collection.delete_many({'tag': tag})
+    campaign_collection.delete_one({'tag': tag})
+
 
     if result.deleted_count > 0:
         return jsonify({'success': True, 'deleted_count': result.deleted_count}), 200

@@ -26,6 +26,62 @@
 </head>
 <body>
     <div id="app">
+        <div id="sidebar" class="active">
+            <div class="sidebar-wrapper active">
+                <div class="sidebar-header">
+                    <div class="d-flex justify-content-between">
+                        <div class="toggler">
+                            <a href="#" class="sidebar-hide d-xl-none d-block"><i class="bi bi-x bi-middle"></i></a>
+                        </div>
+                    </div>
+                </div>
+                <div class="sidebar-menu">
+                    <ul class="menu">
+                        <li class="sidebar-title">Menu</li>
+
+                        <li class="sidebar-item active ">
+                            <a href="{{url_for('auth.index')}}" class='sidebar-link'>
+                                <i class="bi bi-grid-fill"></i>
+                                <span>Dashboard</span>
+                            </a>
+                        </li>
+
+                        <li class="sidebar-item  has-sub">
+                            <a href="#" class='sidebar-link'>
+                                <i class="bi bi-stack"></i>
+                                <span>Whatsapp Business</span>
+                            </a>
+                            <ul class="submenu ">
+                                <li class="submenu-item ">
+                                    <a href="{{ url_for('campaigns.generate_report_page') }}">Generate Report</a>
+                                </li>
+                                <li class="submenu-item ">
+                                    <a href="{{url_for('campaigns.send_campaign')}}">Send Campaign</a>
+                                </li>
+                                <li class="submenu-item ">
+                                    <a href="{{url_for('templates.templates_list')}}">Templates</a>
+                                </li>
+                                <li class="submenu-item ">
+                                    <a href="{{url_for('upload_data.upload_file')}}">Add Members<a>
+                                </li>
+                                <li class="submenu-item ">
+                                    <a href="{{url_for('campaigns.show_all_collections_html')}}">Show Collections</a>
+                                </li> 
+                                <li class="submenu-item ">
+                                    <a href="{{url_for('campaigns.audience')}}">Audience</a>
+                                </li>                         
+                            </ul>
+                        </li>
+                        <li class="sidebar-item">
+                            <a href="{{ url_for('auth.logout') }}" class='sidebar-link'>
+                                <i class="bi bi-box-arrow-right"></i>
+                                <span>Logout</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                <button class="sidebar-toggler btn x"><i data-feather="x"></i></button>
+            </div>
         <div id="main">
             <div class="page-heading">
                 <div class="page-title">

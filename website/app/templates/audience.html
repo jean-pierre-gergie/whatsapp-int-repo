@@ -123,6 +123,7 @@
                                     <th>Last Name</th>
                                     <th>Mobile Number</th>
                                     <th>Tag</th>
+                                    <th>Action</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -139,11 +140,33 @@
                                 {% endfor %}
                             </tbody>
                         </table>
+                        
+                        <!-- Pagination Controls -->
+                        <nav aria-label="Page navigation example">
+                            <ul class="pagination justify-content-center">
+                                {% if page > 1 %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('campaigns.audience', tag=selected_tag, page=page-1) }}" aria-label="Previous">
+                                        <span aria-hidden="true">&laquo;</span>
+                                    </a>
+                                </li>
+                                {% endif %}
+                                {% for p in range(1, total_pages + 1) %}
+                                <li class="page-item {% if p == page %}active{% endif %}">
+                                    <a class="page-link" href="{{ url_for('campaigns.audience', tag=selected_tag, page=p) }}">{{ p }}</a>
+                                </li>
+                                {% endfor %}
+                                {% if page < total_pages %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('campaigns.audience', tag=selected_tag, page=page+1) }}" aria-label="Next">
+                                        <span aria-hidden="true">&raquo;</span>
+                                    </a>
+                                </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
                     </div>
-                </div>
-            </section>
-        </div>
-    </div>
+                    
 
     <script src="./static/vendors/perfect-scrollbar/perfect-scrollbar.min.js"></script>
     <script src="./static/js/bootstrap.bundle.min.js"></script>
