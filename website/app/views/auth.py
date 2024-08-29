@@ -66,25 +66,42 @@ def index():
 @jwt_required()
 def change_password():
     if request.method == 'POST':
+        old_password = request.form.get('old_password')
         new_password = request.form.get('new_password')
         confirm_password = request.form.get('confirm_password')
 
-        if not new_password or not confirm_password:
+        if not old_password or not new_password or not confirm_password:
             flash('Please fill out all fields', 'error')
             return redirect(url_for('auth.change_password'))
 
         if new_password != confirm_password:
-            flash('Passwords do not match', 'error')
+            flash('New passwords do not match', 'error')
             return redirect(url_for('auth.change_password'))
 
-        hashed_password = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt())
-
+        # Get the current user identity from JWT
         current_user = get_jwt_identity()
         username = current_user['username']
 
+        # Fetch the user's current hashed password from the database
         mongo_db = current_app.mongo
         user_credentials_collection = mongo_db.user_credentials
 
+        user = user_credentials_collection.find_one({'username': username})
+
+        # Check if user exists and the passwords are correctly formatted
+        if user is None or not bcrypt.checkpw(old_password.encode('utf-8'), user['user_password'].encode('utf-8') if isinstance(user['user_password'], str) else user['user_password']):
+            flash('Old password is incorrect', 'error')
+            return redirect(url_for('auth.change_password'))
+
+        # Ensure the new password is different from the old one
+        if bcrypt.checkpw(new_password.encode('utf-8'), user['user_password'].encode('utf-8') if isinstance(user['user_password'], str) else user['user_password']):
+            flash('New password cannot be the same as the old password', 'error')
+            return redirect(url_for('auth.change_password'))
+
+        # Hash the new password
+        hashed_password = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt())
+
+        # Update the password in the database
         result = user_credentials_collection.update_one(
             {'username': username},
             {'$set': {'user_password': hashed_password}}
@@ -94,5 +111,6 @@ def change_password():
             flash('Password updated successfully', 'success')
         else:
             flash('Error updating password', 'error')
-                    
+
     return render_template('change_password.html')
+
