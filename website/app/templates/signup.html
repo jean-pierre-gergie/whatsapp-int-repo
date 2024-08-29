@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign Up</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./static/css/bootstrap.css">
+    <link rel="stylesheet" href="./static/css/app.css">
+    <link rel="shortcut icon" href="./static/images/favicon.svg" type="image/x-icon">
+</head>
+<body>
+    <div id="auth" class="container">
+        <div class="row justify-content-center">
+            <div class="col-lg-4 col-md-6 col-12">
+                <br><br><br><br><br><br>
+                <div class="card">
+                    <div class="card-body">
+                        <h4 class="card-title text-center">Sign Up</h4>
+                        {% if success %}
+                            <div class="alert alert-success text-center" role="alert">
+                                {{ message }}
+                            </div>
+                            <button class="btn btn-primary btn-block" onclick="window.location.href='{{ url_for('auth.login') }}'">Back to Login</button>
+                        {% else %}
+                            <form action="{{ url_for('auth.signup') }}" method="POST" id="signupForm">
+                                <div class="form-group">
+                                    <label for="username">Username</label>
+                                    <input type="text" id="username" name="username" class="form-control" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="password">Password</label>
+                                    <input type="password" id="password" name="password" class="form-control" required>
+                                </div>
+                                <div class="form-group">
+                                    <label for="role">Role</label>
+                                    <select id="role" name="role" class="form-control" required>
+                                        <option value="admin">Admin</option>
+                                        <option value="user">User</option>
+                                    </select>
+                                </div>
+                                <button type="submit" class="btn btn-primary btn-block">Sign Up</button>
+                            </form>
+                            {% if message %}
+                                <div id="error-message" class="text-danger mt-3 text-center">{{ message }}</div>
+                            {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

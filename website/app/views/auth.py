@@ -1,6 +1,8 @@
 from flask import Blueprint, request, jsonify, make_response, render_template, redirect, url_for, session , current_app,flash
 from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
 import bcrypt
+from bson.objectid import ObjectId 
+import uuid
 
 bp = Blueprint('auth', __name__)
 
@@ -78,30 +80,24 @@ def change_password():
             flash('New passwords do not match', 'error')
             return redirect(url_for('auth.change_password'))
 
-        # Get the current user identity from JWT
         current_user = get_jwt_identity()
         username = current_user['username']
 
-        # Fetch the user's current hashed password from the database
         mongo_db = current_app.mongo
         user_credentials_collection = mongo_db.user_credentials
 
         user = user_credentials_collection.find_one({'username': username})
 
-        # Check if user exists and the passwords are correctly formatted
         if user is None or not bcrypt.checkpw(old_password.encode('utf-8'), user['user_password'].encode('utf-8') if isinstance(user['user_password'], str) else user['user_password']):
             flash('Old password is incorrect', 'error')
             return redirect(url_for('auth.change_password'))
 
-        # Ensure the new password is different from the old one
         if bcrypt.checkpw(new_password.encode('utf-8'), user['user_password'].encode('utf-8') if isinstance(user['user_password'], str) else user['user_password']):
             flash('New password cannot be the same as the old password', 'error')
             return redirect(url_for('auth.change_password'))
 
-        # Hash the new password
         hashed_password = bcrypt.hashpw(new_password.encode('utf-8'), bcrypt.gensalt())
 
-        # Update the password in the database
         result = user_credentials_collection.update_one(
             {'username': username},
             {'$set': {'user_password': hashed_password}}
@@ -114,3 +110,32 @@ def change_password():
 
     return render_template('change_password.html')
 
+@bp.route('/signup', methods=['GET', 'POST'])
+def signup():
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')
+        role = request.form.get('role')
+
+        mongo_db = current_app.mongo
+        user_credentials_collection = mongo_db.user_credentials
+
+        if user_credentials_collection.find_one({'username': username}):
+            flash('Username already exists', 'error')
+            return render_template('signup.html', message='Username already exists')
+
+        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+
+        new_user = {
+            '_id': ObjectId(),
+            'user_id': str(uuid.uuid4()),  
+            'username': username,
+            'role': role,
+            'user_password': hashed_password.decode('utf-8')  
+        }
+
+        user_credentials_collection.insert_one(new_user)
+        flash('User created successfully', 'success')
+        return render_template('signup.html', message='User created successfully', success=True)
+
+    return render_template('signup.html', message='')
