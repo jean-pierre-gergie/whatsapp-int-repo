@@ -5,7 +5,7 @@ class Config:
     SECRET_KEY = '[Wfrs!HR7B<^NL>'
     JWT_SECRET_KEY = 'your_jwt_secret_key' 
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=1)
-    API_KEY = 'iHB20OJavj7OcHzCmfIKyCHlAK'
+    API_KEY = 'x3nZhZTVLqT2egKf81lfCsW3AK'
     
     from dotenv import load_dotenv
     load_dotenv()
