@@ -29,7 +29,14 @@
         <div id="sidebar" class="active">
             <div class="sidebar-wrapper active">
                 <div class="sidebar-header">
-                    <div class="d-flex justify-content-between">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <!-- Logo -->
+                        <div class="logo">
+                            <a href="{{ url_for('campaigns.generate_report_page') }}">
+                                <img src="{{ url_for('static', filename='images/logo/madalogo.png') }}" alt="Logo" style="height: 80px;">
+                            </a>
+                        </div>
+                        <!-- Toggler -->
                         <div class="toggler">
                             <a href="#" class="sidebar-hide d-xl-none d-block"><i class="bi bi-x bi-middle"></i></a>
                         </div>
@@ -37,7 +44,7 @@
                 </div>
                 <div class="sidebar-menu">
                     <ul class="menu">
-                        <li class="sidebar-title">Menu</li>
+                        <li class="sidebar-title">Omni-Channel</li>
 
                         <!-- Dashboard Dropdown -->
                         <li class="sidebar-item has-sub active">
@@ -61,13 +68,13 @@
                             </a>
                             <ul class="submenu">
                                 <li class="submenu-item">
-                                    <a href="{{url_for('campaigns.send_campaign')}}">Send Campaign</a>
+                                    <a href="{{url_for('campaigns.send_campaign')}}">Broadcast</a>
                                 </li>
                                 <li class="submenu-item">
                                     <a href="{{url_for('templates.templates_list')}}">Templates</a>
                                 </li>
                                 <li class="submenu-item">
-                                    <a href="{{url_for('upload_data.upload_file')}}">Add Members</a>
+                                    <a href="{{url_for('upload_data.upload_file')}}">Add To Database</a>
                                 </li>
                                 <li class="submenu-item">
                                     <a href="{{url_for('campaigns.show_all_collections_html')}}">Show Collections</a>
@@ -95,6 +102,7 @@
                 </div>
                 <button class="sidebar-toggler btn x"><i data-feather="x"></i></button>
             </div>
+        </div>
         </div>
         <div id="main">
             <div class="page-heading">
