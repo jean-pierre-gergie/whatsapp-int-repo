@@ -45,22 +45,27 @@
                     <ul class="menu">
                         <li class="sidebar-title">Menu</li>
 
-                        <li class="sidebar-item active ">
-                            <a href="{{url_for('auth.index')}}" class='sidebar-link'>
+                        <!-- Dashboard Dropdown -->
+                        <li class="sidebar-item has-sub active">
+                            <a href="#" class='sidebar-link'>
                                 <i class="bi bi-grid-fill"></i>
                                 <span>Dashboard</span>
-                            </a>
-                        </li>
-
-                        <li class="sidebar-item has-sub">
-                            <a href="#" class='sidebar-link'>
-                                <i class="bi bi-stack"></i>
-                                <span>Whatsapp Business</span>
                             </a>
                             <ul class="submenu">
                                 <li class="submenu-item">
                                     <a href="{{ url_for('campaigns.generate_report_page') }}">Generate Report</a>
                                 </li>
+                                <!-- Add more submenu items under Dashboard here if needed -->
+                            </ul>
+                        </li>
+
+                        <!-- WhatsApp Business Dropdown -->
+                        <li class="sidebar-item has-sub">
+                            <a href="#" class='sidebar-link'>
+                                <i class="bi bi-stack"></i>
+                                <span>WhatsApp Business</span>
+                            </a>
+                            <ul class="submenu">
                                 <li class="submenu-item">
                                     <a href="{{url_for('campaigns.send_campaign')}}">Send Campaign</a>
                                 </li>
@@ -78,6 +83,8 @@
                                 </li>                         
                             </ul>
                         </li>
+
+                        <!-- Other Menu Items -->
                         <li class="sidebar-item">
                             <a href="{{ url_for('auth.change_password') }}" class='sidebar-link'>
                                 <i class="bi bi-lock"></i>
