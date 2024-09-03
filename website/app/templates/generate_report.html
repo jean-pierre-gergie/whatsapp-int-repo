@@ -286,8 +286,22 @@ function updateChart(sent, delivered, read, failed) {
                 y: {
                     beginAtZero: true
                 }
+            },
+            plugins: {
+                datalabels: {
+                    anchor: 'end',
+                    align: 'end',
+                    color: '#000',
+                    font: {
+                        weight: 'bold'
+                    },
+                    formatter: function(value, context) {
+                        return value;
+                    }
+                }
             }
-        }
+        },
+        plugins: [ChartDataLabels] // Make sure to include this line
     });
 }
 
