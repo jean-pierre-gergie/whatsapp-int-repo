@@ -9,12 +9,11 @@
     <link rel="preconnect" href="https://fonts.gstatic.com">
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="./static/css/bootstrap.css">
-
     <link rel="stylesheet" href="./static/vendors/iconly/bold.css">
-
     <link rel="stylesheet" href="./static/vendors/perfect-scrollbar/perfect-scrollbar.css">
     <link rel="stylesheet" href="./static/vendors/bootstrap-icons/bootstrap-icons.css">
     <link rel="stylesheet" href="./static/css/app.css">
+    <link rel="stylesheet" href="./static/css/sidebar.css"> <!-- Link to the new CSS file -->
     <link rel="shortcut icon" href="./static/images/favicon.svg" type="image/x-icon">
 </head>
 
@@ -26,8 +25,8 @@
                     <div class="d-flex justify-content-between align-items-center">
                         <!-- Logo -->
                         <div class="logo">
-                            <a href="{{ url_for('campaigns.generate_report_page') }}">
-                                <img src="{{ url_for('static', filename='images/logo/madalogo.png') }}" alt="Logo" style="height: 80px;">
+                            <a href="{{ url_for('auth.index') }}">
+                                <img src="{{ url_for('static', filename='images/logo/madalogo.png') }}" alt="Logo" style="height: 120px;">
                             </a>
                         </div>
                         <!-- Toggler -->
@@ -38,8 +37,6 @@
                 </div>
                 <div class="sidebar-menu">
                     <ul class="menu">
-                        <li class="sidebar-title">Omni-Channel</li>
-
                         <!-- Dashboard Dropdown -->
                         <li class="sidebar-item has-sub active">
                             <a href="#" class='sidebar-link'>
@@ -50,7 +47,6 @@
                                 <li class="submenu-item">
                                     <a href="{{ url_for('campaigns.generate_report_page') }}">Generate Report</a>
                                 </li>
-                                <!-- Add more submenu items under Dashboard here if needed -->
                             </ul>
                         </li>
 
@@ -101,11 +97,9 @@
 
     <script src="./static/vendors/perfect-scrollbar/perfect-scrollbar.min.js"></script>
     <script src="./static/js/bootstrap.bundle.min.js"></script>
-
     <script src="./static/vendors/apexcharts/apexcharts.js"></script>
     <script src="./static/js/pages/dashboard.js"></script>
-
     <script src="./static/js/main.js"></script>
-    
+
 </body>
 </html>
