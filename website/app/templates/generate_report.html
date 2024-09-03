@@ -195,22 +195,17 @@ function generateReport(campaignName) {
             const totalCount = sentCount + deliveredCount + readCount + failedCount;
             const billableCount = totalCount - failedCount;
 
-            const sentPercent = totalCount ? ((sentCount / totalCount) * 100).toFixed(2) : 0;
-            const deliveredPercent = totalCount ? ((deliveredCount / totalCount) * 100).toFixed(2) : 0;
-            const readPercent = totalCount ? ((readCount / totalCount) * 100).toFixed(2) : 0;
-            const failedPercent = totalCount ? ((failedCount / totalCount) * 100).toFixed(2) : 0;
-
-            document.getElementById('sent-count').innerText = `${sentPercent}% (${sentCount})`;
-            document.getElementById('delivered-count').innerText = `${deliveredPercent}% (${deliveredCount})`;
-            document.getElementById('read-count').innerText = `${readPercent}% (${readCount})`;
-            document.getElementById('failed-count').innerText = `${failedPercent}% (${failedCount})`;
+            document.getElementById('sent-count').innerText = `${sentCount}`;
+            document.getElementById('delivered-count').innerText = `${deliveredCount}`;
+            document.getElementById('read-count').innerText = `${readCount}`;
+            document.getElementById('failed-count').innerText = `${failedCount}`;
 
             document.getElementById('total-count').innerText = `${totalCount}`;
             document.getElementById('billable-count').innerText = `${billableCount}`;
 
             document.getElementById('report-section').style.display = 'block';
 
-            updateChart(sentPercent, deliveredPercent, readPercent, failedPercent);
+            updateChart(sentCount, deliveredCount, readCount, failedCount);
 
             if (sentCount > 0) {
                 document.getElementById('download-sent').style.display = 'inline';
@@ -258,7 +253,6 @@ function generateReport(campaignName) {
 }
 
 function updateChart(sentCount, deliveredCount, readCount, failedCount) {
-
     const ctx = document.getElementById('report-chart').getContext('2d');
     if (window.reportChart) {
         window.reportChart.destroy();
@@ -313,7 +307,6 @@ function updateChart(sentCount, deliveredCount, readCount, failedCount) {
         plugins: [ChartDataLabels]
     });
 }
-
 
 </script>
 <script src="./static/vendors/perfect-scrollbar/perfect-scrollbar.min.js"></script>
