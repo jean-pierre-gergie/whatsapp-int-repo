@@ -167,8 +167,6 @@ document.getElementById('refresh-report').onclick = function() {
     generateReport(campaignName);
 };
 
-
-
 function generateReport(campaignName) {
     fetch('/generate_report', {
         method: 'POST',
@@ -195,6 +193,7 @@ function generateReport(campaignName) {
             const failedCount = data.status_counts.failed || 0;
 
             const totalCount = sentCount + deliveredCount + readCount + failedCount;
+            const billableCount = totalCount - failedCount;
 
             const sentPercent = totalCount ? ((sentCount / totalCount) * 100).toFixed(2) : 0;
             const deliveredPercent = totalCount ? ((deliveredCount / totalCount) * 100).toFixed(2) : 0;
@@ -207,6 +206,7 @@ function generateReport(campaignName) {
             document.getElementById('failed-count').innerText = `${failedPercent}% (${failedCount})`;
 
             document.getElementById('total-count').innerText = `${totalCount}`;
+            document.getElementById('billable-count').innerText = `${billableCount}`;
 
             document.getElementById('report-section').style.display = 'block';
 
@@ -321,6 +321,5 @@ function updateChart(sent, delivered, read, failed) {
 <script src="./static/js/pages/dashboard.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
 <script src="./static/js/main.js"></script>
-<!-- hello -->
 </body>
 </html>
