@@ -14,7 +14,6 @@
     <link rel="stylesheet" href="./static/css/sidebar.css"> <!-- Link to the new CSS file -->
     <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.svg') }}" type="image/x-icon">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.0.0"></script> <!-- Include the Data Labels plugin -->
 </head>
 <body>
     <div id="app">
@@ -265,7 +264,7 @@ function updateChart(sent, delivered, read, failed) {
         data: {
             labels: ['Sent', 'Delivered', 'Read', 'Failed'],
             datasets: [{
-                label: 'Message Status (%)',
+                label: 'Message Status (Count)',
                 data: [sent, delivered, read, failed],
                 backgroundColor: [
                     'rgba(75, 192, 192, 0.2)',
@@ -283,35 +282,22 @@ function updateChart(sent, delivered, read, failed) {
             }]
         },
         options: {
-            plugins: {
-                datalabels: {
-                    anchor: 'end',
-                    align: 'end',
-                    color: 'black',
-                    font: {
-                        weight: 'bold'
-                    },
-                    formatter: function(value) {
-                        return value + '%';
-                    }
-                }
-            },
             scales: {
                 y: {
-                    beginAtZero: true,
-                    max: 100
+                    beginAtZero: true
                 }
             }
-        },
-        plugins: [ChartDataLabels]  // Include the plugin to display the labels
+        }
     });
 }
-</script>
 
+</script>
 <script src="./static/vendors/perfect-scrollbar/perfect-scrollbar.min.js"></script>
 <script src="./static/js/bootstrap.bundle.min.js"></script>
+
 <script src="./static/vendors/apexcharts/apexcharts.js"></script>
 <script src="./static/js/pages/dashboard.js"></script>
+
 <script src="./static/js/main.js"></script>
 
 </body>
