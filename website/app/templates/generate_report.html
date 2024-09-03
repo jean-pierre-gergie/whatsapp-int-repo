@@ -143,6 +143,7 @@
                                 
                                 <!-- New Total Messages Paragraph -->
                                 <p><strong>Total Messages:</strong> <span id="total-count">0</span></p>
+                                <p><strong>Billable Messages:</strong> <span id="billable-count">0</span></p>
 
                                 <!-- New Refresh Button -->
                                 <button id="refresh-report" class="btn btn-success mt-3">Refresh Report</button>
@@ -165,6 +166,8 @@ document.getElementById('refresh-report').onclick = function() {
     const campaignName = document.getElementById('campaign_name').value;
     generateReport(campaignName);
 };
+
+
 
 function generateReport(campaignName) {
     fetch('/generate_report', {
