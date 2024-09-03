@@ -284,24 +284,29 @@ function updateChart(sent, delivered, read, failed) {
         options: {
             scales: {
                 y: {
-                    beginAtZero: true
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return Number(value); // Ensures that y-axis values are shown as numbers
+                        }
+                    }
                 }
             },
             plugins: {
                 datalabels: {
                     anchor: 'end',
-                    align: 'end',
+                    align: 'top', // Adjusts label position to be on top of the bar
                     color: '#000',
                     font: {
                         weight: 'bold'
                     },
                     formatter: function(value, context) {
-                        return value; // This line will display the exact value (number) on top of the bar
+                        return value; // Ensure the raw number is returned
                     }
                 }
             }
         },
-        plugins: [ChartDataLabels] // Make sure to include this line
+        plugins: [ChartDataLabels]
     });
 }
 
