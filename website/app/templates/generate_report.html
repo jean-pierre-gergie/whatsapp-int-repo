@@ -195,16 +195,24 @@ function generateReport(campaignName) {
             const totalCount = sentCount + deliveredCount + readCount + failedCount;
             const billableCount = totalCount - failedCount;
 
-            document.getElementById('sent-count').innerText = `${sentCount}`;
-            document.getElementById('delivered-count').innerText = `${deliveredCount}`;
-            document.getElementById('read-count').innerText = `${readCount}`;
-            document.getElementById('failed-count').innerText = `${failedCount}`;
+            // Calculate percentages
+            const sentPercent = totalCount ? ((sentCount / totalCount) * 100).toFixed(2) : 0;
+            const deliveredPercent = totalCount ? ((deliveredCount / totalCount) * 100).toFixed(2) : 0;
+            const readPercent = totalCount ? ((readCount / totalCount) * 100).toFixed(2) : 0;
+            const failedPercent = totalCount ? ((failedCount / totalCount) * 100).toFixed(2) : 0;
+
+            // Update legend with percentage and count
+            document.getElementById('sent-count').innerText = `${sentPercent}% (${sentCount})`;
+            document.getElementById('delivered-count').innerText = `${deliveredPercent}% (${deliveredCount})`;
+            document.getElementById('read-count').innerText = `${readPercent}% (${readCount})`;
+            document.getElementById('failed-count').innerText = `${failedPercent}% (${failedCount})`;
 
             document.getElementById('total-count').innerText = `${totalCount}`;
             document.getElementById('billable-count').innerText = `${billableCount}`;
 
             document.getElementById('report-section').style.display = 'block';
 
+            // Pass actual counts to the chart
             updateChart(sentCount, deliveredCount, readCount, failedCount);
 
             if (sentCount > 0) {
@@ -260,7 +268,7 @@ function updateChart(sentCount, deliveredCount, readCount, failedCount) {
     window.reportChart = new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: ['Sent', 'Sent-Delivered', 'Sent-Delivered-Read', 'Failed'],
+            labels: ['Sent', 'Delivered', 'Read', 'Failed'],
             datasets: [{
                 label: 'Message Status (Count)',
                 data: [sentCount, deliveredCount, readCount, failedCount],
