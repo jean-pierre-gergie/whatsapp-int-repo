@@ -296,7 +296,7 @@ function updateChart(sent, delivered, read, failed) {
                         weight: 'bold'
                     },
                     formatter: function(value, context) {
-                        return value;
+                        return value; // This line will display the exact value (number) on top of the bar
                     }
                 }
             }
@@ -313,6 +313,6 @@ function updateChart(sent, delivered, read, failed) {
 <script src="./static/js/pages/dashboard.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
 <script src="./static/js/main.js"></script>
-
+<!-- hello -->
 </body>
 </html>
