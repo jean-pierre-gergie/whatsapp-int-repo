@@ -260,7 +260,7 @@ function updateChart(sentCount, deliveredCount, readCount, failedCount) {
     window.reportChart = new Chart(ctx, {
         type: 'bar',
         data: {
-            labels: ['Sent', 'Delivered', 'Read', 'Failed'],
+            labels: ['Sent', 'Sent-Delivered', 'Sent-Delivered-Read', 'Failed'],
             datasets: [{
                 label: 'Message Status (Count)',
                 data: [sentCount, deliveredCount, readCount, failedCount],
