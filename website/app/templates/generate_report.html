@@ -257,7 +257,8 @@ function generateReport(campaignName) {
     });
 }
 
-function updateChart(sent, delivered, read, failed) {
+function updateChart(sentCount, deliveredCount, readCount, failedCount) {
+
     const ctx = document.getElementById('report-chart').getContext('2d');
     if (window.reportChart) {
         window.reportChart.destroy();
@@ -268,7 +269,7 @@ function updateChart(sent, delivered, read, failed) {
             labels: ['Sent', 'Delivered', 'Read', 'Failed'],
             datasets: [{
                 label: 'Message Status (Count)',
-                data: [sent, delivered, read, failed],
+                data: [sentCount, deliveredCount, readCount, failedCount],
                 backgroundColor: [
                     'rgba(75, 192, 192, 0.2)',
                     'rgba(54, 162, 235, 0.2)',
@@ -304,7 +305,7 @@ function updateChart(sent, delivered, read, failed) {
                         weight: 'bold'
                     },
                     formatter: function(value, context) {
-                        return value; // Ensure the raw number is returned
+                        return value; // Display the actual number on the bar
                     }
                 }
             }
@@ -312,6 +313,7 @@ function updateChart(sent, delivered, read, failed) {
         plugins: [ChartDataLabels]
     });
 }
+
 
 </script>
 <script src="./static/vendors/perfect-scrollbar/perfect-scrollbar.min.js"></script>
