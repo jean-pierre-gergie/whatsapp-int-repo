@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload CSV</title>
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./static/css/bootstrap.css">
+    <link rel="stylesheet" href="./static/vendors/iconly/bold.css">
+    <link rel="stylesheet" href="./static/vendors/perfect-scrollbar/perfect-scrollbar.css">
+    <link rel="stylesheet" href="./static/vendors/bootstrap-icons/bootstrap-icons.css">
+    <link rel="stylesheet" href="./static/css/app.css">
+    <link rel="stylesheet" href="./static/css/sidebar.css"> 
+    <link rel="shortcut icon" href="./static/images/favicon.svg" type="image/x-icon">
+</head>
+<body>
+    <div id="app">
+
+        {% include 'sidebar.html' %}
+        
+        <div id="main">
+            <div class="page-heading">
+                <div class="page-title">
+                    <h1>Upload CSV File</h1>
+                </div>
+                <section class="section">
+                    <div class="card">
+                        <div class="card-body">
+                            <form method="POST" action="{{ url_for('upload_data.upload_file') }}" enctype="multipart/form-data">
+                                <div class="form-group">
+                                    <input type="file" name="file" accept=".csv" class="form-control">
+                                </div>
+                                <div class="form-group">
+                                    <button type="submit" class="btn btn-primary">Upload</button>
+                                </div>
+                            </form>
+                            {% with messages = get_flashed_messages(with_categories=true) %}
+                              {% if messages %}
+                                <ul>
+                                  {% for category, message in messages %}
+                                    <li>{{ message }}</li>
+                                  {% endfor %}
+                                </ul>
+                              {% endif %}
+                            {% endwith %}
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+
+<script src="./static/vendors/perfect-scrollbar/perfect-scrollbar.min.js"></script>
+<script src="./static/js/bootstrap.bundle.min.js"></script>
+<script src="./static/js/main.js"></script>
+
+<script>
+// Disable drag-and-drop for the entire document
+document.addEventListener('dragover', function(event) {
+    event.preventDefault();
+    event.stopPropagation();
+});
+
+document.addEventListener('drop', function(event) {
+    event.preventDefault();
+    event.stopPropagation();
+});
+</script>

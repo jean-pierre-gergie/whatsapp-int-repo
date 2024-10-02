@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+
+  website:
+    build: 
+      context: ./website  # This specifies the directory containing your Dockerfile
+      dockerfile: Dockerfile  # This specifies the Dockerfile to use (optional if named 'Dockerfile')
+    container_name: website_container
+    restart: unless-stopped
+    ports:
+      - "1313:1313"  # Exposes the Flask app on port 1313
+
+    env_file: 
+      - .env  # Loads environment variables from the .env 
+      
+    volumes:
+      - ./website:/app  # Mounts the current directory to the container's /app directory
+    depends_on:
+      - mongodb
+
+  webhook_fa:
+    build: 
+      context: ./webhook_fa  # Specifies the directory containing your Dockerfile
+      dockerfile: Dockerfile  # Optional, specifies the Dockerfile to use
+    container_name: webhook_fa_container
+    restart: unless-stopped
+    ports:
+      - "5000:5000"  # Exposes the FastAPI app on port 5000
+    env_file: 
+      - .env  # Loads environment variables from the .env file
+    volumes:
+      - ./webhook_fa:/app  # Mounts the current directory to the container's /app directory
+    depends_on:
+      - mongodb
+
+  mongodb:
+    image: mongodb/mongodb-community-server:latest
+    container_name: mongodb_container
+    restart: unless-stopped
+    ports:
+      - "27017:27017"  # Exposes MongoDB on port 27017
+    volumes:
+      - mongo_data:/data/db:z  # Mounts the named volume to the MongoDB data directory
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD} 
+
+    
+volumes:
+  mongo_data:
+    driver: local

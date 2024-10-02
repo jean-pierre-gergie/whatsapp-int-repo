@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Send Campaign</title>
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./static/css/bootstrap.css">
+    <link rel="stylesheet" href="./static/vendors/iconly/bold.css">
+    <link rel="stylesheet" href="./static/vendors/perfect-scrollbar/perfect-scrollbar.css">
+    <link rel="stylesheet" href="./static/vendors/bootstrap-icons/bootstrap-icons.css">
+    <link rel="stylesheet" href="./static/css/app.css">
+    <link rel="stylesheet" href="./static/css/sidebar.css"> 
+    <link rel="shortcut icon" href="./static/images/favicon.svg" type="image/x-icon">
+</head>
+<body>
+    <div id="app">
+
+        {% include 'sidebar.html' %}
+        
+        <div id="main">
+            <div class="page-heading">
+                <div class="page-title">
+                    <div class="row">
+                        <div class="col-12 col-md-6 order-md-1 order-last">
+                            <h3>WhatsApp Integration</h3>
+                            <p class="text-subtitle text-muted">Manage your WhatsApp campaigns and messages.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <section class="section">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4 class="card-title">Send Campaign Messages</h4>
+                        </div>
+                        <div class="card-body">
+                            <div id="send-status" class="alert alert-info" style="display:none;">Sending...</div>
+                            <form id="campaign-message-form" method="POST" enctype="multipart/form-data" action="{{ url_for('campaigns.send_campaign_messages') }}">
+                                <div class="form-group">
+                                    <label for="campaign">Tag</label>
+                                    <select name="campaign" id="campaign" class="form-control" required>
+                                        {% for campaign in campaigns %}
+                                            <option value="{{ campaign.tag }}">{{ campaign.tag }}</option>
+                                        {% endfor %}
+                                    </select>
+
+                                    <div class="form-group">
+                                        <label for="campaign_name">Campaign Name</label>
+                                        <input type="text" id="campaign_name" name="campaign_name" class="form-control" placeholder="Enter a name for your campaign" required>
+                                    </div>
+                                </div>
+                                <div class="col-md-6 col-12">
+                                    <div class="form-group">
+                                        <label for="campaign_template">Template</label>
+                                        <select name="campaign_template" id="campaign_template" class="form-control" required onchange="updateTemplatePreview('campaign_template', 'campaign-template-preview')">
+                                            {% for template in templates %}
+                                                {% if template.status == 'approved' %}
+                                                    <option value="{{ template.template_name }}">{{ template.template_name }}</option>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div class="form-group">
+                                        <label for="campaign-template-preview">Template Preview</label>
+                                        <div id="campaign-template-preview" class="alert alert-info">
+                                            Select a template to see a preview here.
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-12">
+                                    <div id="variable-fields-container" class="form-group">
+                                        <!-- Variable fields will be inserted here -->
+                                    </div>
+                                </div>
+                                <div class="col-md-6 col-12">
+                                    <div class="form-group" id="image-field" style="display: none;">
+                                        <label for="file">Image File</label>
+                                        <input type="file" id="file" name="file" class="form-control">
+                                    </div>
+                                </div>
+                                <div class="col-12 d-flex justify-content-end">
+                                    <button type="submit" class="btn btn-primary me-1 mb-1">Send Campaign</button>
+                                    <button type="reset" class="btn btn-light-secondary me-1 mb-1">Reset</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+
+<script>
+    const db_columns = ['id', 'first_name', 'last_name', 'mobile', 'code', 'tag', 'middle_name'];
+
+    function updateTemplatePreview(selectId, previewId) {
+        const templateSelect = document.getElementById(selectId);
+        const previewContainer = document.getElementById(previewId);
+        const selectedTemplate = templateSelect.value;
+
+        fetch('/get_template_text', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ template_name: selectedTemplate })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                previewContainer.innerHTML = data.texts.join('<br>');
+                updateVariableFields(data.variable_count);
+                toggleImageField(data.has_image);
+                alignTextBasedOnLanguage(previewContainer);  // Align text based on language
+            } else {
+                previewContainer.textContent = 'Template not found.';
+                updateVariableFields(0);
+                toggleImageField(false);
+            }
+        })
+        .catch(error => {
+            previewContainer.textContent = 'An error occurred while fetching the template preview.';
+            console.error('Error fetching template preview:', error);
+            updateVariableFields(0);
+            toggleImageField(false);
+        });
+    }
+
+    function updateVariableFields(variableCount) {
+        const container = document.getElementById('variable-fields-container');
+        container.innerHTML = ''; // Clear existing fields
+
+        for (let i = 1; i <= variableCount; i++) {
+            const field = document.createElement('div');
+            field.className = 'form-group';
+            const label = document.createElement('label');
+            label.textContent = `Variable ${i}`;
+            const dropdown = createDropdown(i);
+            field.appendChild(label);
+            field.appendChild(dropdown);
+            container.appendChild(field);
+        }
+    }
+
+    function createDropdown(variableIndex) {
+        const select = document.createElement('select');
+        select.id = `variable_${variableIndex}`;
+        select.name = `variables[]`;
+        select.className = 'form-control';
+        select.required = true;
+
+        db_columns.forEach(column => {
+            const option = document.createElement('option');
+            option.value = column;
+            option.textContent = column.charAt(0).toUpperCase() + column.slice(1);
+            select.appendChild(option);
+        });
+
+        return select;
+    }
+
+    function toggleImageField(hasImage) {
+        const imageField = document.getElementById('image-field');
+        if (hasImage) {
+            imageField.style.display = 'block';
+        } else {
+            imageField.style.display = 'none';
+        }
+    }
+
+    function alignTextBasedOnLanguage(element) {
+        const text = element.textContent.trim();
+        if (text.length > 0 && /[\u0600-\u06FF]/.test(text[0])) {
+            element.style.direction = 'rtl';
+            element.style.textAlign = 'right';
+        } else {
+            element.style.direction = 'ltr';
+            element.style.textAlign = 'left';
+        }
+    }
+
+    document.getElementById('campaign-message-form').onsubmit = function(event) {
+    event.preventDefault(); 
+
+    if (confirm("Are you sure you want to send the campaign messages?")) {
+        document.getElementById('send-status').style.display = 'block';
+        document.getElementById('send-status').textContent = "Sending...";
+
+        fetch('{{ url_for("campaigns.send_campaign_messages") }}', {
+            method: 'POST',
+            body: new FormData(this)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const campaignName = data.campaign_name;  // Get the campaign name from the response
+
+                document.getElementById('send-status').textContent = "Campaign is being processed...";
+
+                // Poll the server to get the campaign status
+                pollCampaignStatus(campaignName);  // Pass campaignName to the polling function
+            } else if (data.error) {
+                document.getElementById('send-status').style.display = 'none';
+                alert(data.error);
+            } else {
+                document.getElementById('send-status').style.display = 'none';
+                alert('An error occurred while sending messages.');
+            }
+        })
+        .catch(error => {
+            document.getElementById('send-status').style.display = 'none';
+            console.error('Error:', error);
+            alert('An error occurred while sending messages.');
+        });
+    }
+};
+
+function pollCampaignStatus(campaignName) {
+    let pollInterval = setInterval(() => {
+        fetch(`/campaign_status/${campaignName}`)  // Use the campaignName in the URL
+        .then(response => response.json())
+        .then(data => {
+            console.log('Polling response:', data);  // Log the full response
+
+            const sentCount = data.sent_count;
+            const failedCount = data.failed_count;
+
+            if (sentCount > 0 || failedCount > 0) {
+                document.getElementById('send-status').textContent = `Send Complete: ${sentCount} sent, ${failedCount} failed.`;
+                clearInterval(pollInterval);
+            } else {
+                // Continue polling if counts are still 0
+                document.getElementById('send-status').textContent = "Processing campaign..."; 
+            }
+        })
+        .catch(error => {
+            console.error('Error fetching campaign status:', error);
+        });
+    }, 1000);  // Poll every 1 second
+}
+</script>
+
+<script src="./static/vendors/perfect-scrollbar/perfect-scrollbar.min.js"></script>
+<script src="./static/js/bootstrap.bundle.min.js"></script>
+<script src="./static/js/main.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Generate Report</title>
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendors/iconly/bold.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendors/perfect-scrollbar/perfect-scrollbar.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendors/bootstrap-icons/bootstrap-icons.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+    <link rel="stylesheet" href="./static/css/sidebar.css"> 
+    <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.svg') }}" type="image/x-icon">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <div id="app">
+        
+        {% include 'sidebar.html' %}
+
+        <div id="main">
+            <div class="page-heading">
+                <div class="page-title">
+                    <div class="row">
+                        <div class="col-12 col-md-6 order-md-1 order-last">
+                            <h3>WhatsApp Integration</h3>
+                            <p class="text-subtitle text-muted">Generate a report for your WhatsApp campaigns.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <section class="section">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4 class="card-title">Generate Campaign Report</h4>
+                        </div>
+                        <div class="card-body">
+                            <form id="report-form" method="POST" action="{{ url_for('campaigns.generate_report') }}">
+                                <div class="form-group">
+                                    <label for="campaign_name">Campaign Name</label>
+                                    <select id="campaign_name" name="campaign_name" class="form-control" required>
+                                        {% for campaign in campaign_names %}
+                                            <option value="{{ campaign.name }}">{{ campaign.name }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>                                
+                                <div class="col-12 d-flex justify-content-end">
+                                    <button type="submit" class="btn btn-primary me-1 mb-1">Generate Report</button>
+                                    <button type="reset" class="btn btn-light-secondary me-1 mb-1">Reset</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="section" id="report-section" style="display: none;">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4 class="card-title">Report Results</h4>
+                        </div>
+                        <div class="card-body">
+                            <div id="report-results">
+                                <canvas id="report-chart" width="400" height="200"></canvas>
+                                <p><strong>Sent:</strong> <span id="sent-count">0</span> <a href="#" id="download-sent">Download CSV</a></p>
+                                <p><strong>Delivered:</strong> <span id="delivered-count">0</span> <a href="#" id="download-delivered">Download CSV</a></p>
+                                <p><strong>Read:</strong> <span id="read-count">0</span> <a href="#" id="download-read">Download CSV</a></p>
+                                <p><strong>Failed:</strong> <span id="failed-count">0</span> <a href="#" id="download-failed">Download CSV</a></p>
+                                
+                                <!-- New Total Messages Paragraph -->
+                                <p><strong>Total Messages:</strong> <span id="total-count">0</span></p>
+                                <p><strong>Billable Messages:</strong> <span id="billable-count">0</span></p>
+
+                                <!-- New Refresh Button -->
+                                <button id="refresh-report" class="btn btn-success mt-3">Refresh Report</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+
+<script>
+document.getElementById('report-form').onsubmit = function(event) {
+    event.preventDefault(); 
+    const campaignName = document.getElementById('campaign_name').value;
+    generateReport(campaignName);
+};
+
+document.getElementById('refresh-report').onclick = function() {
+    const campaignName = document.getElementById('campaign_name').value;
+    generateReport(campaignName);
+};
+
+function generateReport(campaignName) {
+    fetch('/generate_report', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ campaign_name: campaignName })
+    })
+    .then(response => {
+        if (!response.ok) {
+            return response.json().then(data => {
+                throw new Error(data.message || 'An error occurred while generating the report.');
+            });
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            alert('Report generated successfully.');
+
+            const sentCount = data.status_counts.sent || 0;
+            const deliveredCount = data.status_counts.delivered || 0;
+            const readCount = data.status_counts.read || 0;
+            const failedCount = data.status_counts.failed || 0;
+
+            const totalCount = sentCount + deliveredCount + readCount + failedCount;
+            const billableCount = totalCount - failedCount;
+
+            // Calculate percentages
+            const sentPercent = totalCount ? ((sentCount / totalCount) * 100).toFixed(2) : 0;
+            const deliveredPercent = totalCount ? ((deliveredCount / totalCount) * 100).toFixed(2) : 0;
+            const readPercent = totalCount ? ((readCount / totalCount) * 100).toFixed(2) : 0;
+            const failedPercent = totalCount ? ((failedCount / totalCount) * 100).toFixed(2) : 0;
+
+            // Update legend with percentage and count
+            document.getElementById('sent-count').innerText = `${sentPercent}% (${sentCount})`;
+            document.getElementById('delivered-count').innerText = `${deliveredPercent}% (${deliveredCount})`;
+            document.getElementById('read-count').innerText = `${readPercent}% (${readCount})`;
+            document.getElementById('failed-count').innerText = `${failedPercent}% (${failedCount})`;
+
+            document.getElementById('total-count').innerText = `${totalCount}`;
+            document.getElementById('billable-count').innerText = `${billableCount}`;
+
+            document.getElementById('report-section').style.display = 'block';
+
+            // Pass actual counts to the chart
+            updateChart(sentCount, deliveredCount, readCount, failedCount);
+
+            if (sentCount > 0) {
+                document.getElementById('download-sent').style.display = 'inline';
+                document.getElementById('download-sent').href = `/download_csv/sent?campaign_name=${campaignName}`;
+            } else {
+                document.getElementById('download-sent').style.display = 'none';
+            }
+
+            if (deliveredCount > 0) {
+                document.getElementById('download-delivered').style.display = 'inline';
+                document.getElementById('download-delivered').href = `/download_csv/delivered?campaign_name=${campaignName}`;
+            } else {
+                document.getElementById('download-delivered').style.display = 'none';
+            }
+
+            if (readCount > 0) {
+                document.getElementById('download-read').style.display = 'inline';
+                document.getElementById('download-read').href = `/download_csv/read?campaign_name=${campaignName}`;
+            } else {
+                document.getElementById('download-read').style.display = 'none';
+            }
+
+            if (failedCount > 0) {
+                document.getElementById('download-failed').style.display = 'inline';
+                document.getElementById('download-failed').href = `/download_csv/failed?campaign_name=${campaignName}`;
+            } else {
+                document.getElementById('download-failed').style.display = 'none';
+            }
+        } else {
+            alert(data.message || 'An error occurred while generating the report.');
+
+            document.getElementById('sent-count').innerText = "0";
+            document.getElementById('delivered-count').innerText = "0";
+            document.getElementById('read-count').innerText = "0";
+            document.getElementById('failed-count').innerText = "0";
+
+            document.getElementById('report-chart').style.display = 'none';
+            document.getElementById('report-section').style.display = 'none';
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert(error.message);
+    });
+}
+
+function updateChart(sentCount, deliveredCount, readCount, failedCount) {
+    const ctx = document.getElementById('report-chart').getContext('2d');
+    if (window.reportChart) {
+        window.reportChart.destroy();
+    }
+    window.reportChart = new Chart(ctx, {
+        type: 'bar',
+        data: {
+            labels: ['Sent', 'Delivered', 'Read', 'Failed'],
+            datasets: [{
+                label: 'Message Status (Count)',
+                data: [sentCount, deliveredCount, readCount, failedCount],
+                backgroundColor: [
+                    'rgba(75, 192, 192, 0.2)',
+                    'rgba(54, 162, 235, 0.2)',
+                    'rgba(255, 206, 86, 0.2)',
+                    'rgba(255, 99, 132, 0.2)'
+                ],
+                borderColor: [
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(255, 206, 86, 1)',
+                    'rgba(255, 99, 132, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return Number(value); // Ensures that y-axis values are shown as numbers
+                        }
+                    }
+                }
+            },
+            plugins: {
+                datalabels: {
+                    anchor: 'end',
+                    align: 'top', // Adjusts label position to be on top of the bar
+                    color: '#000',
+                    font: {
+                        weight: 'bold'
+                    },
+                    formatter: function(value, context) {
+                        return value; // Display the actual number on the bar
+                    }
+                }
+            }
+        },
+        plugins: [ChartDataLabels]
+    });
+}
+
+</script>
+<script src="./static/vendors/perfect-scrollbar/perfect-scrollbar.min.js"></script>
+<script src="./static/js/bootstrap.bundle.min.js"></script>
+
+<script src="./static/vendors/apexcharts/apexcharts.js"></script>
+<script src="./static/js/pages/dashboard.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels"></script>
+<script src="./static/js/main.js"></script>
+</body>
+</html>

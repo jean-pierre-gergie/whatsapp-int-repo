@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audience</title>
+
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./static/css/bootstrap.css">
+    <link rel="stylesheet" href="./static/vendors/iconly/bold.css">
+    <link rel="stylesheet" href="./static/vendors/perfect-scrollbar/perfect-scrollbar.css">
+    <link rel="stylesheet" href="./static/vendors/bootstrap-icons/bootstrap-icons.css">
+    <link rel="stylesheet" href="./static/css/app.css">
+    <link rel="stylesheet" href="./static/css/sidebar.css"> 
+    <link rel="shortcut icon" href="./static/images/favicon.svg" type="image/x-icon">
+    <style>
+        #template-preview, #single-template-preview {
+            background-color: #f8f9fa; /* Light grey background */
+            color: #000000; 
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        {% include 'sidebar.html' %}
+        <div id="main">
+            <header class="mb-3">
+                <a href="#" class="burger-btn d-block d-xl-none">
+                    <i class="bi bi-justify fs-3"></i>
+                </a>
+            </header>
+
+            <section class="section">
+                <div class="card">
+                    <div class="card-header">
+                        Select a tag to view members associated with it                        
+                        <form action="{{ url_for('campaigns.audience') }}" method="get" class="d-inline">
+                            <div class="input-group">
+                                <select name="tag" class="form-select" onchange="this.form.submit()">
+                                    <option value="" {% if not selected_tag %}selected{% endif %}>All Tags</option>
+                                    {% for tag in tags %}
+                                        <option value="{{ tag }}" {% if selected_tag == tag %}selected{% endif %}>{{ tag }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </form>
+                        <!-- New dropdown and button for deleting by tag -->
+                        <div class="input-group mt-3">
+                           <select id="delete-tag-select" class="form-select">
+                                <option value="" selected>Select Tag to Delete members associated with it</option>
+                                {% for tag in tags %}
+                                    <option value="{{ tag }}">{{ tag }}</option>
+                                {% endfor %}
+                            </select>
+                            <button class="btn btn-danger ms-2" onclick="deleteByTag()">Delete by Tag</button>
+                        </div>
+                    </div>
+                    
+
+                    <div class="card-body">
+                        <table class="table table-striped" id="table1">
+                            <thead>
+                                <tr>
+                                    <th>First Name</th>
+                                    <th>Last Name</th>
+                                    <th>Mobile Number</th>
+                                    <th>Tag</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for member in audience_list %}
+                                <tr>
+                                    <td>{{ member.first_name }}</td>
+                                    <td>{{ member.last_name }}</td>
+                                    <td>{{ member.mobile }}</td>
+                                    <td>{{ member.tag }}</td>
+                                    <td>
+                                        <button class="btn btn-danger btn-sm" onclick="removeMember('{{ member._id }}')">Remove</button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                        
+                        <!-- Pagination Controls -->
+                        <nav aria-label="Page navigation example">
+                            <ul class="pagination justify-content-center">
+                                {% if page > 1 %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('campaigns.audience', tag=selected_tag, page=page-1) }}" aria-label="Previous">
+                                        <span aria-hidden="true">&laquo;</span>
+                                    </a>
+                                </li>
+                                {% endif %}
+                                {% for p in range(1, total_pages + 1) %}
+                                <li class="page-item {% if p == page %}active{% endif %}">
+                                    <a class="page-link" href="{{ url_for('campaigns.audience', tag=selected_tag, page=p) }}">{{ p }}</a>
+                                </li>
+                                {% endfor %}
+                                {% if page < total_pages %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('campaigns.audience', tag=selected_tag, page=page+1) }}" aria-label="Next">
+                                        <span aria-hidden="true">&raquo;</span>
+                                    </a>
+                                </li>
+                                {% endif %}
+                            </ul>
+                        </nav>
+                    </div>
+                    
+
+    <script src="./static/vendors/perfect-scrollbar/perfect-scrollbar.min.js"></script>
+    <script src="./static/js/bootstrap.bundle.min.js"></script>
+    <script src="./static/js/main.js"></script>
+    <script>
+        function removeMember(memberId) {
+            if (confirm('Are you sure you want to remove this member?')) {
+                fetch(`/audience/${memberId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('jwt_token')}` // Adjust if JWT is stored differently
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Member removed successfully.');
+                        location.reload(); // Reload to update list
+                    } else {
+                        alert('Failed to remove member.');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            }
+        }
+        
+        function deleteByTag() {
+            const selectedTag = document.getElementById('delete-tag-select').value;
+            if (!selectedTag) {
+                alert('Please select a tag to delete.');
+                return;
+            }
+        
+            if (confirm(`Are you sure you want to delete all members with the tag "${selectedTag}"?`)) {
+                fetch(`/audience/tag/${selectedTag}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${localStorage.getItem('jwt_token')}` // Adjust if JWT is stored differently
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Members with tag deleted successfully.');
+                        location.reload(); // Reload to update list
+                    } else {
+                        alert('Failed to delete members by tag.');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            }
+        }
+        </script>
+        
+        
+</body>
+
+</html>

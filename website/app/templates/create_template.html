@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Create WhatsApp Template</title>
+	<link rel="preconnect" href="https://fonts.gstatic.com">
+	<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="./static/css/bootstrap.css">
+	<link rel="stylesheet" href="./static/vendors/iconly/bold.css">
+	<link rel="stylesheet" href="./static/vendors/perfect-scrollbar/perfect-scrollbar.css">
+	<link rel="stylesheet" href="./static/vendors/bootstrap-icons/bootstrap-icons.css">
+	<link rel="stylesheet" href="./static/css/app.css">
+	<link rel="stylesheet" href="./static/css/sidebar.css"> 
+	<link rel="shortcut icon" href="./static/images/favicon.svg" type="image/x-icon">
+	<style>
+	.btn-active {
+		background-color: #007bff;
+		/* Example: Bootstrap primary color */
+		color: white;
+	}
+	</style>
+</head>
+
+<body>
+	<div id="app">
+        {% include 'sidebar.html' %}
+		<div id="main">
+			<header class="mb-3">
+				<a href="#" class="burger-btn d-block d-xl-none">
+					<i class="bi bi-justify fs-3"></i>
+				</a>
+			</header>
+			<div class="page-heading">
+				<div class="page-title">
+					<div class="row">
+						<div class="col-12 col-md-6">
+							<h3>Create WhatsApp Template</h3>
+							<p class="text-subtitle text-muted">Fill in the details to create a new template.</p>
+						</div>
+					</div>
+				</div>
+				<section class="section">
+					<div class="card">
+						<div class="card-header">
+							<h4 class="card-title">New Template</h4>
+						</div>
+						<div class="card-body">
+							<form method="POST" action="/create_template" class="form form-horizontal">
+								<!-- Bootstrap Modal for Popup Messages -->
+								<div class="modal fade" id="responseModal" tabindex="-1" aria-labelledby="responseModalLabel" aria-hidden="true">
+									<div class="modal-dialog">
+										<div class="modal-content">
+											<div class="modal-header">
+												<h5 class="modal-title" id="responseModalLabel">Message</h5>
+												<button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+											</div>
+											<div class="modal-body" id="modalMessageBody">
+												<!-- Message content will be inserted here dynamically -->
+											</div>
+											<div class="modal-footer">
+												<button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+											</div>
+										</div>
+									</div>
+								</div>
+								<div class="row">
+									<div class="col-md-6 col-12">
+										<div class="form-group">
+											<label for="template_name">Template Name</label>
+											<br><small class="form-text text-muted"> Enter a name consisting of lower case letters, digits, and underscores (_). Do not use other characters or spaces. </small>
+											<input type="text" id="template_name" name="template_name" class="form-control" placeholder="Template Name" required>
+										</div>
+									</div>
+									<div class="col-md-6 col-12">
+										<div class="form-group">
+											<label for="category">Category</label>
+											<br><small class="form-text text-muted"> You can’t change the category of a template after the template is registered </small>
+											<select name="category" id="category" class="form-control" required>
+												<option value="MARKETING">Marketing</option>
+												<option value="UTILITY">Utility</option>
+												<option value="AUTHENTICATION">Authentication</option>
+											</select>
+										</div>
+									</div>
+									<div class="col-md-6 col-12">
+										<div class="form-group">
+											<label for="language">Language</label><br>
+											<!-- Add description text below the label -->
+											<small class="form-text text-muted"> Select a language that matches the language of the template text. If the languages don’t match, the template will be rejected. </small>
+											<select name="language" id="language" class="form-control" required> {% for lang in languages %} <option value="{{ lang.Code }}">{{ lang.Language }}</option> {% endfor %} </select>
+										</div>
+									</div>
+									<!-- Header Type Selection -->
+									<div class="col-md-6 col-12">
+										<div class="form-group">
+											<br><label for="header_type">Header Type</label>
+											<select name="header_type" id="header_type" class="form-control" onchange="updateHeaderFields()">
+												<option value="TEXT">Text</option>
+												<option value="IMAGE">Image</option>
+											</select>
+										</div>
+									</div>
+									<!-- Header Text Field -->
+									<div class="col-md-6 col-12" id="header_text_field">
+										<div class="form-group">
+											<label for="header_text">Header Text (optional)</label>
+											<input type="text" id="header_text" name="header_text" class="form-control" placeholder="Header Text">
+										</div>
+									</div>
+									<!-- Header Image URL Field (Initially hidden) -->
+									<div class="col-md-6 col-12" id="header_image_url_field" style="display:none;">
+										<div class="form-group">
+											<label for="header_image_url">Header Image URL (required for image header)</label>
+											<input type="url" id="header_image_url" name="header_image_url" class="form-control" placeholder="Image URL">
+										</div>
+									</div>
+									<div class="col-md-12 col-12">
+										<div class="form-group">
+											<label for="body_text">Body Text</label>
+											<div id="body_text" contenteditable="true" class="form-control" style="height: 100px; overflow:auto; border: 1px solid #ced4da; padding: 10px;"></div>
+											<input type="hidden" id="body_text_hidden" name="body_text" required>
+											<!-- Buttons to format text and align text -->
+											<div class="mt-2">
+												<button type="button" class="btn btn-secondary" onclick="formatText('bold')">Bold</button>
+												<button type="button" class="btn btn-secondary" onclick="formatText('italic')">Italic</button>
+												<button type="button" class="btn btn-secondary" onclick="alignText('left')">Align Left</button>
+												<button type="button" class="btn btn-secondary" onclick="alignText('right')">Align Right</button>
+												<button type="button" class="btn btn-secondary" onclick="insertVariable()">Insert Variable</button>
+											</div><br>
+											<div id="sequentialErrorMessage" class="alert alert-danger" style="display: none;"> Variables must be in sequential order (e.g., {{1}}, {{2}}, {{3}}). Please correct the order. </div>
+										</div>
+										<div class="col-md-12 col-12" id="body_examples_container">
+											<!-- Example fields will be appended here -->
+										</div>
+									</div>
+									<div class="col-md-12 col-12">
+										<div class="form-group">
+											<label for="footer_text">Footer Text (optional)</label>
+											<input type="text" id="footer_text" name="footer_text" class="form-control" placeholder="Footer Text">
+										</div>
+									</div>
+									<!-- Allow Category Change -->
+									<div class="col-md-12 col-12">
+										<div class="form-group">
+											<label for="allow_category_change">Allow Category Change</label>
+											<input type="checkbox" id="allow_category_change" name="allow_category_change">
+										</div>
+									</div>
+									<!-- Buttons Section -->
+									<div class="col-md-12 col-12">
+										<h5>Buttons</h5>
+										<div id="buttons-container">
+											<div class="button-entry">
+												<div class="row">
+													<div class="col-md-4 col-12">
+														<div class="form-group">
+															<label for="button_type">Button Type (optional)</label>
+															<select name="button_type" class="form-control button-type" onchange="updateButtonFields(this)">
+																<option value="">Select Button Type</option>
+																<option value="PHONE_NUMBER">Phone Number</option>
+																<option value="URL">URL</option>
+																<option value="QUICK_REPLY">Quick Reply</option>
+																<option value="COPY_CODE">Copy Code</option>
+															</select>
+														</div>
+													</div>
+													<div class="col-md-4 col-12">
+														<div class="form-group">
+															<label for="button_text">Button Text</label>
+															<input type="text" name="button_text" class="form-control button-text" placeholder="Button Text">
+														</div>
+													</div>
+													<div class="col-md-4 col-12 button-field phone-number-field" style="display: none;">
+														<div class="form-group">
+															<label for="phone_number">Phone Number</label>
+															<input type="text" name="phone_number" class="form-control phone-number" placeholder="Phone Number">
+														</div>
+													</div>
+													<div class="col-md-4 col-12 button-field url-field" style="display: none;">
+														<div class="form-group">
+															<label for="url">URL</label>
+															<input type="text" name="url" class="form-control url" placeholder="URL">
+														</div>
+													</div>
+													<div class="col-md-4 col-12">
+														<button type="button" class="btn btn-danger mt-3" onclick="deleteButtonEntry(this)">Delete</button>
+													</div>
+												</div>
+											</div>
+										</div>
+										<button type="button" class="btn btn-secondary" onclick="addButtonEntry()">Add Another Button</button>
+									</div>
+									<div class="col-12 d-flex justify-content-end">
+										<button type="submit" id="createTemplateButton" class="btn btn-primary me-1 mb-1">Create Template</button>
+										<button type="button" class="btn btn-light-secondary me-1 mb-1" onclick="resetForm()">Reset</button>
+									</div>
+								</div>
+							</form>
+							<div id="responseMessage" style="display:none;">
+								<pre id="responseJson"></pre>
+							</div>
+						</div>
+					</div>
+				</section>
+			</div>
+		</div>
+	</div>
+	<script>
+	function updateBodyExamples() {
+		const bodyText = document.getElementById('body_text').innerText;
+		const variableCount = (bodyText.match(/\{\{\d+\}\}/g) || []).length;
+		console.log("Number of variables found: ", variableCount); // Debugging line
+		const examplesContainer = document.getElementById('body_examples_container');
+		examplesContainer.innerHTML = ''; // Clear existing examples
+		for(let i = 0; i < variableCount; i++) {
+			const exampleEntry = document.createElement('div');
+			exampleEntry.className = 'form-group';
+			exampleEntry.innerHTML = `
+                <label for="body_example_${i}">Example for ${i + 1}</label>
+                <input type="text" id="body_example_${i}" name="body_example" class="form-control" placeholder="Example for variable ${i + 1}" />
+            `;
+			examplesContainer.appendChild(exampleEntry);
+		}
+		checkSequentialOrder(); // Check the order whenever examples are updated
+	}
+
+	function toggleActiveButton(type) {
+		const boldButton = document.querySelector("button[onclick=\"formatText('bold')\"]");
+		const italicButton = document.querySelector("button[onclick=\"formatText('italic')\"]");
+		if(type === 'bold') {
+			if(document.queryCommandState('bold')) {
+				boldButton.classList.add('btn-active');
+			} else {
+				boldButton.classList.remove('btn-active');
+			}
+		} else if(type === 'italic') {
+			if(document.queryCommandState('italic')) {
+				italicButton.classList.add('btn-active');
+			} else {
+				italicButton.classList.remove('btn-active');
+			}
+		}
+	}
+	document.addEventListener('DOMContentLoaded', () => {
+		toggleActiveButton('bold');
+		toggleActiveButton('italic');
+	});
+
+	function formatText(type) {
+		if(type === 'bold') {
+			document.execCommand('bold');
+			toggleActiveButton('bold');
+		} else if(type === 'italic') {
+			document.execCommand('italic');
+			toggleActiveButton('italic');
+		}
+		updateHiddenInput();
+		updateBodyExamples();
+	}
+
+	function alignText(direction) {
+		const textArea = document.getElementById('body_text');
+		if(direction === 'right') {
+			textArea.style.direction = 'rtl';
+			textArea.style.textAlign = 'right';
+		} else {
+			textArea.style.direction = 'ltr';
+			textArea.style.textAlign = 'left';
+		}
+		updateHiddenInput();
+		updateBodyExamples();
+	}
+	document.getElementById('body_text').addEventListener('input', () => {
+		updateHiddenInput();
+		toggleActiveButton('bold');
+		toggleActiveButton('italic');
+	});
+	document.getElementById('body_text').addEventListener('click', () => {
+		toggleActiveButton('bold');
+		toggleActiveButton('italic');
+	});
+
+	function updateHeaderFields() {
+		const headerType = document.getElementById('header_type').value;
+		const headerTextField = document.getElementById('header_text_field');
+		const headerImageUrlField = document.getElementById('header_image_url_field');
+		if(headerType === 'IMAGE') {
+			headerTextField.style.display = 'none';
+			headerImageUrlField.style.display = 'block';
+		} else {
+			headerTextField.style.display = 'block';
+			headerImageUrlField.style.display = 'none';
+		}
+	}
+
+	function updateButtonFields(selectElement) {
+		const buttonType = selectElement.value;
+		const entry = selectElement.closest('.button-entry');
+		const phoneField = entry.querySelector('.phone-number-field');
+		const urlField = entry.querySelector('.url-field');
+		phoneField.style.display = 'none';
+		urlField.style.display = 'none';
+		if(buttonType === 'PHONE_NUMBER') {
+			phoneField.style.display = 'block';
+		} else if(buttonType === 'URL') {
+			urlField.style.display = 'block';
+		}
+	}
+	function addButtonEntry() {
+    const buttonsContainer = document.getElementById('buttons-container');
+    
+    // Check if there are any existing button entries
+    const existingEntries = buttonsContainer.querySelectorAll('.button-entry');
+    
+    // If no button entries exist, create a new one from scratch
+    if (existingEntries.length === 0) {
+        const newEntry = document.createElement('div');
+        newEntry.className = 'button-entry';
+        newEntry.innerHTML = `
+            <div class="row">
+                <div class="col-md-4 col-12">
+                    <div class="form-group">
+                        <label for="button_type">Button Type (optional)</label>
+                        <select name="button_type" class="form-control button-type" onchange="updateButtonFields(this)">
+                            <option value="">Select Button Type</option>
+                            <option value="PHONE_NUMBER">Phone Number</option>
+                            <option value="URL">URL</option>
+                            <option value="QUICK_REPLY">Quick Reply</option>
+                            <option value="COPY_CODE">Copy Code</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-4 col-12">
+                    <div class="form-group">
+                        <label for="button_text">Button Text</label>
+                        <input type="text" name="button_text" class="form-control button-text" placeholder="Button Text">
+                    </div>
+                </div>
+                <div class="col-md-4 col-12 button-field phone-number-field" style="display: none;">
+                    <div class="form-group">
+                        <label for="phone_number">Phone Number</label>
+                        <input type="text" name="phone_number" class="form-control phone-number" placeholder="Phone Number">
+                    </div>
+                </div>
+                <div class="col-md-4 col-12 button-field url-field" style="display: none;">
+                    <div class="form-group">
+                        <label for="url">URL</label>
+                        <input type="text" name="url" class="form-control url" placeholder="URL">
+                    </div>
+                </div>
+                <div class="col-md-4 col-12">
+                    <button type="button" class="btn btn-danger mt-3" onclick="deleteButtonEntry(this)">Delete</button>
+                </div>
+            </div>
+        `;
+        buttonsContainer.appendChild(newEntry);
+    } else {
+        // Otherwise, clone the first button entry
+        const newEntry = existingEntries[0].cloneNode(true);
+        newEntry.querySelectorAll('input, select').forEach(input => {
+            input.value = '';
+        });
+        newEntry.querySelectorAll('.button-field').forEach(field => {
+            field.style.display = 'none';
+        });
+        buttonsContainer.appendChild(newEntry);
+    }
+}
+
+	function deleteButtonEntry(button) {
+		const buttonEntry = button.closest('.button-entry');
+		buttonEntry.remove();
+	}
+
+	function updateHiddenInput() {
+            const bodyTextDiv = document.getElementById('body_text');
+            const hiddenInput = document.getElementById('body_text_hidden');
+ 
+            let textWithMarkdown = bodyTextDiv.innerHTML
+                .replace(/<b>\s*(.*?)\s*<\/b>/gi, (match, p1) => {
+                    const trimmedText = p1.replace(/^\s+|\s+$/g, '');
+                    return `*${trimmedText}*`;
+                })
+                .replace(/<i.*?>\s*(.*?)\s*<\/i>/gi, (match, p1) => {
+                    const trimmedText = p1.replace(/^\s+|\s+$/g, '');
+                    return `_${trimmedText}_`;
+                })
+                .replace(/<[^>]*>?/gm, '')
+                .replace(/\{\{\d+\}\}/g, (match) => match)  
+                .replace(/&nbsp;/g, ' ')
+                .replace(/<br\s*\/?>/gi, '\n')
+                .replace(/\n/g, ' ')
+                .replace(/<div.*?>\s*(.*?)\s*<\/div>/gi, '$1\n')
+                .replace(/&nbsp;/g, ' ')
+                .replace(/<br\s*\/?>/gi, '\n')
+                .replace(/(\*)\s+/g, '$1')   
+                .replace(/\s+(\*)/g, '$1')   
+                .replace(/(_)\s+/g, '$1')   
+                .replace(/\s+(_)/g, '$1')   
+                .trim();
+ 
+            hiddenInput.value = textWithMarkdown;
+        }
+	document.getElementById('body_text').addEventListener('input', () => {
+		updateHiddenInput();
+		toggleActiveButton('bold');
+		toggleActiveButton('italic');
+		updateBodyExamples();
+	});
+	document.querySelector('form').addEventListener('submit', function(event) {
+    event.preventDefault();
+    updateHiddenInput();
+    const form = event.target;
+    const formData = new FormData(form);
+
+    fetch(form.action, {
+        method: 'POST',
+        body: formData
+    }).then(response => response.json()).then(data => {
+        let message = '';
+        if (data.status_code === 400 && data.response && data.response.meta) {
+            const meta = data.response.meta;
+            if (meta.developer_message && meta.developer_message.includes('Invalid payload')) {
+                try {
+                    const jsonStart = meta.developer_message.indexOf('{');
+                    const errorJsonString = meta.developer_message.substring(jsonStart);
+                    const errorJson = JSON.parse(errorJsonString);
+                    message = errorJson.error.error_user_title;
+                } catch (e) {
+                    console.error("Error parsing nested JSON:", e);
+                    message = 'An error occurred. Please check your template name or example fields if any.';
+                }
+            } else {
+                message = meta.developer_message;
+            }
+        } else if (data.message) {
+            message = 'Template submitted successfully.';
+            document.getElementById('modalMessageBody').textContent = message;
+            const modal = new bootstrap.Modal(document.getElementById('responseModal'));
+            modal.show();
+
+            // Reset the form and modal on success
+            resetForm();
+            document.getElementById('responseModal').addEventListener('hidden.bs.modal', function() {
+                // Ensure modal backdrop is removed
+                if (document.querySelector('.modal-backdrop')) {
+                    document.querySelector('.modal-backdrop').remove();
+                }
+                // Reset any other state here
+                document.body.classList.remove('modal-open');
+				location.reload();  // Add this line to force a page reload
+
+            });
+        } else {
+            message = `Unexpected error: ${JSON.stringify(data, null, 4)}`;
+        }
+        document.getElementById('modalMessageBody').textContent = message;
+        new bootstrap.Modal(document.getElementById('responseModal')).show();
+    }).catch(error => {
+        console.error('Error:', error);
+        document.getElementById('modalMessageBody').textContent = 'An error occurred while submitting the form. Please try again.';
+        new bootstrap.Modal(document.getElementById('responseModal')).show();
+    });
+});
+
+
+	function resetForm() {
+		const form = document.querySelector('form');
+		form.reset();
+		const bodyTextDiv = document.getElementById('body_text');
+		bodyTextDiv.innerHTML = '';
+		const hiddenInput = document.getElementById('body_text_hidden');
+		hiddenInput.value = '';
+		const headerImageUrlField = document.getElementById('header_image_url_field');
+		headerImageUrlField.style.display = 'none';
+		const headerTextField = document.getElementById('header_text_field');
+		headerTextField.style.display = 'block';
+		const buttonsContainer = document.getElementById('buttons-container');
+		const buttonEntries = buttonsContainer.querySelectorAll('.button-entry');
+		buttonEntries.forEach((entry, index) => {
+			if(index > 0) {
+				entry.remove();
+			} else {
+				entry.querySelector('.phone-number-field').style.display = 'none';
+				entry.querySelector('.url-field').style.display = 'none';
+				entry.querySelector('.button-type').value = '';
+				entry.querySelector('.button-text').value = '';
+			}
+		});
+		const responseMessage = document.getElementById('responseMessage');
+		responseMessage.style.display = 'none';
+		const responseJson = document.getElementById('responseJson');
+		responseJson.textContent = '';
+		const examplesContainer = document.getElementById('body_examples_container');
+		examplesContainer.innerHTML = '';
+	}
+
+	function alignTextBasedOnLanguage() {
+		const languageSelect = document.getElementById('language');
+		const bodyTextDiv = document.getElementById('body_text');
+		const selectedLanguage = languageSelect.value;
+		if(selectedLanguage === 'ar') {
+			bodyTextDiv.style.direction = 'rtl';
+			bodyTextDiv.style.textAlign = 'right';
+		} else {
+			bodyTextDiv.style.direction = 'ltr';
+			bodyTextDiv.style.textAlign = 'left';
+		}
+	}
+	document.getElementById('language').addEventListener('change', alignTextBasedOnLanguage);
+	let variableCount = 0; 
+	function insertVariable() {
+    variableCount++; 
+    const variableText = `{% raw %}{{${variableCount}}}{% endraw %}`;
+    const bodyTextDiv = document.getElementById('body_text');
+    
+    const selection = window.getSelection();
+    let range = selection.rangeCount > 0 ? selection.getRangeAt(0) : null;
+
+    if (!range || !bodyTextDiv.contains(range.commonAncestorContainer)) {
+        bodyTextDiv.focus();
+        range = document.createRange();
+        range.selectNodeContents(bodyTextDiv);
+        range.collapse(false);
+        selection.removeAllRanges();
+        selection.addRange(range);
+    }
+    
+    range.deleteContents();
+    const textNode = document.createTextNode(variableText);
+    range.insertNode(textNode);
+    
+    range.setStartAfter(textNode);
+    range.setEndAfter(textNode);
+    selection.removeAllRanges();
+    selection.addRange(range);
+    
+    updateHiddenInput();
+    updateBodyExamples();
+    checkSequentialOrder(); 
+}
+
+	function checkSequentialOrder() {
+		const bodyText = document.getElementById('body_text').innerText;
+		const variableMatches = bodyText.match(/\{\{\d+\}\}/g) || [];
+		const variableNumbers = variableMatches.map(v => parseInt(v.match(/\d+/)[0]));
+		// Check if the array is sequential
+		const isSequential = variableNumbers.every((val, index) => val === index + 1);
+		if(!isSequential) {
+			document.getElementById('body_examples_container').style.display = 'none';
+			document.getElementById('sequentialErrorMessage').style.display = 'block';
+			document.getElementById('createTemplateButton').disabled = true;
+		} else {
+			document.getElementById('body_examples_container').style.display = 'block';
+			document.getElementById('sequentialErrorMessage').style.display = 'none';
+			document.getElementById('createTemplateButton').disabled = false;
+		}
+		return isSequential;
+	}
+	document.querySelector('form').addEventListener('submit', function(event) {
+		if(!checkSequentialOrder()) {
+			event.preventDefault();
+			alert('Variables must be in sequential order. Please correct them before submitting.');
+		}
+	});
+
+	
+	</script>
+	<script src="./static/vendors/perfect-scrollbar/perfect-scrollbar.min.js"></script>
+	<script src="./static/js/bootstrap.bundle.min.js"></script>
+	<script src="./static/js/main.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

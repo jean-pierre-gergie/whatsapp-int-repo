@@ -1,0 +1,75 @@
+<!-- sidebar.html -->
+<div id="sidebar" class="active">
+    <div class="sidebar-wrapper active">
+        <div class="sidebar-header">
+            <div class="d-flex justify-content-between align-items-center">
+                <!-- Logo -->
+                <div class="logo">
+                    <a href="{{ url_for('auth.index') }}">
+                        <img src="{{ url_for('static', filename='images/logo/madalogo.png') }}" alt="Logo" style="height: 120px;">
+                    </a>
+                </div>
+                <!-- Toggler -->
+                <div class="toggler">
+                    <a href="#" class="sidebar-hide d-xl-none d-block"><i class="bi bi-x bi-middle"></i></a>
+                </div>
+            </div>
+        </div>
+        <div class="sidebar-menu">
+            <ul class="menu">
+                <!-- Dashboard Dropdown -->
+                <li class="sidebar-item has-sub active">
+                    <a href="#" class='sidebar-link'>
+                        <i class="bi bi-grid-fill"></i>
+                        <span>Dashboard</span>
+                    </a>
+                    <ul class="submenu">
+                        <li class="submenu-item">
+                            <a href="{{ url_for('campaigns.generate_report_page') }}">Generate Report</a>
+                        </li>
+                    </ul>
+                </li>
+
+                <!-- WhatsApp Business Dropdown -->
+                <li class="sidebar-item has-sub">
+                    <a href="#" class='sidebar-link'>
+                        <i class="bi bi-stack"></i>
+                        <span>WhatsApp Business</span>
+                    </a>
+                    <ul class="submenu">
+                        <li class="submenu-item">
+                            <a href="{{url_for('campaigns.send_campaign')}}">Broadcast</a>
+                        </li>
+                        <li class="submenu-item">
+                            <a href="{{url_for('templates.templates_list')}}">Templates</a>
+                        </li>
+                        <li class="submenu-item">
+                            <a href="{{url_for('upload_data.upload_file')}}">Add To Database</a>
+                        </li>
+                        <li class="submenu-item">
+                            <a href="{{url_for('campaigns.show_all_collections_html')}}">Show Collections</a>
+                        </li> 
+                        <li class="submenu-item">
+                            <a href="{{url_for('campaigns.audience')}}">Audience</a>
+                        </li>                         
+                    </ul>
+                </li>
+
+                <!-- Other Menu Items -->
+                <li class="sidebar-item">
+                    <a href="{{ url_for('auth.change_password') }}" class='sidebar-link'>
+                        <i class="bi bi-lock"></i>
+                        <span>Change Password</span>
+                    </a>
+                </li>
+                <li class="sidebar-item">
+                    <a href="{{ url_for('auth.logout') }}" class='sidebar-link'>
+                        <i class="bi bi-box-arrow-right"></i>
+                        <span>Logout</span>
+                    </a>
+                </li>
+            </ul>
+        </div>
+        <button class="sidebar-toggler btn x"><i data-feather="x"></i></button>
+    </div>
+</div>
