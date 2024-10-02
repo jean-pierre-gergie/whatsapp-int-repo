@@ -48,7 +48,7 @@ def login():
 
                 # Set the JWT in the cookie
                 response = make_response(redirect(url_for('auth.index')))
-                response.set_cookie('access_token_cookie', access_token, httponly=True, secure=True, samesite='None')
+                response.set_cookie('access_token_cookie', access_token, httponly=True, secure=False, samesite='None')
                 
                 logger.info(f"Login successful for user {username} with role {role}. Redirecting to /index.")
                 return response
