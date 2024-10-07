@@ -34,6 +34,42 @@ services:
     depends_on:
       - mongodb
 
+  microservice:
+      build: 
+        context: ./microservice  # Specifies the directory containing your FastAPI app
+        dockerfile: Dockerfile
+      container_name: microservice
+      restart: unless-stopped
+      ports:
+        - "1616:1616"  # Exposes the FastAPI app on port 1616
+      volumes:
+        - ./microservice:/app  # Mounts the current directory to the container's /app directory
+      env_file:
+        - .env  # MongoDB as the result backend
+      command: uvicorn app:app --host 0.0.0.0 --port 1616 --reload
+
+  celery_worker:
+      build:
+        context: ./microservice  # Uses the same codebase for FastAPI and Celery
+      container_name: celery_worker
+      restart: unless-stopped
+      depends_on:
+        - rabbitmq
+        - mongodb
+      env_file:
+        - .env 
+      command: celery -A celery_app worker --loglevel=info  # Start Celery worker
+
+  rabbitmq:
+    image: "rabbitmq:3-management"  # RabbitMQ image with management plugin
+    container_name: rabbitmq
+    ports:
+      - "15672:15672"  # RabbitMQ management UI
+      - "5672:5672"  # RabbitMQ broker port
+    restart: unless-stopped
+    env_file:
+      - .env 
+      
   mongodb:
     image: mongodb/mongodb-community-server:latest
     container_name: mongodb_container
