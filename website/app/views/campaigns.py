@@ -9,12 +9,13 @@ import os
 import csv
 from io import StringIO
 from bson import ObjectId
+import requests
 
 import logging
 
 logging.basicConfig(level=logging.DEBUG)
 
-logger = logging.getLogger('campaign_status_logger')
+logger = logging.getLogger(__name__)
 
 
 bp = Blueprint('campaigns', __name__)
@@ -192,55 +193,164 @@ def send_campaign_messages():
         file.save(file_path)
         media_id = upload_image(file_path)
 
-    members_collection = mongo_db.members
-    members = list(members_collection.find({"tag": selected_campaign}))
+    # members_collection = mongo_db.members
+    # members = list(members_collection.find({"tag": selected_campaign}))
 
     variables = request.form.getlist('variables[]')
 
-    # Send campaign messages asynchronously (not waiting for completion)
-    send_message_campaign(members, template_json, variables, media_id, selected_campaign, campaign_name)
 
-    # Immediately return success response without counts (campaign is still processing)
-    return jsonify({
-        "success": True,
-        "message": "Campaign is being processed.",
-        "campaign_name": campaign_name  # Include this in the response
-    })
+    # def remove_object_ids(members):
+    #     for member in members:
+    #         if '_id' in member:
+    #             del member['_id']
+    #     return members
 
-@bp.route('/campaign_status/<campaign_name>', methods=['GET'])
+    # Remove the _id field from members
+
+    # members = remove_object_ids(members)
+    payload = {
+        "selected_campaign": selected_campaign,
+        "template_json": template_json,
+        "variables": variables,
+        "media_id": media_id,
+        "campaign": selected_campaign,
+        "campaign_name": campaign_name
+    }
+
+    microservice_base_url = current_app.config['MICROSERVICE_BASE_URL']
+
+    logger.info(f"Payload details: {payload}")
+    logger.info(f"Micro Service Base url {microservice_base_url}")
+
+
+
+    #################################################################################################
+
+
+    ## here we need to send the request to submtit the     the job 
+
+    ## it will return the  task id 
+    try:
+        # Send the request to submit the job
+        response = requests.post(f"{microservice_base_url}/start_campaign_task", json=payload)
+
+        if response.status_code == 200:
+            # Extract the task_id from the response
+            task_id = response.json().get("task_id")
+            logger.info(f"Task started with ID: {task_id}")
+
+            # Add campaign name and task_id to the campaign_name collection
+            campaign_name_collection.insert_one({
+                "name": campaign_name,
+                "task_id": task_id,
+                "created_by": current_user,  # Optionally store who created it
+                "created_at": datetime.utcnow()  # Store the creation time
+            })
+
+            return jsonify({
+                "success": True,
+                "message": "Campaign is being processed. Task started",
+                "campaign_name": campaign_name,
+                "task_id": task_id
+            }), 200
+        else:
+            return jsonify({"success": False, "error": "Failed to start campaign task."}), response.status_code
+
+    except Exception as e:
+        logger.error(f"Error occurred: {str(e)}")
+        return jsonify({"success": False, "error": "An error occurred while processing the campaign."}), 500
+
+  
+
+@bp.route('/campaign_task_status_polling/<campaign_name>', methods=['GET'])
 @jwt_required()
 @role_required(['admin', 'user']) 
 def get_campaign_status(campaign_name):
     mongo_db = current_app.mongo
-    campaign_responses_collection = mongo_db.campaign_responses
-    logger.debug("Pulling status ")
-    # Fetch all documents with the campaign_name
-    all_documents = list(campaign_responses_collection.find({"campaign_name": campaign_name}))
-    logger.debug(f"All documents for campaign {campaign_name}: {all_documents}")  # Debugging all documents
 
-    # Correctly query documents with status_code == 200 (at the top level)
-    sent_documents = list(campaign_responses_collection.find({
-        "campaign_name": campaign_name,
-        "status_code": 200
-    }))
-    sent_count = len(sent_documents)
-    logger.debug(f"Sent documents: {sent_documents}")  # Log documents marked as sent
+    logger.debug("Polling for campaign status.")
+    logger.debug(f"Polling status for campaign: {campaign_name}")
 
-    # Correctly query documents with status_code != 200 (at the top level)
-    failed_documents = list(campaign_responses_collection.find({
-        "campaign_name": campaign_name,
-        "status_code": {"$ne": 200}
-    }))
-    failed_count = len(failed_documents)
-    logger.debug(f"Failed documents: {failed_documents}")  # Log documents marked as failed
+    try:
+        campaign_collection = mongo_db.campaign_name  # MongoDB collection name is campaign_name
+        campaign_doc = campaign_collection.find_one({"name": campaign_name})
 
-    # Log final counts
-    logger.debug(f"Sent: {sent_count}, Failed: {failed_count}")
+        if not campaign_doc:
+            logger.warning(f"Campaign {campaign_name} not found in the database.")
+            return jsonify({"error": "Campaign not found"}), 404
 
-    return jsonify({
-        "sent_count": sent_count,
-        "failed_count": failed_count
-    })
+        task_id = campaign_doc.get('task_id')
+
+        if not task_id:
+            logger.warning(f"No task ID found for campaign {campaign_name}.")
+            return jsonify({"error": "Task ID not found for this campaign"}), 404
+
+        microservice_base_url = current_app.config['MICROSERVICE_BASE_URL']
+        logger.debug(f"Requesting status from microservice for task ID: {task_id}")
+
+        try:
+            response = requests.get(f"{microservice_base_url}/microservice_get_campaign_status/{task_id}")
+            response.raise_for_status()  # Raises an HTTPError for bad responses (4xx and 5xx)
+            logger.debug(f"Received response from microservice for task ID: {task_id}")
+        except requests.RequestException as e:
+            logger.error(f"Error contacting FastAPI for task {task_id}: {e}")
+            return jsonify({"error": "Could not fetch campaign status"}), 500
+
+        microservice_data = response.json()
+
+        if microservice_data.get('status') == 'Task in progress...':
+            total_members = microservice_data.get('total_members', 0)
+            processed = microservice_data.get('processed', 0)
+            curr_succ = microservice_data.get('success_count', 0)
+            curr_failed = microservice_data.get('failed_count', 0)
+
+            logger.debug(f"Task {task_id} is in progress: {processed}/{total_members} processed, "
+                         f"{curr_succ} successes, {curr_failed} failures.")
+            
+            return jsonify({
+                "task_id": task_id,
+                "status": "Task in progress...",
+                "total_members": total_members,
+                "processed": processed,
+                "current_success": curr_succ,
+                "current_failed": curr_failed
+            })
+
+        elif microservice_data.get('status') == 'Task completed!':
+            # Fetch the final results from the campaign_responses collection
+            campaign_responses_collection = mongo_db.campaign_responses
+            response_data = campaign_responses_collection.find_one({"campaign_name": campaign_name})
+
+            if not response_data:
+                logger.warning(f"Final results for campaign {campaign_name} not found in the database.")
+                return jsonify({"error": "Final results not found"}), 404
+
+            # Retrieve total members, successes, and failures from the response data
+            total_members = response_data.get('total_members', 0)
+            success_count = response_data.get('total_success', 0)
+            failed_count = response_data.get('total_failed', 0)
+
+            logger.debug(f"Task {task_id} completed successfully with {success_count} successes and {failed_count} failures.")
+
+            return jsonify({
+                "task_id": task_id,
+                "status": "Task completed!",
+                "total_members": total_members,
+                "processed": total_members,  # All members should be processed by now
+                "current_success": success_count,
+                "current_failed": failed_count
+            })
+
+        else:
+            logger.warning(f"Task {task_id} status returned from microservice: {microservice_data.get('status')}")
+            return jsonify({"error": microservice_data.get('status')}), 400
+
+    except Exception as e:
+        logger.error(f"An unexpected error occurred while polling campaign status for {campaign_name}: {e}")
+        return jsonify({"error": "An unexpected error occurred"}), 500
+
+
+
 
 @bp.route('/download/<filename>')
 @jwt_required()

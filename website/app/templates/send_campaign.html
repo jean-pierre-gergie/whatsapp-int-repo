@@ -16,7 +16,6 @@
 </head>
 <body>
     <div id="app">
-
         {% include 'sidebar.html' %}
         
         <div id="main">
@@ -115,7 +114,7 @@
                 previewContainer.innerHTML = data.texts.join('<br>');
                 updateVariableFields(data.variable_count);
                 toggleImageField(data.has_image);
-                alignTextBasedOnLanguage(previewContainer);  // Align text based on language
+                alignTextBasedOnLanguage(previewContainer);
             } else {
                 previewContainer.textContent = 'Template not found.';
                 updateVariableFields(0);
@@ -165,26 +164,17 @@
 
     function toggleImageField(hasImage) {
         const imageField = document.getElementById('image-field');
-        if (hasImage) {
-            imageField.style.display = 'block';
-        } else {
-            imageField.style.display = 'none';
-        }
+        imageField.style.display = hasImage ? 'block' : 'none';
     }
 
     function alignTextBasedOnLanguage(element) {
         const text = element.textContent.trim();
-        if (text.length > 0 && /[\u0600-\u06FF]/.test(text[0])) {
-            element.style.direction = 'rtl';
-            element.style.textAlign = 'right';
-        } else {
-            element.style.direction = 'ltr';
-            element.style.textAlign = 'left';
-        }
+        element.style.direction = /[\u0600-\u06FF]/.test(text[0]) ? 'rtl' : 'ltr';
+        element.style.textAlign = /[\u0600-\u06FF]/.test(text[0]) ? 'right' : 'left';
     }
 
     document.getElementById('campaign-message-form').onsubmit = function(event) {
-    event.preventDefault(); 
+    event.preventDefault();
 
     if (confirm("Are you sure you want to send the campaign messages?")) {
         document.getElementById('send-status').style.display = 'block';
@@ -197,12 +187,9 @@
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                const campaignName = data.campaign_name;  // Get the campaign name from the response
-
+                const campaignName = data.campaign_name;
                 document.getElementById('send-status').textContent = "Campaign is being processed...";
-
-                // Poll the server to get the campaign status
-                pollCampaignStatus(campaignName);  // Pass campaignName to the polling function
+                pollCampaignStatus(campaignName);
             } else if (data.error) {
                 document.getElementById('send-status').style.display = 'none';
                 alert(data.error);
@@ -221,27 +208,72 @@
 
 function pollCampaignStatus(campaignName) {
     let pollInterval = setInterval(() => {
-        fetch(`/campaign_status/${campaignName}`)  // Use the campaignName in the URL
+        fetch(`/campaign_task_status_polling/${campaignName}`)
         .then(response => response.json())
         .then(data => {
-            console.log('Polling response:', data);  // Log the full response
+            console.log('Polling response:', data);
 
-            const sentCount = data.sent_count;
-            const failedCount = data.failed_count;
+            // Check if the response contains an error
+            if (data.error) {
+                // If the error is "Task is still pending...", keep polling
+                if (data.error === "Task is still pending...") {
+                    document.getElementById('send-status').textContent = "Task is pending. Please wait...";
+                    return;  // Continue polling
+                } else {
+                    // If it's a different error, stop polling and show the error message
+                    document.getElementById('send-status').textContent = data.error;
+                    clearInterval(pollInterval);
+                    return;
+                }
+            }
 
-            if (sentCount > 0 || failedCount > 0) {
-                document.getElementById('send-status').textContent = `Send Complete: ${sentCount} sent, ${failedCount} failed.`;
-                clearInterval(pollInterval);
-            } else {
-                // Continue polling if counts are still 0
-                document.getElementById('send-status').textContent = "Processing campaign..."; 
+            const totalMembers = data.total_members || 0;
+            const processed = data.processed || 0;
+            const currentSuccess = data.current_success || 0;
+            const currentFailed = data.current_failed || 0;
+
+            switch (data.status) {
+                case "PENDING":
+                    document.getElementById('send-status').textContent = "Task is pending. Please wait...";
+                    break;
+                
+                case "Task in progress...":
+                    document.getElementById('send-status').textContent = 
+                        `Processing campaign: ${processed}/${totalMembers} processed, ${currentSuccess} successful, ${currentFailed} failed.`;
+                    break;
+                
+                    case "Task completed!":
+                        // Retrieve the final result from the response
+                        const finalSuccessCount = data.current_success || 0;
+                        const finalFailedCount = data.current_failed || 0;
+
+                        // Update the status message with the final counts
+                        document.getElementById('send-status').textContent = 
+                            `Send Complete: ${finalSuccessCount} sent, ${finalFailedCount} failed.`;
+
+                        // Stop polling
+                        clearInterval(pollInterval);
+                        break;
+                case "Task failed.":
+                    document.getElementById('send-status').textContent = "The campaign task failed. Please try again.";
+                    clearInterval(pollInterval);
+                    break;
+
+                default:
+                    document.getElementById('send-status').textContent = data.status;
+                    clearInterval(pollInterval);
+                    break;
             }
         })
         .catch(error => {
             console.error('Error fetching campaign status:', error);
+            document.getElementById('send-status').textContent = 'An error occurred while polling the campaign status.';
+            clearInterval(pollInterval);
         });
-    }, 1000);  // Poll every 1 second
+    }, 1000);
 }
+
+
 </script>
 
 <script src="./static/vendors/perfect-scrollbar/perfect-scrollbar.min.js"></script>

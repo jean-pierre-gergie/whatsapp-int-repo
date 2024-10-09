@@ -36,7 +36,7 @@ def check_task_status(task_id):
 
 # Main function to start the task and poll the status
 def main():
-    n = 1000  # Number of iterations for the task
+    n = 100  # Number of iterations for the task
     task_id = start_task(n)
     
     if task_id:

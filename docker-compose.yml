@@ -53,6 +53,10 @@ services:
         context: ./microservice  # Uses the same codebase for FastAPI and Celery
       container_name: celery_worker
       restart: unless-stopped
+      
+      volumes:
+        - ./microservice:/app
+
       depends_on:
         - rabbitmq
         - mongodb
@@ -69,7 +73,7 @@ services:
     restart: unless-stopped
     env_file:
       - .env 
-      
+
   mongodb:
     image: mongodb/mongodb-community-server:latest
     container_name: mongodb_container

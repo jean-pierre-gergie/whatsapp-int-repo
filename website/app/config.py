@@ -21,3 +21,5 @@ class Config:
     database_name = 'whatsapp_data'
     MONGODB_URI = f"mongodb://{username}:{password}@{host}:{port}/"
     MONGODB_NAME = 'whatsapp_data'
+
+    MICROSERVICE_BASE_URL= os.getenv("MICROSERVICE_BASE_URL")
