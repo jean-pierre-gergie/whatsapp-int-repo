@@ -86,7 +86,7 @@ def send_message_campaign(self, selected_campaign, template_json, variables, cam
 
     for prog_idx, member in enumerate(members, start=1):
         # Simulate processing delay for testing purposes
-        time.sleep(5)  # Remove this line in production
+        time.sleep(10)  # Remove this line in production
         number = member['mobile']
         template_dict['to'] = number
         logger.debug(f"Processing member with number: {number}")
