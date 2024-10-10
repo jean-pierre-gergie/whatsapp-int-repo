@@ -84,9 +84,12 @@ def send_message_campaign(self, selected_campaign, template_json, variables, cam
             }
         }
 
+    # Set up the MongoDB collections
+    campaign_responses_collection = mongo_db.campaign_responses
+    final_campaign_response_collection = mongo_db.final_campaign_response
+
     for prog_idx, member in enumerate(members, start=1):
-        # Simulate processing delay for testing purposes
-        time.sleep(10)  # Remove this line in production
+        time.sleep(10)
         number = member['mobile']
         template_dict['to'] = number
         logger.debug(f"Processing member with number: {number}")
@@ -94,6 +97,7 @@ def send_message_campaign(self, selected_campaign, template_json, variables, cam
         member_data = {column: member.get(column, '') for column in variables}
         logger.debug(f"Member data: {member_data}")
 
+        # Update template with member-specific data
         for component in template_dict.get('template', {}).get('components', []):
             if component['type'] == 'body':
                 for i, parameter in enumerate(component.get('parameters', [])):
@@ -104,8 +108,6 @@ def send_message_campaign(self, selected_campaign, template_json, variables, cam
                     component['parameters'][0]['image'] = {'id': media_id}
 
         headers = {"Content-Type": "application/json", "D360-API-KEY": api_key_360}
-        logger.debug(f"Sending request to URL {dialog_360_message_url}: ...")
-
         try:
             response = requests.post(dialog_360_message_url, headers=headers, json=template_dict)
             response_time = time.time() - start_time
@@ -117,13 +119,29 @@ def send_message_campaign(self, selected_campaign, template_json, variables, cam
                 'Title': 'Request Error',
                 'Details': str(e),
                 'Code': 'N/A',
-                'TimeTaken': time.time() - start_time
+                'TimeTaken': response_time
             })
             continue
 
-        # Insert response data into MongoDB
-        
-        # Handle response
+        # Save individual message response
+        data_to_insert = {
+            'campaign': campaign,
+            'campaign_name': campaign_name,
+            'campaign_date': datetime.now(),
+            'number': number,
+            'template': template_dict,
+            'response': response.json() if response.status_code == 200 else response.text,
+            'status_code': response.status_code,
+            'time_taken': response_time
+        }
+
+        try:
+            campaign_responses_collection.insert_one(data_to_insert)
+            logger.debug("Individual message response inserted successfully into MongoDB")
+        except Exception as e:
+            logger.error(f"Error inserting individual message response into MongoDB: {e}")
+
+        # Handle response based on status code
         if response.status_code == 200:
             try:
                 response_json = response.json()
@@ -135,7 +153,6 @@ def send_message_campaign(self, selected_campaign, template_json, variables, cam
                         'TimeTaken': response_time
                     })
             except json.JSONDecodeError:
-                logger.error("Invalid JSON response")
                 failed_rows.append({
                     'Number': number,
                     'Title': 'Error',
@@ -166,21 +183,23 @@ def send_message_campaign(self, selected_campaign, template_json, variables, cam
             'curr_failed': len(failed_rows)
         })
 
-    campaign_responses_collection = mongo_db.campaign_responses
-    data_to_insert = {
+    # Save aggregated results to final_campaign_response_collection
+    aggregated_data_to_insert = {
         'campaign': campaign,
         'campaign_name': campaign_name,
         'campaign_date': datetime.now(),
-        'total_members':total_members,
+        'total_members': total_members,
         'total_success': len(success_rows),
-        'total_failed' : len(failed_rows)
-        }
+        'total_failed': len(failed_rows),
+        'success_rows': success_rows,
+        'failed_rows': failed_rows
+    }
 
     try:
-        campaign_responses_collection.insert_one(data_to_insert)
-        logger.debug("Data inserted successfully into MongoDB")
+        final_campaign_response_collection.insert_one(aggregated_data_to_insert)
+        logger.debug("Aggregated campaign data inserted successfully into MongoDB")
     except Exception as e:
-        logger.error(f"Error inserting data into MongoDB: {e}")
+        logger.error(f"Error inserting aggregated campaign data into MongoDB: {e}")
 
     # Return the final results
     logger.debug(f"Campaign completed. Success: {len(success_rows)}, Failed: {len(failed_rows)}")
@@ -195,8 +214,6 @@ def send_message_campaign(self, selected_campaign, template_json, variables, cam
             'failed_percentage': f'{(len(failed_rows) / total_members) * 100:.2f}%' if total_members > 0 else '0.00%'
         }
     }
-
-
 
 
 def get_mongo_client():

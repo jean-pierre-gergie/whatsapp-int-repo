@@ -318,8 +318,8 @@ def get_campaign_status(campaign_name):
 
         elif microservice_data.get('status') == 'Task completed!':
             # Fetch the final results from the campaign_responses collection
-            campaign_responses_collection = mongo_db.campaign_responses
-            response_data = campaign_responses_collection.find_one({"campaign_name": campaign_name})
+            final_campaign_response_collection = mongo_db.final_campaign_response
+            response_data = final_campaign_response_collection.find_one({"campaign_name": campaign_name})
 
             if not response_data:
                 logger.warning(f"Final results for campaign {campaign_name} not found in the database.")

@@ -20,7 +20,7 @@ def create_collections():
 
         # Define collections to create
         collections = [
-            'campaign', 'campaign_responses', 'language', 'members',
+            'campaign', 'campaign_responses', 'final_campaign_response','language', 'members',
             'templates', 'user_credentials', 'webhook_latest_from_user',
             'webhook_latest_to_user', 'webhook_responses'
         ]
