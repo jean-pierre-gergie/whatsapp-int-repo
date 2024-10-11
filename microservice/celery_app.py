@@ -89,7 +89,7 @@ def send_message_campaign(self, selected_campaign, template_json, variables, cam
     final_campaign_response_collection = mongo_db.final_campaign_response
 
     for prog_idx, member in enumerate(members, start=1):
-        time.sleep(10)
+        time.sleep(5)
         number = member['mobile']
         template_dict['to'] = number
         logger.debug(f"Processing member with number: {number}")

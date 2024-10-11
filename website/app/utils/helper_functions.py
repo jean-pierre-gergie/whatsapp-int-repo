@@ -4,6 +4,7 @@ from flask import Blueprint, render_template, request, jsonify, send_file, url_f
 import time
 import json
 import re
+import phonenumbers
 import os
 from app.config import Config
 from datetime import datetime
@@ -396,33 +397,48 @@ def get_all_collections_content():
 
 def check_df_validity(df):
     # Specify which columns to check for duplicates and phone numbers
-    duplicate_check_columns = [ 'mobile']  # Adjust as needed
+    duplicate_check_columns = ['formatted_mobile']  # Adjust as needed
     phone_number_column = 'mobile'  # Adjust if needed
 
-    # 1. Check for duplicates
-    duplicates = df[df.duplicated(subset=duplicate_check_columns, keep=False)]
+    def is_valid_phone_number(number):
+        try:
+            # Parse the phone number
+            parsed_number = phonenumbers.parse(number, "LB")
+
+            # Validate if the parsed number is a possible number
+            if not phonenumbers.is_valid_number(parsed_number):
+                return None
+
+            # Format the number to the international format (with country code and digits)
+            formatted_number = phonenumbers.format_number(parsed_number, phonenumbers.PhoneNumberFormat.E164).replace("+", "")
+
+            print(formatted_number)
+            # Return the formatted number
+            return formatted_number
+
+        except phonenumbers.NumberParseException:
+            return None
+
+    # Apply phone number validation
+    df['formatted_mobile'] = df[phone_number_column].apply(is_valid_phone_number)
+
+    # Count invalid phone numbers
+    num_invalid_numbers = df['formatted_mobile'].isna().sum()
+
+    # Filter out rows with invalid phone numbers
+    df_valid = df[df['formatted_mobile'].notna()]
+
+    duplicates = df_valid[df_valid.duplicated(subset=duplicate_check_columns, keep=False)]
     num_duplicates = len(duplicates)
 
-    # Remove duplicates from the original DataFrame
-    df_cleaned = df.drop_duplicates(subset=duplicate_check_columns, keep='first')
+    df_cleaned = df_valid.drop_duplicates(subset=duplicate_check_columns, keep='first')
 
-    # 2. Check for properly formatted phone numbers
-    # Assuming valid numbers are 10-15 digits and can start with a '+' for country codes
-    phone_regex = re.compile(r'^\+?\d{10,15}$')
-    
-    # Identify rows with valid phone numbers
-    valid_numbers_mask = df_cleaned[phone_number_column].apply(lambda x: bool(phone_regex.match(str(x))) if pd.notnull(x) else False)
-    
-    # Count valid and invalid numbers
-    num_valid_numbers = valid_numbers_mask.sum()
-    num_invalid_numbers = len(df_cleaned) - num_valid_numbers
+    df_cleaned.loc[:, phone_number_column] = df_cleaned['formatted_mobile']
+    df_cleaned = df_cleaned.drop(columns=['formatted_mobile'])
 
-    # Remove rows with invalid phone numbers
-    df_cleaned = df_cleaned[valid_numbers_mask]
-
-    # 3. Statistics
     total_rows = len(df)
     num_proper_rows = len(df_cleaned)
+    num_valid_numbers = num_proper_rows
 
     # Prepare statistics summary
     stats_summary = {
