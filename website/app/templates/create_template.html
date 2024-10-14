@@ -69,8 +69,12 @@
 									<div class="col-md-6 col-12">
 										<div class="form-group">
 											<label for="template_name">Template Name</label>
-											<br><small class="form-text text-muted"> Enter a name consisting of lower case letters, digits, and underscores (_). Do not use other characters or spaces. </small>
-											<input type="text" id="template_name" name="template_name" class="form-control" placeholder="Template Name" required>
+											<br>
+											<small class="form-text text-muted">
+												Enter a name consisting of lower case letters, digits, and underscores (_). Do not use other characters or spaces.
+											</small>
+											<input type="text" id="template_name" name="template_name" class="form-control" placeholder="Template Name"
+												pattern="^[a-z0-9_]+$" title="Only lowercase letters, digits, and underscores are allowed." required>
 										</div>
 									</div>
 									<div class="col-md-6 col-12">
@@ -282,6 +286,15 @@
 		toggleActiveButton('italic');
 	});
 
+	document.getElementById('template_name').addEventListener('input', function() {
+		const pattern = /^[a-z0-9_]+$/;
+		if (!pattern.test(this.value)) {
+			this.setCustomValidity('Only lowercase letters, digits, and underscores are allowed.');
+		} else {
+			this.setCustomValidity('');
+		}
+	});
+
 	function updateHeaderFields() {
 		const headerType = document.getElementById('header_type').value;
 		const headerTextField = document.getElementById('header_text_field');
@@ -410,60 +423,60 @@
 		updateBodyExamples();
 	});
 	document.querySelector('form').addEventListener('submit', function(event) {
-    event.preventDefault();
-    updateHiddenInput();
-    const form = event.target;
-    const formData = new FormData(form);
+		event.preventDefault();
+		updateHiddenInput();
+		const form = event.target;
+		const formData = new FormData(form);
 
-    fetch(form.action, {
-        method: 'POST',
-        body: formData
-    }).then(response => response.json()).then(data => {
-        let message = '';
-        if (data.status_code === 400 && data.response && data.response.meta) {
-            const meta = data.response.meta;
-            if (meta.developer_message && meta.developer_message.includes('Invalid payload')) {
-                try {
-                    const jsonStart = meta.developer_message.indexOf('{');
-                    const errorJsonString = meta.developer_message.substring(jsonStart);
-                    const errorJson = JSON.parse(errorJsonString);
-                    message = errorJson.error.error_user_title;
-                } catch (e) {
-                    console.error("Error parsing nested JSON:", e);
-                    message = 'An error occurred. Please check your template name or example fields if any.';
-                }
-            } else {
-                message = meta.developer_message;
-            }
-        } else if (data.message) {
-            message = 'Template submitted successfully.';
-            document.getElementById('modalMessageBody').textContent = message;
-            const modal = new bootstrap.Modal(document.getElementById('responseModal'));
-            modal.show();
+		fetch(form.action, {
+			method: 'POST',
+			body: formData
+		}).then(response => response.json()).then(data => {
+			let message = '';
+			if (data.status_code === 400 && data.response && data.response.meta) {
+				const meta = data.response.meta;
+				if (meta.developer_message && meta.developer_message.includes('Invalid payload')) {
+					try {
+						const jsonStart = meta.developer_message.indexOf('{');
+						const errorJsonString = meta.developer_message.substring(jsonStart);
+						const errorJson = JSON.parse(errorJsonString);
+						message = errorJson.error.error_user_title;
+					} catch (e) {
+						console.error("Error parsing nested JSON:", e);
+						message = 'An error occurred. Please check your template name or example fields if any.';
+					}
+				} else {
+					message = meta.developer_message;
+				}
+			} else if (data.message) {
+				message = 'Template submitted successfully.';
+				document.getElementById('modalMessageBody').textContent = message;
+				const modal = new bootstrap.Modal(document.getElementById('responseModal'));
+				modal.show();
 
-            // Reset the form and modal on success
-            resetForm();
-            document.getElementById('responseModal').addEventListener('hidden.bs.modal', function() {
-                // Ensure modal backdrop is removed
-                if (document.querySelector('.modal-backdrop')) {
-                    document.querySelector('.modal-backdrop').remove();
-                }
-                // Reset any other state here
-                document.body.classList.remove('modal-open');
-				location.reload();  // Add this line to force a page reload
+				// Reset the form and modal on success
+				resetForm();
+				document.getElementById('responseModal').addEventListener('hidden.bs.modal', function() {
+					// Ensure modal backdrop is removed
+					if (document.querySelector('.modal-backdrop')) {
+						document.querySelector('.modal-backdrop').remove();
+					}
+					// Reset any other state here
+					document.body.classList.remove('modal-open');
+					location.reload();  // Add this line to force a page reload
 
-            });
-        } else {
-            message = `Unexpected error: ${JSON.stringify(data, null, 4)}`;
-        }
-        document.getElementById('modalMessageBody').textContent = message;
-        new bootstrap.Modal(document.getElementById('responseModal')).show();
-    }).catch(error => {
-        console.error('Error:', error);
-        document.getElementById('modalMessageBody').textContent = 'An error occurred while submitting the form. Please try again.';
-        new bootstrap.Modal(document.getElementById('responseModal')).show();
-    });
-});
+				});
+			} else {
+				message = `Unexpected error: ${JSON.stringify(data, null, 4)}`;
+			}
+			document.getElementById('modalMessageBody').textContent = message;
+			new bootstrap.Modal(document.getElementById('responseModal')).show();
+		}).catch(error => {
+			console.error('Error:', error);
+			document.getElementById('modalMessageBody').textContent = 'An error occurred while submitting the form. Please try again.';
+			new bootstrap.Modal(document.getElementById('responseModal')).show();
+		});
+	});
 
 
 	function resetForm() {

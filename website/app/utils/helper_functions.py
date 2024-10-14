@@ -11,6 +11,7 @@ from datetime import datetime
 from collections import Counter
 import logging
 from datetime import datetime
+from .country_number_cleaning import is_valid_phone_number
 
 
 logging.basicConfig(level=logging.DEBUG)  # You can adjust the level depending on the environment (e.g., INFO, WARNING, ERROR)
@@ -400,25 +401,6 @@ def check_df_validity(df):
     duplicate_check_columns = ['formatted_mobile']  # Adjust as needed
     phone_number_column = 'mobile'  # Adjust if needed
 
-    def is_valid_phone_number(number):
-        try:
-            # Parse the phone number
-            parsed_number = phonenumbers.parse(number, "LB")
-
-            # Validate if the parsed number is a possible number
-            if not phonenumbers.is_valid_number(parsed_number):
-                return None
-
-            # Format the number to the international format (with country code and digits)
-            formatted_number = phonenumbers.format_number(parsed_number, phonenumbers.PhoneNumberFormat.E164).replace("+", "")
-
-            print(formatted_number)
-            # Return the formatted number
-            return formatted_number
-
-        except phonenumbers.NumberParseException:
-            return None
-
     # Apply phone number validation
     df['formatted_mobile'] = df[phone_number_column].apply(is_valid_phone_number)
 
@@ -450,3 +432,5 @@ def check_df_validity(df):
     }
 
     return stats_summary, duplicates, df_cleaned
+
+
