@@ -195,9 +195,9 @@ def add_member():
         collection = mongo_db.members
 
         # Check for existing member with the same mobile number
-        existing_member = collection.find_one({'mobile': formatted_number})
+        existing_member = collection.find_one({'mobile': formatted_number, 'tag': tag})
         if existing_member:
-            return {'success': False, 'message': 'A member with this mobile number already exists.'}, 409
+            return {'success': False, 'message': 'A member with this mobile number and tag already exists.'}, 409
 
         # Insert the new member into the collection
         collection.insert_one(member_data)
