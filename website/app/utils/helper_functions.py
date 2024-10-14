@@ -337,49 +337,76 @@ def get_report(campaign_name):
     webhook_latest_to_user_collection = mongo_db.webhook_latest_to_user
     campaign_responses_collection = mongo_db.campaign_responses
 
+    # Fetch campaign responses from the database
     campaign_responses = list(campaign_responses_collection.find({
         'campaign_name': campaign_name
     }))
 
+    # If no responses are found, return None
     if not campaign_responses:
         return None
 
-    message_ids = [response['response']['messages'][0]['id'] for response in campaign_responses]
+    # Collect message IDs, but only if 'messages' exists and is a valid list
+    message_ids = [
+        response['response']['messages'][0]['id']
+        for response in campaign_responses
+        if 'response' in response and 'messages' in response['response'] and isinstance(response['response']['messages'], list) and response['response']['messages']
+    ]
 
+    # Fetch webhook data for the collected message IDs
     webhook_latest_to_user = list(webhook_latest_to_user_collection.find({
         'id': {'$in': message_ids}
     }))
 
+    # Create a dictionary to map message IDs to webhook data
     webhook_dict = {doc['id']: doc for doc in webhook_latest_to_user}
 
+    # Initialize variables for joined data and status counting
     joined_data = []
     status_counter = Counter()
-    
+
     data_by_status = {
         'sent': [],
         'delivered': [],
         'read': [],
         'failed': []
     }
-    
-    for response in campaign_responses:
-        message_id = response['response']['messages'][0]['id']
-        if message_id in webhook_dict:
-            webhook_data = webhook_dict[message_id]
-            joined_data.append({
-                'campaign_response': response,
-                'webhook_data': webhook_data
-            })
-            status_counter[webhook_data['status']] += 1
-            data_by_status[webhook_data['status']].append(response)
 
+    # Iterate over the campaign responses and join them with webhook data
+    for response in campaign_responses:
+        if 'response' in response and 'messages' in response['response'] and isinstance(response['response']['messages'], list) and response['response']['messages']:
+            message_id = response['response']['messages'][0]['id']
+            if message_id in webhook_dict:
+                webhook_data = webhook_dict[message_id]
+                
+                # Join response and webhook data
+                joined_data.append({
+                    'campaign_response': response,
+                    'webhook_data': webhook_data
+                })
+                
+                # Update status counter and categorize by status
+                status = webhook_data.get('status', 'unknown')  # Use 'unknown' as a fallback status
+                status_counter[status] += 1
+                if status in data_by_status:
+                    data_by_status[status].append(response)
+                else:
+                    data_by_status[status] = [response]
+    
+        # Check if the message has a failed status due to error in response
+        if response.get('status_code') == 400 and 'error' in response.get('response', {}):
+            status_counter['failed'] += 1
+            data_by_status['failed'].append(response)
+
+    # Prepare the status counts dictionary
     message_statuses = {
-        'sent': status_counter['sent'],
-        'delivered': status_counter['delivered'],
-        'read': status_counter['read'],
-        'failed': status_counter['failed']
+        'sent': status_counter.get('sent', 0),
+        'delivered': status_counter.get('delivered', 0),
+        'read': status_counter.get('read', 0),
+        'failed': status_counter.get('failed', 0)
     }
 
+    # Return the status counts and the data categorized by status
     return {'status_counts': message_statuses, 'data_by_status': data_by_status}
 
 

@@ -431,10 +431,17 @@ def download_csv(status):
     
     # Write data rows
     for item in data:
+        # Extract message ID safely, with a fallback in case it's missing
+        message_id = (
+            item['response']['messages'][0]['id']
+            if 'response' in item and 'messages' in item['response'] and isinstance(item['response']['messages'], list) and item['response']['messages']
+            else 'N/A'  # Fallback in case the message ID is not available
+        )
+
         cw.writerow([
             item['campaign_name'],
             item['number'],
-            item['response']['messages'][0]['id'],
+            message_id,
             status
         ])
     
