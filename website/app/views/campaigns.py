@@ -139,6 +139,24 @@ def send_single_message():
 
 
 
+@bp.route('/campaigns')
+@jwt_required()
+@role_required(['admin', 'user'])
+def campaigns():
+
+
+    mongo_db = current_app.mongo
+    final_campaign_response_collection = mongo_db.final_campaign_response
+
+    campaigns = list(final_campaign_response_collection.find())
+
+    for campaign in campaigns:
+        campaign['_id'] = str(campaign['_id']) 
+
+
+    return render_template('campaigns_page.html', campaigns=campaigns)
+
+
 @bp.route('/send_campaign')
 @jwt_required()
 @role_required(['admin', 'user']) 
@@ -175,7 +193,11 @@ def send_campaign_messages():
     selected_campaign = request.form['campaign']
     selected_template = request.form['campaign_template']
     campaign_name = request.form['campaign_name']
-
+    campaign_timing = request.form['campaign_timing']  
+    scheduled_date_local = request.form['scheduled_date_local']
+    scheduled_date = request.form['scheduled_date_utc']
+    logger.debug(f"----UTC Time {scheduled_date}")
+    logger.debug(f"----Local Time {scheduled_date_local}")
     # MongoDB connection
     mongo_db = current_app.mongo
     campaign_name_collection = mongo_db.campaign_name
@@ -193,43 +215,24 @@ def send_campaign_messages():
         file.save(file_path)
         media_id = upload_image(file_path)
 
-    # members_collection = mongo_db.members
-    # members = list(members_collection.find({"tag": selected_campaign}))
-
     variables = request.form.getlist('variables[]')
 
-
-    # def remove_object_ids(members):
-    #     for member in members:
-    #         if '_id' in member:
-    #             del member['_id']
-    #     return members
-
-    # Remove the _id field from members
-
-    # members = remove_object_ids(members)
     payload = {
+        "campaign_timing": campaign_timing,  
+        "scheduled_date": scheduled_date,
+        "scheduled_date_local":scheduled_date_local,  
         "selected_campaign": selected_campaign,
         "template_json": template_json,
         "variables": variables,
-        "media_id": media_id,
-        "campaign": selected_campaign,
-        "campaign_name": campaign_name
+        "campaign_name": campaign_name,
+        "media_id": media_id if media_id else 0 
     }
 
     microservice_base_url = current_app.config['MICROSERVICE_BASE_URL']
 
-    logger.info(f"Payload details: {payload}")
-    logger.info(f"Micro Service Base url {microservice_base_url}")
+    logger.info(f"BE LEVEL Payload details at BE LEVEL: {payload}")
+    logger.info(f"BE LEVEL Micro Service Base url {microservice_base_url}")
 
-
-
-    #################################################################################################
-
-
-    ## here we need to send the request to submtit the     the job 
-
-    ## it will return the  task id 
     try:
         # Send the request to submit the job
         response = requests.post(f"{microservice_base_url}/start_campaign_task", json=payload)
@@ -243,8 +246,8 @@ def send_campaign_messages():
             campaign_name_collection.insert_one({
                 "name": campaign_name,
                 "task_id": task_id,
-                "created_by": current_user,  # Optionally store who created it
-                "created_at": datetime.utcnow()  # Store the creation time
+                "created_by": current_user,  
+                "created_at": datetime.utcnow()  
             })
 
             return jsonify({

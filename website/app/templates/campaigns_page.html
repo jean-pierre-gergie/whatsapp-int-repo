@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./static/css/bootstrap.css">
+
+    <link rel="stylesheet" href="./static/vendors/iconly/bold.css">
+    
+    <link rel="stylesheet" href="./static/vendors/perfect-scrollbar/perfect-scrollbar.css">
+    <link rel="stylesheet" href="./static/vendors/bootstrap-icons/bootstrap-icons.css">
+    <link rel="stylesheet" href="./static/css/app.css">
+    <link rel="stylesheet" href="./static/css/sidebar.css"> 
+    <link rel="shortcut icon" href="./static/images/favicon.svg" type="image/x-icon">
+</head>
+
+<body>
+    <div id="app">
+        
+        {% include 'sidebar.html' %}
+
+        <div id="main">
+            <header class="mb-3">
+                <a href="#" class="burger-btn d-block d-xl-none">
+                    <i class="bi bi-justify fs-3"></i>
+                </a>
+            </header>
+
+            <section class="section">
+                <div class="row">
+                    <div class="d-flex justify-content-start my-4">
+                        <a href="/send_campaign" class="btn btn-success">Send Campaign</a>
+                    </div>
+                    <h1 class="my-4">Campaign Status</h1>
+
+                    {% for campaign in campaigns %}
+                        <div class="col-md-6">
+                            <div class="card mb-4">
+                                <div class="card-body">
+                                    <h5 class="card-title mb-4">{{ campaign.campaign_name }}</h5>
+                                    <p><strong>Status:</strong> {{ campaign.status }}</p>
+                                    <p><strong>Campaign Date:</strong> {{ campaign.campaign_date }}</p>
+                                    <p><strong>Total Members:</strong> {{ campaign.total_members }}</p>
+                                    <p><strong>Total Success:</strong> {{ campaign.total_success }}</p>
+                                    <p><strong>Total Failed:</strong> {{ campaign.total_failed }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <p>No campaigns found.</p>
+                    {% endfor %}
+                </div>
+         </div>       
+    </div>
+        
+    <script src="./static/vendors/perfect-scrollbar/perfect-scrollbar.min.js"></script>
+    <script src="./static/js/bootstrap.bundle.min.js"></script>
+
+    <script src="./static/vendors/apexcharts/apexcharts.js"></script>
+    <script src="./static/js/pages/dashboard.js"></script>
+
+    <script src="./static/js/main.js"></script>
+    
+</body>
+</html>

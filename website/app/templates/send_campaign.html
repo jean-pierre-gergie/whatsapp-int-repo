@@ -50,6 +50,22 @@
                                         <input type="text" id="campaign_name" name="campaign_name" class="form-control" placeholder="Enter a name for your campaign" required>
                                     </div>
                                 </div>
+
+                                <div class="form-group">
+                                    <label for="campaign_timing">Campaign Timing</label>
+                                    <select name="campaign_timing" id="campaign_timing" class="form-control" required onchange="toggleDateField()">
+                                        <option value="immediate">Immediate</option>
+                                        <option value="scheduled">Scheduled</option>
+                                    </select>
+                                </div>
+                                
+                                <div class="form-group" id="scheduled-date-field" style="display: none;">
+                                    <label for="scheduled_date">Scheduled Date and Time</label>
+                                    <input type="datetime-local" id="scheduled_date_local" name="scheduled_date_local" class="form-control">
+                                    <input type="hidden" id="scheduled_date_utc" name="scheduled_date_utc">
+                                </div>
+
+
                                 <div class="col-md-6 col-12">
                                     <div class="form-group">
                                         <label for="campaign_template">Template</label>
@@ -96,6 +112,19 @@
 <script>
     const db_columns = ['id', 'first_name', 'last_name', 'mobile', 'code', 'tag', 'middle_name'];
 
+    function toggleDateField() {
+        const campaignTiming = document.getElementById('campaign_timing').value;
+        const dateField = document.getElementById('scheduled-date-field');
+        
+        if (campaignTiming === 'scheduled') {
+            dateField.style.display = 'block';
+            document.getElementById('scheduled_date_local').required = true;
+        } else {
+            dateField.style.display = 'none';
+            document.getElementById('scheduled_date_local').required = false;
+        }
+    }
+    
     function updateTemplatePreview(selectId, previewId) {
         const templateSelect = document.getElementById(selectId);
         const previewContainer = document.getElementById(previewId);
@@ -174,106 +203,121 @@
     }
 
     document.getElementById('campaign-message-form').onsubmit = function(event) {
-    event.preventDefault();
+        event.preventDefault();
 
-    if (confirm("Are you sure you want to send the campaign messages?")) {
-        document.getElementById('send-status').style.display = 'block';
-        document.getElementById('send-status').textContent = "Sending...";
+        const campaignTiming = document.getElementById('campaign_timing').value;
 
-        fetch('{{ url_for("campaigns.send_campaign_messages") }}', {
-            method: 'POST',
-            body: new FormData(this)
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                const campaignName = data.campaign_name;
-                document.getElementById('send-status').textContent = "Campaign is being processed...";
-                pollCampaignStatus(campaignName);
-            } else if (data.error) {
-                document.getElementById('send-status').style.display = 'none';
-                alert(data.error);
-            } else {
-                document.getElementById('send-status').style.display = 'none';
-                alert('An error occurred while sending messages.');
+        if (campaignTiming === 'scheduled') {
+            const scheduledDateInput = document.getElementById('scheduled_date_local').value;
+            
+            if (scheduledDateInput) {
+                // Creating the local date based on the input (assumed to be local time)
+                const localDate = new Date(scheduledDateInput);
+
+                // Convert to UTC using toISOString which returns the time in UTC
+                const utcDate = localDate.toISOString();
+                
+                console.log("Local Date:", localDate);
+                console.log("UTC Date:", utcDate);
+
+                // Set the UTC date in the hidden input field
+                document.getElementById('scheduled_date_utc').value = utcDate;
             }
-        })
-        .catch(error => {
-            document.getElementById('send-status').style.display = 'none';
-            console.error('Error:', error);
-            alert('An error occurred while sending messages.');
-        });
-    }
-};
+        }
 
-function pollCampaignStatus(campaignName) {
-    let pollInterval = setInterval(() => {
-        fetch(`/campaign_task_status_polling/${campaignName}`)
-        .then(response => response.json())
-        .then(data => {
-            console.log('Polling response:', data);
+        if (confirm("Are you sure you want to send the campaign messages?")) {
+            document.getElementById('send-status').style.display = 'block';
+            document.getElementById('send-status').textContent = "Sending...";
 
-            // Check if the response contains an error
-            if (data.error) {
-                // If the error is "Task is still pending...", keep polling
-                if (data.error === "Task is still pending...") {
-                    document.getElementById('send-status').textContent = "Task is pending. Please wait...";
-                    return;  // Continue polling
+            fetch('{{ url_for("campaigns.send_campaign_messages") }}', {
+                method: 'POST',
+                body: new FormData(this)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    if (campaignTiming === 'immediate') {
+                        const campaignName = data.campaign_name;
+                        document.getElementById('send-status').textContent = "Campaign is being processed...";
+                        pollCampaignStatus(campaignName);
+                    } else {
+                        document.getElementById('send-status').textContent = "Campaign is scheduled for future delivery.";
+                    }
+                } else if (data.error) {
+                    document.getElementById('send-status').style.display = 'none';
+                    alert(data.error);
                 } else {
-                    // If it's a different error, stop polling and show the error message
-                    document.getElementById('send-status').textContent = data.error;
-                    clearInterval(pollInterval);
-                    return;
+                    document.getElementById('send-status').style.display = 'none';
+                    alert('An error occurred while sending messages.');
                 }
-            }
+            })
+            .catch(error => {
+                document.getElementById('send-status').style.display = 'none';
+                console.error('Error:', error);
+                alert('An error occurred while sending messages.');
+            });
+        }
+    };
 
-            const totalMembers = data.total_members || 0;
-            const processed = data.processed || 0;
-            const currentSuccess = data.current_success || 0;
-            const currentFailed = data.current_failed || 0;
+    function pollCampaignStatus(campaignName) {
+        let pollInterval = setInterval(() => {
+            fetch(`/campaign_task_status_polling/${campaignName}`)
+            .then(response => response.json())
+            .then(data => {
+                console.log('Polling response:', data);
 
-            switch (data.status) {
-                case "PENDING":
-                    document.getElementById('send-status').textContent = "Task is pending. Please wait...";
-                    break;
-                
-                case "Task in progress...":
-                    document.getElementById('send-status').textContent = 
-                        `Processing campaign: ${processed}/${totalMembers} processed, ${currentSuccess} successful, ${currentFailed} failed.`;
-                    break;
-                
+                if (data.error) {
+                    if (data.error === "Task is still pending...") {
+                        document.getElementById('send-status').textContent = "Task is pending. Please wait...";
+                        return;
+                    } else {
+                        document.getElementById('send-status').textContent = data.error;
+                        clearInterval(pollInterval);
+                        return;
+                    }
+                }
+
+                const totalMembers = data.total_members || 0;
+                const processed = data.processed || 0;
+                const currentSuccess = data.current_success || 0;
+                const currentFailed = data.current_failed || 0;
+
+                switch (data.status) {
+                    case "PENDING":
+                        document.getElementById('send-status').textContent = "Task is pending. Please wait...";
+                        break;
+                    
+                    case "Task in progress...":
+                        document.getElementById('send-status').textContent = 
+                            `Processing campaign: ${processed}/${totalMembers} processed, ${currentSuccess} successful, ${currentFailed} failed.`;
+                        break;
+                    
                     case "Task completed!":
-                        // Retrieve the final result from the response
                         const finalSuccessCount = data.current_success || 0;
                         const finalFailedCount = data.current_failed || 0;
-
-                        // Update the status message with the final counts
                         document.getElementById('send-status').textContent = 
                             `Send Complete: ${finalSuccessCount} sent, ${finalFailedCount} failed.`;
-
-                        // Stop polling
                         clearInterval(pollInterval);
                         break;
-                case "Task failed.":
-                    document.getElementById('send-status').textContent = "The campaign task failed. Please try again.";
-                    clearInterval(pollInterval);
-                    break;
 
-                default:
-                    document.getElementById('send-status').textContent = data.status;
-                    clearInterval(pollInterval);
-                    break;
-            }
-        })
-        .catch(error => {
-            console.error('Error fetching campaign status:', error);
-            document.getElementById('send-status').textContent = 'An error occurred while polling the campaign status.';
-            clearInterval(pollInterval);
-        });
-    }, 1000);
-}
+                    case "Task failed.":
+                        document.getElementById('send-status').textContent = "The campaign task failed. Please try again.";
+                        clearInterval(pollInterval);
+                        break;
 
-
+                    default:
+                        document.getElementById('send-status').textContent = data.status;
+                        clearInterval(pollInterval);
+                        break;
+                }
+            })
+            .catch(error => {
+                console.error('Error fetching campaign status:', error);
+                document.getElementById('send-status').textContent = 'An error occurred while polling the campaign status.';
+                clearInterval(pollInterval);
+            });
+        }, 1000);
+    }
 </script>
 
 <script src="./static/vendors/perfect-scrollbar/perfect-scrollbar.min.js"></script>
