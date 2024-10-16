@@ -83,7 +83,9 @@ def send_message_campaign(self, campaign_timing, scheduled_date,scheduled_date_l
         'curr_succ': 0,
         'curr_failed': 0
     })
-    scheduled_date_compare = parser.parse(scheduled_date)
+  
+    if campaign_timing == "scheduled"and scheduled_date is not None:
+        scheduled_date_compare = parser.parse(scheduled_date)
     if campaign_timing == "scheduled" and datetime.now(timezone.utc) < scheduled_date_compare:
         campaign_scheduled = True
         if not campaign_id_db:  # Ensure the document isn't inserted twice
