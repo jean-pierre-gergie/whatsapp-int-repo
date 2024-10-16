@@ -85,7 +85,7 @@ def check_submitted_templates():
         try:
             
             logger.debug("Fetching  and updating templates cz there is submitted templates not approved yet ")
-            fetch_and_update_templates()  # This will update templates based on your existing logic
+            fetch_and_update_templates()  
 
             return jsonify({
                 "templates": [template['template_name'] for template in submitted_templates],

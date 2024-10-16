@@ -69,10 +69,11 @@
                               {{ campaign.status }}
                           </span>
                                     </p>
-                                    <p><strong>Campaign Submitted At: </strong> {{ campaign.campaign_submitted_at }}</p>
-                                    <p><strong>Campaign Scheduled At: </strong> {{ campaign.campaign_scheduled_at }}</p>
-                                    <p><strong>Campaign Started At: </strong> {{ campaign.campaign_started_at }}</p>
-                                    <p><strong>Campaign Finished At: </strong> {{ campaign.campaign_finished_at }}</p>
+                                    <p><strong>Campaign Submitted At (Local): </strong> <span class="campaign-submitted-at">{{ campaign.campaign_submitted_at }}</span></p>
+                                    <p><strong>Campaign Scheduled At (Local): </strong> <span class="campaign-scheduled-at">{{ campaign.campaign_scheduled_at }}</span></p>
+                                    <p><strong>Campaign Started At (Local): </strong> <span class="campaign-started-at">{{ campaign.campaign_started_at }}</span></p>
+                                    <p><strong>Campaign Finished At (Local): </strong> <span class="campaign-finished-at">{{ campaign.campaign_finished_at }}</span></p>
+                                   
                                     <p><strong>Total Members:</strong> {{ campaign.total_members }}</p>
                                     <p><strong>Total Success:</strong> {{ campaign.total_success }}</p>
                                     <p><strong>Total Failed:</strong> {{ campaign.total_failed }}</p>
@@ -89,6 +90,72 @@
             </section>
          </div>       
     </div>
+    <script>
+        function convertToLocal(utcTime) {
+            console.log('UTC Time before conversion:', utcTime);  // Log the UTC time before conversion
+            
+            // Parse the date string in "YYYY-MM-DD HH:MM AM/PM" format
+            let dateTimeParts = utcTime.split(' ');  // Split date and time
+            let date = dateTimeParts[0];  // Extract the date part
+            let time = dateTimeParts[1];  // Extract the time part
+            let period = dateTimeParts[2];  // Extract AM/PM
+    
+            // Convert 12-hour time to 24-hour time
+            let timeParts = time.split(':');
+            let hours = parseInt(timeParts[0]);
+            let minutes = timeParts[1];
+    
+            if (period === 'PM' && hours < 12) {
+                hours += 12;  // Convert PM to 24-hour format
+            } else if (period === 'AM' && hours === 12) {
+                hours = 0;  // Midnight case
+            }
+    
+            // Construct a valid ISO date string
+            let isoDateString = `${date}T${hours.toString().padStart(2, '0')}:${minutes}:00Z`;
+            console.log('ISO Date String:', isoDateString);  // Log the ISO date string
+    
+            let utcDate = new Date(isoDateString);  // Now create the Date object
+            console.log('UTC Date Object:', utcDate);  // Log the date object to check if it's valid
+    
+            if (isNaN(utcDate.getTime())) {
+                console.error('Invalid date encountered:', utcTime);  // Log if the date is invalid
+                return 'Invalid Date';  // Return a placeholder for invalid dates
+            }
+            return utcDate.toLocaleString();  // Convert to local time
+        }
+    
+        document.addEventListener('DOMContentLoaded', (event) => {
+            let campaignSubmittedElements = document.querySelectorAll('.campaign-submitted-at');
+            let campaignScheduledElements = document.querySelectorAll('.campaign-scheduled-at');
+            let campaignStartedElements = document.querySelectorAll('.campaign-started-at');
+            let campaignFinishedElements = document.querySelectorAll('.campaign-finished-at');
+    
+            campaignSubmittedElements.forEach(element => {
+                let utcTime = element.textContent;
+                console.log('Converting campaign submitted time:', utcTime);  // Log the original time
+                element.textContent = convertToLocal(utcTime);
+            });
+    
+            campaignScheduledElements.forEach(element => {
+                let utcTime = element.textContent;
+                console.log('Converting campaign scheduled time:', utcTime);  // Log the original time
+                element.textContent = convertToLocal(utcTime);
+            });
+    
+            campaignStartedElements.forEach(element => {
+                let utcTime = element.textContent;
+                console.log('Converting campaign started time:', utcTime);  // Log the original time
+                element.textContent = convertToLocal(utcTime);
+            });
+    
+            campaignFinishedElements.forEach(element => {
+                let utcTime = element.textContent;
+                console.log('Converting campaign finished time:', utcTime);  // Log the original time
+                element.textContent = convertToLocal(utcTime);
+            });
+        });
+    </script>
         
     <script src="./static/vendors/perfect-scrollbar/perfect-scrollbar.min.js"></script>
     <script src="./static/js/bootstrap.bundle.min.js"></script>

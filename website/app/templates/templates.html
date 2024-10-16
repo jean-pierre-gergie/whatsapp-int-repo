@@ -179,6 +179,7 @@
         }
     
         function checkSubmittedTemplates() {
+            console.log("Polling backend for template updates...")
             fetch('/check_submitted_templates')
             .then(response => response.json())
             .then(data => {
@@ -197,25 +198,33 @@
             fetch('/check_submitted_templates')
             .then(response => response.json())
             .then(data => {
+                console.log('Response data:', data); // Log the response data
                 if (data.found) {
+                    console.log('Found submitted templates:', data.templates); // Log the templates if found
                     startPolling(); // Start polling only if there's a submitted template
+                } else {
+                    console.log('No submitted templates found');
                 }
             })
-            .catch(error => console.error('Error checking submitted templates:', error));
+            .catch(error => {
+                console.error('Error checking submitted templates:', error); // Log any errors
+            });
         }
     
         // Update the table UI or add a visual indicator that a template is submitted
-        function updateTemplateTable(submittedTemplates) {
-            submittedTemplates.forEach(templateName => {
-                let templateRow = document.querySelector(`td.clickable-template:contains('${templateName}')`);
-                if (templateRow) {
-                    let statusCell = templateRow.parentElement.querySelector('td:nth-child(3)'); // Assuming the Status is in the 3rd column
-                    if (statusCell) {
-                        statusCell.innerHTML = '<span class="badge bg-secondary">Submitted</span>';
-                    }
-                }
-            });
-        }
+        // function updateTemplateTable(submittedTemplates) {
+        //     submittedTemplates.forEach(templateName => {
+        //         let templateRows = document.querySelectorAll('td.clickable-template');
+        //         templateRows.forEach(templateRow => {
+        //             if (templateRow.textContent.trim() === templateName) {
+        //                 let statusCell = templateRow.parentElement.querySelector('td:nth-child(3)');
+        //                 if (statusCell) {
+        //                     statusCell.innerHTML = '<span class="badge bg-secondary">Submitted</span>';
+        //                 }
+        //             }
+        //         });
+        //     });
+        // }
     
         // Run the check for submitted templates on page load
         window.onload = checkInitialSubmittedTemplates;

@@ -193,7 +193,15 @@
 
     function toggleImageField(hasImage) {
         const imageField = document.getElementById('image-field');
-        imageField.style.display = hasImage ? 'block' : 'none';
+        const fileInput = document.getElementById('file');
+        
+        if (hasImage) {
+            imageField.style.display = 'block';
+            fileInput.required = true;  // Make it required when the image is needed
+        } else {
+            imageField.style.display = 'none';
+            fileInput.required = false; // Remove the required attribute when the image is not needed
+        }
     }
 
     function alignTextBasedOnLanguage(element) {
