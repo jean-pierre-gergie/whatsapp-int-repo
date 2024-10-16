@@ -237,8 +237,18 @@ def send_campaign_messages():
     file = request.files.get('file')
     media_id = None
     if file:
-        file_path = f"./{file.filename}"
+        # Define the upload directory
+        upload_dir = './uploaded_assets'
+
+        # Check if the directory exists, if not, create it
+        if not os.path.exists(upload_dir):
+            os.makedirs(upload_dir)
+
+        # Save the file in the 'uploaded_assets' directory
+        file_path = os.path.join(upload_dir, file.filename)
         file.save(file_path)
+
+        # Upload the file and get the media_id (assuming upload_image is a function to upload to a remote service)
         media_id = upload_image(file_path)
 
     variables = request.form.getlist('variables[]')
