@@ -94,7 +94,7 @@
                                 <div class="col-md-6 col-12">
                                     <div class="form-group" id="image-field" style="display: none;">
                                         <label for="file">Image File</label>
-                                        <input type="file" id="file" name="file" class="form-control">
+                                        <input type="file" id="file" name="file" class="form-control" accept="image/png, image/jpeg">
                                     </div>
                                 </div>
                                 <div class="col-12 d-flex justify-content-end">
@@ -205,6 +205,17 @@
     document.getElementById('campaign-message-form').onsubmit = function(event) {
         event.preventDefault();
 
+        const fileInput = document.getElementById('file');
+            if (fileInput && fileInput.files.length > 0) {
+                const file = fileInput.files[0];
+                const validFileTypes = ['image/png', 'image/jpeg'];
+
+                if (!validFileTypes.includes(file.type)) {
+                    alert('Invalid file type. Please upload a PNG or JPEG image.');
+                    return;
+                }
+            }
+
         const campaignTiming = document.getElementById('campaign_timing').value;
 
         if (campaignTiming === 'scheduled') {
@@ -264,6 +275,9 @@
                 alert('An error occurred while sending messages.');
             });
         }
+
+
+        
     };
 
     function pollCampaignStatus(campaignName) {
