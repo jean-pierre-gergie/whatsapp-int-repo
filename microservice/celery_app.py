@@ -94,6 +94,10 @@ def send_message_campaign(self, campaign_timing, scheduled_date,scheduled_date_l
             'campaign_scheduled_at': scheduled_date,
             'total_members': total_members
         }
+
+        campaign_id = manage_campaign_data(
+            initial_campaign_data, final_campaign_response_collection, campaign_id=None, action='insert')
+        
         self.apply_async(
                 kwargs = {
                     'campaign_timing': campaign_timing,  # Same
