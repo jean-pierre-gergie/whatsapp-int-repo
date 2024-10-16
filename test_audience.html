@@ -16,7 +16,7 @@
     <link rel="stylesheet" href="./static/css/sidebar.css"> 
     <link rel="shortcut icon" href="./static/images/favicon.svg" type="image/x-icon">
     <style>
-            #template-preview, #single-template-preview {
+        #template-preview, #single-template-preview {
             background-color: #f8f9fa; /* Light grey background */
             color: #000000; 
         }
@@ -26,10 +26,12 @@
             color: #000; /* Ensure text is black */
             border: 1px solid #ccc; /* Define border color */
         }
+
+        /* Hide the form initially */
         #add-member-form {
             display: none;
         }
-        </style>
+    </style>
 </head>
 
 <body>
@@ -45,7 +47,7 @@
             <section class="section">
                 <div class="card">
                     <div class="card-header">
-                        Select a tag to view members associated with it                        
+                        Select a tag to view members associated with it
                         <form action="{{ url_for('campaigns.audience') }}" method="get" class="d-inline">
                             <div class="input-group">
                                 <select name="tag" class="form-select" onchange="this.form.submit()">
@@ -56,6 +58,7 @@
                                 </select>
                             </div>
                         </form>
+                        
                         <!-- New dropdown and button for deleting by tag -->
                         <div class="input-group mt-3">
                            <select id="delete-tag-select" class="form-select">
@@ -67,46 +70,46 @@
                             <button class="btn btn-danger ms-2" onclick="deleteByTag()">Delete by Tag</button>
                         </div>
                     </div>
-                <!-- Form to add a new member -->
-                <div class="card-body">
-                    <!-- Button to show the form -->
-                    <button id="show-form-btn" class="btn btn-primary" onclick="toggleForm()">Add New Member</button>
 
-                    <!-- Form to add a new member -->
-                    <form id="add-member-form" onsubmit="addMember(event)">
-                        <div class="row mt-3">
-                            <div class="col-md-4 mb-2">
-                                <input type="text" name="first_name" id="first-name" class="form-control" placeholder="First Name" required>
+                    <div class="card-body">
+                        <!-- Button to show the form -->
+                        <button id="show-form-btn" class="btn btn-primary" onclick="toggleForm()">Add New Member</button>
+
+                        <!-- Form to add a new member -->
+                        <form id="add-member-form" onsubmit="addMember(event)">
+                            <div class="row mt-3">
+                                <div class="col-md-4 mb-2">
+                                    <input type="text" name="first_name" id="first-name" class="form-control" placeholder="First Name" required>
+                                </div>
+                                <div class="col-md-4 mb-2">
+                                    <input type="text" name="middle_name" id="middle-name" class="form-control" placeholder="Middle Name">
+                                </div>
+                                <div class="col-md-4 mb-2">
+                                    <input type="text" name="last_name" id="last-name" class="form-control" placeholder="Last Name" required>
+                                </div>
+                                <div class="col-md-4 mb-2">
+                                    <select name="tag" id="tag" class="form-select" required>
+                                        <option value="" selected>Select Tag</option>
+                                        {% for tag in tags %}
+                                        <option value="{{ tag }}">{{ tag }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-4 mb-2">
+                                    <input type="text" name="code" id="code" class="form-control" placeholder="Code">
+                                </div>
+                                <div class="col-md-4 mb-2">
+                                    <input type="text" name="mobile" id="mobile" class="form-control" placeholder="Mobile" required>
+                                </div>
+                                <div class="col-md-12 mt-2">
+                                    <button type="submit" class="btn btn-primary">Add Member</button>
+                                    <button type="button" class="btn btn-secondary ms-2" onclick="toggleForm()">Cancel</button>
+                                </div>
                             </div>
-                            <div class="col-md-4 mb-2">
-                                <input type="text" name="middle_name" id="middle-name" class="form-control" placeholder="Middle Name">
-                            </div>
-                            <div class="col-md-4 mb-2">
-                                <input type="text" name="last_name" id="last-name" class="form-control" placeholder="Last Name" required>
-                            </div>
-                            <div class="col-md-4 mb-2">
-                                <select name="tag" id="tag" class="form-select" required>
-                                    <option value="" selected>Select Tag</option>
-                                    {% for tag in tags %}
-                                    <option value="{{ tag }}">{{ tag }}</option>
-                                    {% endfor %}
-                                </select>
-                            </div>
-                            <div class="col-md-4 mb-2">
-                                <input type="text" name="code" id="code" class="form-control" placeholder="Code">
-                            </div>
-                            <div class="col-md-4 mb-2">
-                                <input type="text" name="mobile" id="mobile" class="form-control" placeholder="Mobile" required>
-                            </div>
-                            <div class="col-md-12 mt-2">
-                                <button type="submit" class="btn btn-primary">Add Member</button>
-                                <button type="button" class="btn btn-secondary ms-2" onclick="toggleForm()">Cancel</button>
-                            </div>
-                        </div>
-                        <!-- Feedback message -->
-                        <div id="feedback" class="mt-3"></div>
-                    </form>
-                </div>
+                            <!-- Feedback message -->
+                            <div id="feedback" class="mt-3"></div>
+                        </form>
+                    </div>
 
                     <div class="card-body">
                         <table class="table table-striped" id="table1">
@@ -133,7 +136,7 @@
                                 {% endfor %}
                             </tbody>
                         </table>
-                        
+
                         <!-- Pagination Controls -->
                         <nav aria-label="Page navigation example">
                             <ul class="pagination justify-content-center">
@@ -160,6 +163,10 @@
                         </nav>
                     </div>
                     
+                </div>
+            </section>
+        </div>
+    </div>
 
     <script src="./static/vendors/perfect-scrollbar/perfect-scrollbar.min.js"></script>
     <script src="./static/js/bootstrap.bundle.min.js"></script>
@@ -175,102 +182,6 @@
             } else {
                 form.style.display = 'none';
                 showFormBtn.style.display = 'block'; // Show the button again when form is hidden
-            }
-        }
-
-        function removeMember(memberId) {
-            if (confirm('Are you sure you want to remove this member?')) {
-                fetch(`/audience/${memberId}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('jwt_token')}` // Adjust if JWT is stored differently
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert('Member removed successfully.');
-                        location.reload(); // Reload to update list
-                    } else {
-                        alert('Failed to remove member.');
-                    }
-                })
-                .catch(error => console.error('Error:', error));
-            }
-        }
-
-        function addContact() {
-            // Get the values from the input fields
-            const firstName = document.getElementById('first-name').value;
-            const middleName = document.getElementById('middle-name').value;
-            const lastName = document.getElementById('last-name').value;
-            const tag = document.getElementById('add-tag-select').value;
-            const code = document.getElementById('code').value;
-            const mobile = document.getElementById('mobile').value;
-            
-            // Validate input
-            if (!firstName || !lastName || !tag || !mobile) {
-                alert('Please fill in all required fields.');
-                return;
-            }
-
-            // Create the contact object
-            const contact = {
-                first_name: firstName,
-                middle_name: middleName,
-                last_name: lastName,
-                tag: tag,
-                code: code,
-                mobile: mobile
-            };
-
-            // Send a POST request to add the contact
-            fetch('/audience', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${localStorage.getItem('jwt_token')}` // Adjust if JWT is stored differently
-                },
-                body: JSON.stringify(contact)
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('Contact added successfully.');
-                    location.reload(); // Reload to update list
-                } else {
-                    alert('Failed to add contact.');
-                }
-            })
-            .catch(error => console.error('Error:', error));
-        }
-            
-        function deleteByTag() {
-            const selectedTag = document.getElementById('delete-tag-select').value;
-            if (!selectedTag) {
-                alert('Please select a tag to delete.');
-                return;
-            }
-        
-            if (confirm(`Are you sure you want to delete all members with the tag "${selectedTag}"?`)) {
-                fetch(`/audience/tag/${selectedTag}`, {
-                    method: 'DELETE',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${localStorage.getItem('jwt_token')}` // Adjust if JWT is stored differently
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert('Members with tag deleted successfully.');
-                        location.reload(); // Reload to update list
-                    } else {
-                        alert('Failed to delete members by tag.');
-                    }
-                })
-                .catch(error => console.error('Error:', error));
             }
         }
 
@@ -304,14 +215,6 @@
                 document.getElementById('feedback').innerHTML = '<div class="alert alert-danger">An error occurred.</div>';
             });
         }
-
-        
-        
-
-
     </script>
-        
-        
 </body>
-
 </html>
