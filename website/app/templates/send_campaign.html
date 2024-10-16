@@ -213,6 +213,13 @@
             if (scheduledDateInput) {
                 // Creating the local date based on the input (assumed to be local time)
                 const localDate = new Date(scheduledDateInput);
+                const currentDate = new Date();
+
+                if (localDate < currentDate) {
+                    alert("Scheduled date cannot be in the past. Please choose a future date.");
+                    return; 
+                }
+
 
                 // Convert to UTC using toISOString which returns the time in UTC
                 const utcDate = localDate.toISOString();

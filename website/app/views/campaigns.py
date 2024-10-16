@@ -1,5 +1,6 @@
 from flask import Blueprint, render_template, request, jsonify, send_file, url_for, current_app, make_response
 from datetime import datetime, timedelta
+from dateutil import parser
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from ..utils.decorators import role_required
 from ..utils.helper_functions import send_message, upload_image,get_report,transform_template_json, get_template_details, send_message_campaign,get_all_collections_content
@@ -139,21 +140,46 @@ def send_single_message():
 
 
 
+
 @bp.route('/campaigns')
 @jwt_required()
 @role_required(['admin', 'user'])
 def campaigns():
 
-
+    # Get the MongoDB collection
     mongo_db = current_app.mongo
     final_campaign_response_collection = mongo_db.final_campaign_response
 
-    campaigns = list(final_campaign_response_collection.find())
+    # Fetch campaigns from the collection
+    campaigns = list(final_campaign_response_collection.find().sort('campaign_submitted_at', -1))
 
+    # Define the date fields that need formatting
+    date_fields = [
+        'campaign_submitted_at',
+        'campaign_scheduled_at',  # This is stored as a string in ISO format
+        'campaign_started_at',
+        'campaign_finished_at'
+    ]
+
+    # Loop through campaigns and reformat applicable date fields
     for campaign in campaigns:
-        campaign['_id'] = str(campaign['_id']) 
+        campaign['_id'] = str(campaign['_id'])
 
+        for field in date_fields:
+            if field in campaign:
+                # Check if the field is a datetime object or a string in ISO format
+                if isinstance(campaign[field], datetime):
+                    # Convert datetime objects to a readable format
+                    campaign[field] = campaign[field].strftime('%Y-%m-%d %I:%M %p')
+                elif isinstance(campaign[field], str):
+                    try:
+                        # Convert the ISO 8601 string to a datetime object
+                        campaign[field] = parser.parse(campaign[field]).strftime('%Y-%m-%d %I:%M %p')
+                    except Exception as e:
+                        # Handle parsing errors if necessary
+                        current_app.logger.error(f"Error parsing date field {field}: {e}")
 
+    # Render the template with the formatted campaigns
     return render_template('campaigns_page.html', campaigns=campaigns)
 
 

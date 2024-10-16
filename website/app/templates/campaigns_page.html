@@ -18,7 +18,23 @@
     <link rel="stylesheet" href="./static/css/sidebar.css"> 
     <link rel="shortcut icon" href="./static/images/favicon.svg" type="image/x-icon">
 </head>
+<style>
+    .status-finished {
+        color: green;
+    }
 
+    .status-sending {
+        color: blue;
+    }
+
+    .status-pending {
+        color: orange;
+    }
+
+    .status-default {
+        color: black;
+    }
+</style>
 <body>
     <div id="app">
         
@@ -37,24 +53,40 @@
                         <a href="/send_campaign" class="btn btn-success">Send Campaign</a>
                     </div>
                     <h1 class="my-4">Campaign Status</h1>
-
+            
                     {% for campaign in campaigns %}
-                        <div class="col-md-6">
-                            <div class="card mb-4">
-                                <div class="card-body">
-                                    <h5 class="card-title mb-4">{{ campaign.campaign_name }}</h5>
-                                    <p><strong>Status:</strong> {{ campaign.status }}</p>
-                                    <p><strong>Campaign Date:</strong> {{ campaign.campaign_date }}</p>
+                        <div class="col-md-4"> <!-- Changed from col-md-6 to col-md-4 to reduce width -->
+                            <div class="card mb-4" style="padding: 10px; margin: 10px;"> <!-- Adjust padding and margin -->
+                                <div class="card-body" style="font-size: 0.9rem;"> <!-- Reduce font size -->
+                                    <h5 class="card-title mb-4" style="font-size: 1.1rem;">{{ campaign.campaign_name }}</h5>
+
+                                    <p><strong>Status:</strong> 
+                                        <span class="{% if campaign.status == 'Finished' %}status-finished
+                                        {% elif campaign.status == 'Sending Messages' %}status-sending
+                                        {% elif campaign.status == 'Pending Start Time' %}status-pending
+                                        {% else %}status-default
+                                        {% endif %}">
+                              {{ campaign.status }}
+                          </span>
+                                    </p>
+                                    <p><strong>Campaign Submitted At: </strong> {{ campaign.campaign_submitted_at }}</p>
+                                    <p><strong>Campaign Scheduled At: </strong> {{ campaign.campaign_scheduled_at }}</p>
+                                    <p><strong>Campaign Started At: </strong> {{ campaign.campaign_started_at }}</p>
+                                    <p><strong>Campaign Finished At: </strong> {{ campaign.campaign_finished_at }}</p>
                                     <p><strong>Total Members:</strong> {{ campaign.total_members }}</p>
                                     <p><strong>Total Success:</strong> {{ campaign.total_success }}</p>
                                     <p><strong>Total Failed:</strong> {{ campaign.total_failed }}</p>
+                                    <p><strong>Success Percentage:</strong> {{ campaign.success_percentage }}</p>
+                                    <p><strong>Failed Percentage:</strong> {{ campaign.failed_percentage }}</p>
                                 </div>
                             </div>
                         </div>
                     {% else %}
                         <p>No campaigns found.</p>
                     {% endfor %}
+
                 </div>
+            </section>
          </div>       
     </div>
         

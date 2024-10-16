@@ -46,12 +46,13 @@ celery_app = Celery(
 
 
 @celery_app.task(bind=True)
-def send_message_campaign(self, campaign_timing, scheduled_date,scheduled_date_local, selected_campaign, template_json, variables, campaign_name, media_id=None):
+def send_message_campaign(self, campaign_timing, scheduled_date,scheduled_date_local, selected_campaign, template_json, variables, campaign_name, media_id=None,campaign_id_db =None):
 
     logger.debug(f"Task started with: campaign_timing={campaign_timing}, scheduled_datetime={scheduled_date},scheduled_datetime_local={scheduled_date_local}, "
                  f"selected_campaign={selected_campaign}, template_json={template_json}, variables={variables}, "
                  f"campaign_name={campaign_name}, media_id={media_id}")
     
+    logger.debug(f"campaign_id_db: {campaign_id_db}")
 
     success_rows = []
     failed_rows = []
@@ -85,56 +86,75 @@ def send_message_campaign(self, campaign_timing, scheduled_date,scheduled_date_l
     scheduled_date_compare = parser.parse(scheduled_date)
     if campaign_timing == "scheduled" and datetime.now(timezone.utc) < scheduled_date_compare:
         campaign_scheduled = True
-        initial_campaign_data = {
-            'status': "Pending Start Time",
-            'campaign': selected_campaign,
-            'campaign_name': campaign_name,
-            'campaign_submitted_at': datetime.now(),
-            'campaign_scheduled': campaign_scheduled,
-            'campaign_scheduled_at': scheduled_date,
-            'total_members': total_members
-        }
+        if not campaign_id_db:  # Ensure the document isn't inserted twice
+            initial_campaign_data = {
+                'status': "Pending Start Time",
+                'campaign': selected_campaign,
+                'campaign_name': campaign_name,
+                'campaign_submitted_at': datetime.now(),
+                'campaign_scheduled': campaign_scheduled,
+                'campaign_scheduled_at': scheduled_date,
+                'total_members': total_members
+            }
 
-        campaign_id = manage_campaign_data(
-            initial_campaign_data, final_campaign_response_collection, campaign_id=None, action='insert')
-        
+            # Insert document and capture the campaign_id_db for future updates
+            campaign_id_db = manage_campaign_data(
+                initial_campaign_data, final_campaign_response_collection, campaign_id=None, action='insert'
+            )
+
+        # Schedule the task to run at the scheduled time, passing campaign_id_db
         self.apply_async(
-                kwargs = {
-                    'campaign_timing': campaign_timing,  # Same
-                    'scheduled_date': scheduled_date,  # Rename scheduled_datetime to scheduled_date
-                    'scheduled_date_local':scheduled_date_local,
-                    'selected_campaign': selected_campaign,  # Same
-                    'template_json': template_json,  # Same
-                    'variables': variables,  # Same
-                    'campaign_name': campaign_name,  # Same
-                    'media_id': media_id if media_id else 0  # Use media_id with default value 0 if not provided
-                },
-                eta=scheduled_date
-                )
-        return 
+            kwargs={
+                'campaign_timing': campaign_timing,
+                'scheduled_date': scheduled_date,
+                'scheduled_date_local': scheduled_date_local,
+                'selected_campaign': selected_campaign,
+                'template_json': template_json,
+                'variables': variables,
+                'campaign_name': campaign_name,
+                'media_id': media_id if media_id else 0,
+                'campaign_id_db': str(campaign_id_db)  # Pass the campaign_id_db for the second run
+            },
+            eta=scheduled_date  # Set task to run at the scheduled date
+        )
+        return
 
     else:
-        initial_campaign_data = {
-            'status': "Starting Now",
-            'campaign': selected_campaign,
-            'campaign_name': campaign_name,
-            'campaign_submitted_at': datetime.now(),
-            'campaign_scheduled': False,
-            'total_members': total_members
-        }
 
-        campaign_id = manage_campaign_data(
-            initial_campaign_data, final_campaign_response_collection, campaign_id=None, action='insert')
+        logger.debug(f"immediate or Second run campaign_id_db: {campaign_id_db}")
+
+        if not campaign_id_db:  # If it's not passed, insert a new document
+            logger.debug(f"going for immedate campaign_id_db: {campaign_id_db}")
+            initial_campaign_data = {
+                'status': "Starting Now",
+                'campaign': selected_campaign,
+                'campaign_name': campaign_name,
+                'campaign_submitted_at': datetime.now(),
+                'campaign_scheduled': False,  # Immediate campaign, so not scheduled
+                'total_members': total_members
+            }
+
+            # Insert document for immediate campaigns
+            campaign_id_db = manage_campaign_data(
+                initial_campaign_data, final_campaign_response_collection, campaign_id=None, action='insert'
+            )
 
         for prog_idx, member in enumerate(members, start=1):
+
+            
+
             time.sleep(5)
 
             progress_update = {
                 'status': "Sending Messages",
                 'campaign_started_at': datetime.now()
             }
-   
-            manage_campaign_data(progress_update, final_campaign_response_collection, campaign_id=campaign_id, action="update")
+
+            logger.debug(f"updating record campaign_id_db: {campaign_id_db}")
+
+            logger.debug(f"progress updating : {progress_update}")
+        
+            manage_campaign_data(progress_update, final_campaign_response_collection, campaign_id=campaign_id_db, action="update")
 
             number = member['mobile']
             template_dict['to'] = number
@@ -183,8 +203,9 @@ def send_message_campaign(self, campaign_timing, scheduled_date,scheduled_date_l
                 'curr_failed': len(failed_rows)
             })
 
+         # Final update after processing all members
         final_update = {
-            'status': "finished",
+            'status': "Finished",
             'campaign_finished_at': datetime.now(),
             'total_success': len(success_rows),
             'total_failed': len(failed_rows),
@@ -192,11 +213,15 @@ def send_message_campaign(self, campaign_timing, scheduled_date,scheduled_date_l
             'failed_percentage': f'{(len(failed_rows) / total_members) * 100:.2f}%' if total_members > 0 else '0.00%'
         }
 
-        update_final_campaign_data(campaign_id=campaign_id,
-                                    final_campaign_response_collection=final_campaign_response_collection, 
-                                    final_update=final_update,
-                                    success_rows_len=len(success_rows),
-                                    failed_rows_len=len(success_rows))
+        # Update the final campaign data using the same campaign_id_db
+        update_final_campaign_data(
+            campaign_id=campaign_id_db,
+            final_campaign_response_collection=final_campaign_response_collection,
+            final_update=final_update,
+            success_rows_len=len(success_rows),
+            failed_rows_len=len(failed_rows)
+        )
+
 
     logger.debug(f"Campaign completed. Success: {len(success_rows)}, Failed: {len(failed_rows)}")
 

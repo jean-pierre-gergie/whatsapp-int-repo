@@ -5,6 +5,8 @@ import json
 from datetime import datetime
 import requests
 import time 
+from bson import ObjectId
+
 
 
 logger = get_task_logger(__name__)
@@ -78,6 +80,17 @@ def manage_campaign_data(campaign_data_progess, final_campaign_response_collecti
     - success_rows: List of successful rows (for counting in the 'update' action).
     - failed_rows: List of failed rows (for counting in the 'update' action).
     """
+    logger.debug(f"progress updating function campaign id   : {campaign_id}")
+    logger.debug(f"progress updating function  action : {action}")
+    logger.debug(f"progress updating function  payload : {campaign_data_progess}")
+
+    try:
+        campaign_id = ObjectId(campaign_id)
+        logger.debug("reformated  the ID to object")
+    except Exception as e:
+        logging.error(f"Invalid campaign_id format: {e}")
+        return
+
 
     if action == "insert":
         try:
@@ -90,19 +103,25 @@ def manage_campaign_data(campaign_data_progess, final_campaign_response_collecti
             return None
 
     elif action == "update":
+
+        doc = final_campaign_response_collection.find_one({'_id': campaign_id})
+
+        if not doc:
+            logging.error(f"No document found with campaign_id: {campaign_id}")
+            return
+        
+
         if campaign_id is None:
             logging.error("Campaign ID must be provided for the update action.")
             return
 
-        
-        
         try:
             # Update the campaign progress
             final_campaign_response_collection.update_one(
                 {'_id': campaign_id},
                 {'$set': campaign_data_progess}
             )
-            logging.debug(f"Campaign progress updated for member ")
+            logging.debug(f"Campaign progress updated for campaign {campaign_id} with {campaign_data_progess} ")
         except Exception as e:
             logging.error(f"Error updating campaign progress in MongoDB: {e}")
 
@@ -279,6 +298,12 @@ def update_final_campaign_data(campaign_id, final_campaign_response_collection, 
     """
     # Prepare the final update data
     
+    try:
+        campaign_id = ObjectId(campaign_id)
+        logger.debug("reformated  the ID to object")
+    except Exception as e:
+        logging.error(f"Invalid campaign_id format: {e}")
+        return
 
     try:
         # Update the final campaign data in MongoDB
