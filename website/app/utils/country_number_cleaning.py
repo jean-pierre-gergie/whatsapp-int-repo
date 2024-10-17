@@ -99,6 +99,7 @@ def is_valid_phone_number(number):
     try:
         logging.info(f"Received phone number: {number}")
         
+        number = str(number)
         # Strip leading non-digits and remove leading 00
         number = strip_leading_non_digits_and_remove_00(number)
         logging.debug(f"Processed number after stripping: {number}")
