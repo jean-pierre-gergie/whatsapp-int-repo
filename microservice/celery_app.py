@@ -145,7 +145,7 @@ def send_message_campaign(self, campaign_timing, scheduled_date,scheduled_date_l
 
             
 
-            time.sleep(5)
+            # time.sleep(5)
 
             progress_update = {
                 'status': "Sending Messages",
