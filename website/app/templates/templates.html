@@ -173,60 +173,88 @@
         }
     </script>
     <script>
-        function startPolling() {
-            // Poll every 5 seconds to check for submitted templates
-            setInterval(checkSubmittedTemplates, 5000);
-        }
-    
-        function checkSubmittedTemplates() {
-            console.log("Polling backend for template updates...")
-            fetch('/check_submitted_templates')
-            .then(response => response.json())
-            .then(data => {
-                if (data.found) {
-                    // If submitted templates are found, update the UI
-                    updateTemplateTable(data.templates);
-                    // Optionally, you can refresh the table or reload the page
-                    location.reload(); 
-                }
-            })
-            .catch(error => console.error('Error checking submitted templates:', error));
-        }
-    
-        // Call this function when the page loads
-        function checkInitialSubmittedTemplates() {
-            fetch('/check_submitted_templates')
-            .then(response => response.json())
-            .then(data => {
-                console.log('Response data:', data); // Log the response data
-                if (data.found) {
-                    console.log('Found submitted templates:', data.templates); // Log the templates if found
-                    startPolling(); // Start polling only if there's a submitted template
-                } else {
-                    console.log('No submitted templates found');
-                }
-            })
-            .catch(error => {
-                console.error('Error checking submitted templates:', error); // Log any errors
-            });
-        }
-    
-        // Update the table UI or add a visual indicator that a template is submitted
-        // function updateTemplateTable(submittedTemplates) {
-        //     submittedTemplates.forEach(templateName => {
+        // let pollingInterval;  // Variable to hold the interval ID
+
+        // function startPolling() {
+        //     // Poll every 5 seconds to check for submitted templates
+        //     pollingInterval = setInterval(checkSubmittedTemplates, 5000);
+        // }
+
+        // function stopPolling() {
+        //     if (pollingInterval) {
+        //         clearInterval(pollingInterval);  // Clear the interval when polling is no longer needed
+        //         console.log('Stopped polling.');
+        //     }
+        // }
+
+        // function checkSubmittedTemplates() {
+        //     console.log("Polling backend for template updates...");
+        //     fetch('/check_submitted_templates')
+        //     .then(response => response.json())
+        //     .then(data => {
+        //         if (data.found) {
+        //             // If submitted templates are found, update the status in the table
+        //             updateTemplateStatus(data.templates);
+        //         } else {
+        //             // If no templates are found, stop polling
+        //             console.log('No submitted templates found, stopping polling...');
+        //             stopPolling();  // Stop polling if there are no templates found
+        //         }
+        //     })
+        //     .catch(error => {
+        //         console.error('Error checking submitted templates:', error);
+        //         stopPolling();  // Optionally stop polling in case of an error
+        //     });
+        // }
+
+        // function updateTemplateStatus(updatedTemplates) {
+        //     updatedTemplates.forEach(template => {
+        //         let templateName = template.template_name;  // Use template_name instead of template itself
         //         let templateRows = document.querySelectorAll('td.clickable-template');
         //         templateRows.forEach(templateRow => {
         //             if (templateRow.textContent.trim() === templateName) {
-        //                 let statusCell = templateRow.parentElement.querySelector('td:nth-child(3)');
+        //                 let statusCell = templateRow.parentElement.querySelector('td:nth-child(3)'); // Status column
         //                 if (statusCell) {
-        //                     statusCell.innerHTML = '<span class="badge bg-secondary">Submitted</span>';
+        //                     // Fetch updated status from the server for this specific template
+        //                     fetch(`/check_submitted_templates?template_name=${templateName}`)
+        //                     .then(response => response.json())
+        //                     .then(data => {
+        //                         if (data.status === 'approved') {
+        //                             statusCell.innerHTML = '<span class="badge bg-success">Approved</span>';
+        //                         } else if (data.status === 'rejected') {
+        //                             statusCell.innerHTML = '<span class="badge bg-danger">Rejected</span>';
+        //                         } else {
+        //                             statusCell.innerHTML = '<span class="badge bg-secondary">Submitted</span>';
+        //                         }
+
+        //                         // Optionally stop polling if all templates have been approved or rejected
+        //                         if (data.status === 'approved' || data.status === 'rejected') {
+        //                             stopPolling();  // Stop polling if all are processed
+        //                         }
+        //                     })
+        //                     .catch(error => console.error('Error updating template status:', error));
         //                 }
         //             }
         //         });
         //     });
         // }
-    
-        // Run the check for submitted templates on page load
+
+        // function checkInitialSubmittedTemplates() {
+        //     fetch('/check_submitted_templates')
+        //     .then(response => response.json())
+        //     .then(data => {
+        //         console.log('Response data:', data); // Log the response data
+        //         if (data.found) {
+        //             console.log('Found submitted templates:', data.templates); // Log the templates if found
+        //             startPolling(); // Start polling only if there's a submitted template
+        //         } else {
+        //             console.log('No submitted templates found');
+        //         }
+        //     })
+        //     .catch(error => {
+        //         console.error('Error checking submitted templates:', error); // Log any errors
+        //     });
+        // }
         window.onload = checkInitialSubmittedTemplates;
     </script>
     

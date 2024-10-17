@@ -73,34 +73,36 @@ def remove_template():
 @bp.route('/check_submitted_templates', methods=['GET'])
 @jwt_required()
 @role_required(['admin', 'user']) 
-def check_submitted_templates():
+def get_template_status():
+    template_name = request.args.get('template_name')
+    
+    if not template_name:
+        return jsonify({
+            "error": "Template name is required."
+        }), 400
+
     mongo_db = current_app.mongo
     collection = mongo_db.templates
 
-    # Query for templates with the status 'submitted'
-    submitted_templates = list(collection.find({"status": "submitted"}))
+    try:
+        # Fetch the template by its name
+        template = collection.find_one({"template_name": template_name})
 
-    if submitted_templates:
-        # Call the function to update templates
-        try:
-            
-            logger.debug("Fetching  and updating templates cz there is submitted templates not approved yet ")
-            fetch_and_update_templates()  
-
+        if template:
             return jsonify({
-                "templates": [template['template_name'] for template in submitted_templates],
-                "found": True
+                "status": template['status']  # Return the status of the template
             })
-        except Exception as e:
-            print(f"Error in fetching and updating templates: {e}")
+        else:
             return jsonify({
-                "templates": [template['template_name'] for template in submitted_templates],
-                "found": True,
-                "update_status": "failed"
-            }), 500
-    else:
-        return jsonify({"found": False})
+                "error": "Template not found."
+            }), 404
 
+    except Exception as e:
+        logger.error(f"Error fetching template status for {template_name}: {e}")
+        return jsonify({
+            "error": "An error occurred while fetching the template status.",
+            "details": str(e)
+        }), 500
 
 
 @bp.route('/create_template_html')

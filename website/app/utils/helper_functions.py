@@ -428,6 +428,7 @@ def check_df_validity(df):
     duplicate_check_columns = ['formatted_mobile']  # Adjust as needed
     phone_number_column = 'mobile'  # Adjust if needed
 
+    df[phone_number_column] = df[phone_number_column].astype(str)
     # Apply phone number validation
     df['formatted_mobile'] = df[phone_number_column].apply(is_valid_phone_number)
 

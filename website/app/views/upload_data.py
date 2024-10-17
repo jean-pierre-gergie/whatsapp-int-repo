@@ -1,4 +1,4 @@
-from flask import Blueprint, request, render_template, flash, redirect, url_for, current_app, jsonify
+from flask import Blueprint, request, render_template, flash, redirect, url_for, current_app, jsonify,send_from_directory,send_file
 import pandas as pd
 import tempfile
 import os
@@ -7,10 +7,15 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from ..utils.decorators import role_required
 from ..utils.helper_functions import check_df_validity
 from ..utils.country_number_cleaning import is_valid_phone_number
+from werkzeug.utils import secure_filename
+import logging
 
+logging.basicConfig(level=logging.DEBUG)
 
+logger = logging.getLogger(__name__)
 
 bp = Blueprint('upload_data', __name__)
+
 @bp.route('/upload_file', methods=['GET', 'POST'])
 @jwt_required()
 @role_required(['admin', 'user']) 
@@ -52,41 +57,77 @@ def upload_file():
             flash('No columns to parse from file. The file might be empty.', 'error')
             return render_template('upload.html')
         except Exception as e:
-            flash(f'An error occurred: {str(e)}', 'error')
+            flash(f'An error occurred while uploading file : {str(e)}', 'error')
             return render_template('upload.html')
     return render_template('upload.html')
 
+
+@bp.route('/download_sample', methods=['GET'])
+@jwt_required()
+@role_required(['admin', 'user'])
+def download_sample():
+    try:
+        filename = secure_filename('sample-data.csv')
+        file_path = os.path.join('/app', 'sample_member_data', filename)
+        if os.path.isfile(file_path):
+            # flash('Sample downloaded', 'info')
+            return send_file(file_path, as_attachment=True)
+        else:
+            flash('Sample data file not found!', 'error')
+            return redirect(url_for('upload_data.upload_file'))
+    except Exception as e:
+        flash(f'Error: {str(e)}', 'error')
+        return redirect(url_for('upload_data.upload_file'))
+
+    
+
 @bp.route('/map_columns', methods=['POST'])
 @jwt_required()
-@role_required(['admin', 'user']) 
+@role_required(['admin', 'user'])
 def map_columns():
     if request.method == 'POST':
         try:
+            logger.info("Processing /map_columns request.")
+
             csv_columns = request.form.getlist('csv_columns[]')
             db_columns = request.form.getlist('db_columns[]')
             temp_file_path = request.form.get('temp_file_path')
 
+            logger.debug(f"Received csv_columns: {csv_columns}")
+            logger.debug(f"Received db_columns: {db_columns}")
+            logger.debug(f"Temporary file path: {temp_file_path}")
+
             if not temp_file_path:
                 flash('No temporary file path provided!', 'error')
+                logger.error('No temporary file path provided.')
                 return redirect(url_for('upload_data.upload_file'))
 
             if not os.path.exists(temp_file_path):
                 flash('File not found or path invalid!', 'error')
+                logger.error(f"File not found at path: {temp_file_path}")
                 return redirect(url_for('upload_data.upload_file'))
 
-            df = pd.read_csv(temp_file_path)
+            logger.info(f"Reading CSV file from: {temp_file_path}")
+            df = pd.read_csv(temp_file_path, keep_default_na=False)
 
             if df.empty:
                 flash('The uploaded file is empty.', 'error')
+                logger.error("Uploaded CSV file is empty.")
                 os.remove(temp_file_path)
                 return redirect(url_for('upload_data.upload_file'))
 
             # Map columns based on user selections
             column_mapping = dict(zip(csv_columns, db_columns))
+            logger.info(f"Column mapping: {column_mapping}")
             df = df.rename(columns=column_mapping)
 
             # Apply the check_df_validity function after the column mapping
+            logger.info("Validating DataFrame...")
             stats, duplicates, cleaned_df = check_df_validity(df)
+
+            # Log statistics
+            logger.info(f"Stats: {stats}")
+            logger.info(f"Number of duplicate rows: {duplicates.shape[0]}")
 
             # Combine the stats into a single message
             stats_message = (
@@ -99,6 +140,7 @@ def map_columns():
             # If no valid rows are left after cleaning
             if stats['num_proper_rows'] == 0:
                 flash('No valid rows to process after cleaning the data.', 'error')
+                logger.warning("No valid rows left after cleaning.")
                 os.remove(temp_file_path)
                 return redirect(url_for('upload_data.upload_file'))
 
@@ -107,25 +149,26 @@ def map_columns():
 
             # Insert cleaned data into MongoDB
             unique_fields = ['first_name', 'last_name', 'mobile', 'tag']
-
             mongo_db = current_app.mongo
             collection = mongo_db.members
 
+            logger.info("Starting insertion of cleaned data into MongoDB...")
             for _, row in cleaned_df.iterrows():
                 member_data = {db_col: row[db_col] for db_col in db_columns if pd.notnull(row[db_col])}
-
+                logger.debug(f"Member data: {member_data}")
                 if not member_data:
+                    logger.debug("Empty member data, skipping this row.")
                     continue
 
                 query_filters = {field: member_data[field] for field in unique_fields if field in member_data}
-
                 existing_member = collection.find_one(query_filters)
 
                 if existing_member:
-                    print(f"Member already exists: {existing_member}")
+                    logger.info(f"Member already exists: {existing_member}")
                     continue
 
                 collection.insert_one(member_data)
+                logger.info(f"Inserted member data: {member_data}")
 
             if 'tag' in db_columns:
                 tags = cleaned_df['tag'].unique()
@@ -137,9 +180,11 @@ def map_columns():
                 for tag in tags:
                     if campaign_collection.find_one({'tag': tag}):
                         duplicate_tags.append(tag)
+                        logger.info(f"Duplicate tag found: {tag}")
                     else:
                         campaign_collection.insert_one({'tag': tag})
                         new_tags.append(tag)
+                        logger.info(f"Inserted new tag: {tag}")
 
                 # Flash a notification for duplicate tags
                 if duplicate_tags:
@@ -148,13 +193,13 @@ def map_columns():
                 # Flash a success message for new tags
                 if new_tags:
                     flash(f'New tags inserted successfully: {", ".join(new_tags)}', 'success')
-                    flash('Data inserted successfully!', 'success')
 
+            logger.info("Finished processing, removing temporary file.")
             os.remove(temp_file_path)
 
-            # flash('Data inserted successfully!', 'success')
         except Exception as e:
-            flash(f'An error occurred: {str(e)}', 'error')
+            flash(f'An error occurred while mapping : {str(e)}', 'error')
+            logger.error(f"Error while mapping columns: {str(e)}", exc_info=True)
         finally:
             return redirect(url_for('upload_data.upload_file'))
         
