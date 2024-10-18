@@ -64,19 +64,6 @@ services:
         - .env 
       command: celery -A celery_app worker --loglevel=info  # Start Celery worker
 
-  celery_beat:
-    build:
-      context: ./microservice  # Separate folder for beat app
-    container_name: celery_beat
-    restart: unless-stopped
-    volumes:
-      - ./microservice:/app  # Separate codebase for beat
-    depends_on:
-      - rabbitmq
-      - mongodb
-    env_file:
-      - .env
-    command: celery -A celery_beat_app beat --loglevel=info  
 
   rabbitmq:
     image: "rabbitmq:3-management"  # RabbitMQ image with management plugin
