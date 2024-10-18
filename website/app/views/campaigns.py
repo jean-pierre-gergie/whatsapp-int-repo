@@ -454,10 +454,14 @@ def download_csv(status):
     campaign_name = request.args.get('campaign_name')
     report_data = get_report(campaign_name)
     
-    if not report_data:
-        return jsonify({'success': False, 'message': f'No data found for campaign {campaign_name}'}), 404
-
-    data = report_data['data_by_status'].get(status, [])
+    if status == 'all':
+        # Combine all message statuses into a single list
+        data = []
+        for stat in ['sent', 'delivered', 'read', 'failed']:
+            data.extend(report_data['data_by_status'].get(stat, []))
+    else:
+        # Get data for a specific status
+        data = report_data['data_by_status'].get(status, [])
 
     if not data:
         return jsonify({'success': False, 'message': f'No data found for status {status}'}), 404
@@ -465,23 +469,40 @@ def download_csv(status):
     si = StringIO()
     cw = csv.writer(si)
     
-    # Write headers
-    cw.writerow(['Campaign Name', 'Phone Number', 'Message ID', 'Status'])
+    # Write headers including the new fields
+    cw.writerow([
+        'Campaign Name', 
+        'Phone Number', 
+        'Message ID', 
+        'Status', 
+        'Error Code', 
+        'Error Message', 
+        'Billable'
+    ])
     
-    # Write data rowsc
+    # Write data rows
     for item in data:
         # Extract message ID safely, with a fallback in case it's missing
         message_id = (
-            item['response']['messages'][0]['id']
-            if 'response' in item and 'messages' in item['response'] and isinstance(item['response']['messages'], list) and item['response']['messages']
-            else 'N/A'  # Fallback in case the message ID is not available
+            item.get('wamid', 'N/A')  # Using 'wamid' from the combined data
         )
+
+        # Extract error details from the item (assumed structure from webhook)
+        errors = item.get('errors', [])
+        error_code = errors[0]['code'] if errors else 'N/A'
+        error_message = errors[0]['message'] if errors else 'N/A'
+
+        # Extract billable status from 'pricing'
+        billable = item.get('billable', 'False')
 
         cw.writerow([
             item['campaign_name'],
             item['number'],
             message_id,
-            status
+            item.get('status', 'unknown'),  # Extracting status from the combined data
+            error_code,
+            error_message,
+            billable
         ])
     
     output = make_response(si.getvalue())

@@ -14,8 +14,14 @@ from datetime import datetime
 from .country_number_cleaning import is_valid_phone_number
 
 
-logging.basicConfig(level=logging.DEBUG)  # You can adjust the level depending on the environment (e.g., INFO, WARNING, ERROR)
+formatter = logging.Formatter('%(levelname)s - FUNCTION: %(funcName)s - %(message)s')
+handler = logging.StreamHandler()
+handler.setFormatter(formatter)
+
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
+logger.addHandler(handler)
+
 pymongo_logger = logging.getLogger("pymongo")
 pymongo_logger.setLevel(logging.ERROR) 
 
@@ -333,30 +339,39 @@ def send_message_campaign(members, template_json, variables, media_id=None, camp
 
 
 def get_report(campaign_name):
+    logger.info(f"Fetching report for campaign: {campaign_name}")
+    
     mongo_db = current_app.mongo
     webhook_latest_to_user_collection = mongo_db.webhook_latest_to_user
     campaign_responses_collection = mongo_db.campaign_responses
 
     # Fetch campaign responses from the database
+    logger.info(f"Fetching campaign responses from the database for campaign: {campaign_name}")
     campaign_responses = list(campaign_responses_collection.find({
         'campaign_name': campaign_name
     }))
 
-    # If no responses are found, return None
     if not campaign_responses:
+        logger.warning(f"No campaign responses found for campaign: {campaign_name}")
         return None
 
-    # Collect message IDs, but only if 'messages' exists and is a valid list
+    logger.info(f"Found {len(campaign_responses)} responses for campaign: {campaign_name}")
+
     message_ids = [
         response['response']['messages'][0]['id']
         for response in campaign_responses
         if 'response' in response and 'messages' in response['response'] and isinstance(response['response']['messages'], list) and response['response']['messages']
     ]
 
+    logger.info(f"Collected {len(message_ids)} message IDs from campaign responses")
+
     # Fetch webhook data for the collected message IDs
+    logger.info(f"Fetching webhook data for message IDs from the database")
     webhook_latest_to_user = list(webhook_latest_to_user_collection.find({
         'id': {'$in': message_ids}
     }))
+
+    logger.info(f"Fetched {len(webhook_latest_to_user)} webhook records")
 
     # Create a dictionary to map message IDs to webhook data
     webhook_dict = {doc['id']: doc for doc in webhook_latest_to_user}
@@ -372,31 +387,66 @@ def get_report(campaign_name):
         'failed': []
     }
 
+    logger.info("Starting to join campaign responses with webhook data")
+
     # Iterate over the campaign responses and join them with webhook data
     for response in campaign_responses:
         if 'response' in response and 'messages' in response['response'] and isinstance(response['response']['messages'], list) and response['response']['messages']:
             message_id = response['response']['messages'][0]['id']
+
             if message_id in webhook_dict:
                 webhook_data = webhook_dict[message_id]
                 
-                # Join response and webhook data
-                joined_data.append({
-                    'campaign_response': response,
-                    'webhook_data': webhook_data
+                # Extract relevant fields from campaign response
+                combined_data = {
+                    'campaign': response.get('campaign'),
+                    'campaign_name': response.get('campaign_name'),
+                    'number': response.get('number'),
+                    'status_code': response.get('status_code'),
+                    'wa_id': response['response']['contacts'][0].get('wa_id') if response['response'].get('contacts') else None,
+                    'wamid': message_id,  # Message ID from the response
+                }
+
+                # Extract relevant fields from webhook data
+                combined_data.update({
+                    'status': webhook_data.get('status', 'unknown'),  # Status from webhook
+                    'billable': webhook_data.get('pricing', {}).get('billable', False),  # If available
+                    'errors': webhook_data.get('errors', [])  # Error details from webhook
                 })
-                
+
+                # Join response and webhook data
+                joined_data.append(combined_data)
+
                 # Update status counter and categorize by status
                 status = webhook_data.get('status', 'unknown')  # Use 'unknown' as a fallback status
                 status_counter[status] += 1
+
                 if status in data_by_status:
-                    data_by_status[status].append(response)
+                    data_by_status[status].append(combined_data)
                 else:
-                    data_by_status[status] = [response]
+                    data_by_status[status] = [combined_data]
+
+                logger.debug(f"Message ID {message_id} - Status: {status}")
     
         # Check if the message has a failed status due to error in response
         if response.get('status_code') == 400 and 'error' in response.get('response', {}):
+            # Extract relevant fields from campaign response for the failed status
+            failed_data = {
+                'campaign': response.get('campaign'),
+                'campaign_name': response.get('campaign_name'),
+                'number': response.get('number'),
+                'status_code': response.get('status_code'),
+                'wa_id': response['response']['contacts'][0].get('wa_id') if response['response'].get('contacts') else None,
+                'wamid': response['response']['messages'][0]['id'],  # Message ID from the response
+                'status': 'failed',  # Explicitly mark as failed due to error
+                'errors': response.get('response', {}).get('error', 'Unknown error')  # Extract error from response
+            }
+
+            # Append to the failed status category
             status_counter['failed'] += 1
-            data_by_status['failed'].append(response)
+            data_by_status['failed'].append(failed_data)
+
+            # logger.warning(f"Message ID {failed_data['wamid']} - Status: failed due to error: {failed_data['errors']}")
 
     # Prepare the status counts dictionary
     message_statuses = {
@@ -406,9 +456,11 @@ def get_report(campaign_name):
         'failed': status_counter.get('failed', 0)
     }
 
+    logger.info(f"Status counts for campaign {campaign_name}: {message_statuses}")
+    logger.info(f"Data by status {campaign_name}:\n{json.dumps(data_by_status, indent=4, default=str)}")
+
     # Return the status counts and the data categorized by status
     return {'status_counts': message_statuses, 'data_by_status': data_by_status}
-
 
 
 def get_all_collections_content():

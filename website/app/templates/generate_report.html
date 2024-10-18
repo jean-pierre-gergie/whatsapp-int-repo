@@ -69,6 +69,7 @@
                                 <p><strong>Failed:</strong> <span id="failed-count">0</span> <a href="#" id="download-failed">Download CSV</a></p>
                                 
                                 <!-- New Total Messages Paragraph -->
+                                 <p><strong>All Messages:</strong> <a href="#" id="download-all-messages" class="btn btn-primary">Download All Messages CSV</a></p>
                                 <p><strong>Total Messages:</strong> <span id="total-count">0</span></p>
                                 <p><strong>Billable Messages:</strong> <span id="billable-count">0</span></p>
 
@@ -122,18 +123,11 @@ function generateReport(campaignName) {
             const totalCount = sentCount + deliveredCount + readCount + failedCount;
             const billableCount = totalCount - failedCount;
 
-            // Calculate percentages
-            const sentPercent = totalCount ? ((sentCount / totalCount) * 100).toFixed(2) : 0;
-            const deliveredPercent = totalCount ? ((deliveredCount / totalCount) * 100).toFixed(2) : 0;
-            const readPercent = totalCount ? ((readCount / totalCount) * 100).toFixed(2) : 0;
-            const failedPercent = totalCount ? ((failedCount / totalCount) * 100).toFixed(2) : 0;
-
-            // Update legend with percentage and count
-            document.getElementById('sent-count').innerText = `${sentPercent}% (${sentCount})`;
-            document.getElementById('delivered-count').innerText = `${deliveredPercent}% (${deliveredCount})`;
-            document.getElementById('read-count').innerText = `${readPercent}% (${readCount})`;
-            document.getElementById('failed-count').innerText = `${failedPercent}% (${failedCount})`;
-
+            // Update counts
+            document.getElementById('sent-count').innerText = `${sentCount}`;
+            document.getElementById('delivered-count').innerText = `${deliveredCount}`;
+            document.getElementById('read-count').innerText = `${readCount}`;
+            document.getElementById('failed-count').innerText = `${failedCount}`;
             document.getElementById('total-count').innerText = `${totalCount}`;
             document.getElementById('billable-count').innerText = `${billableCount}`;
 
@@ -142,6 +136,7 @@ function generateReport(campaignName) {
             // Pass actual counts to the chart
             updateChart(sentCount, deliveredCount, readCount, failedCount);
 
+            // Update the "Download CSV" links for individual statuses
             if (sentCount > 0) {
                 document.getElementById('download-sent').style.display = 'inline';
                 document.getElementById('download-sent').href = `/download_csv/sent?campaign_name=${campaignName}`;
@@ -169,9 +164,15 @@ function generateReport(campaignName) {
             } else {
                 document.getElementById('download-failed').style.display = 'none';
             }
+
+            // Set up the "Download All Messages" link for all statuses
+            document.getElementById('download-all-messages').href = `/download_csv/all?campaign_name=${campaignName}`;
+            document.getElementById('download-all-messages').style.display = 'inline';
+
         } else {
             alert(data.message || 'An error occurred while generating the report.');
 
+            // Hide everything if no data is found
             document.getElementById('sent-count').innerText = "0";
             document.getElementById('delivered-count').innerText = "0";
             document.getElementById('read-count').innerText = "0";
@@ -186,6 +187,7 @@ function generateReport(campaignName) {
         alert(error.message);
     });
 }
+
 
 function updateChart(sentCount, deliveredCount, readCount, failedCount) {
     const ctx = document.getElementById('report-chart').getContext('2d');
