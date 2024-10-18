@@ -468,7 +468,7 @@ def download_csv(status):
     # Write headers
     cw.writerow(['Campaign Name', 'Phone Number', 'Message ID', 'Status'])
     
-    # Write data rows
+    # Write data rowsc
     for item in data:
         # Extract message ID safely, with a fallback in case it's missing
         message_id = (
