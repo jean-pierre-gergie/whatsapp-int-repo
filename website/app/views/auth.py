@@ -1,6 +1,6 @@
 import logging
 from flask import Blueprint, request, jsonify, make_response, render_template, redirect, url_for, session, current_app, flash
-from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
+from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity , get_jwt
 import bcrypt
 from bson.objectid import ObjectId
 from ..utils.decorators import  role_required
@@ -139,7 +139,15 @@ def change_password():
         )
 
         if result.matched_count > 0:
-            flash('Password updated successfully', 'success')
+            # Revoke current JWT token
+            jti = get_jwt()["jti"]  # Get the JWT ID from the current token
+            mongo_db.revoked_tokens.insert_one({"jti": jti})
+            flash('Password updated successfully. Please log in again.', 'success')
+
+            # Optionally, you can clear the JWT cookie to force re-login
+            response = make_response(redirect(url_for('auth.login')))
+            response.delete_cookie('access_token_cookie')
+            return response
         else:
             flash('Error updating password', 'error')
 

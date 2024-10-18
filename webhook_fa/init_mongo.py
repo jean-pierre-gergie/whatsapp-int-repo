@@ -22,7 +22,7 @@ def create_collections():
         collections = [
             'campaign', 'campaign_responses', 'final_campaign_response','language', 'members',
             'templates', 'user_credentials', 'webhook_latest_from_user',
-            'webhook_latest_to_user', 'webhook_responses'
+            'webhook_latest_to_user', 'webhook_responses','revoked_tokens'
         ]
 
         existing_collections = db.list_collection_names()

@@ -36,6 +36,12 @@ def create_app():
     jwt.init_app(app)
     logger.debug("JWT initialized.")
 
+    @jwt.token_in_blocklist_loader
+    def check_if_token_revoked(jwt_header, jwt_payload):
+        jti = jwt_payload['jti']
+        token_in_db = app.mongo.revoked_tokens.find_one({'jti': jti})
+        return token_in_db is not None
+
     # Initialize MongoDB
     try:
         client = get_mongo_client()
@@ -59,3 +65,5 @@ def create_app():
 def get_mongo_client():
     logger.debug(f"Connecting to MongoDB with URI: {Config.MONGODB_URI}")
     return MongoClient(Config.MONGODB_URI)
+
+
