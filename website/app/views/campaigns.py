@@ -183,6 +183,64 @@ def campaigns():
     return render_template('campaigns_page.html', campaigns=campaigns)
 
 
+@bp.route('/campaign_details/<campaign_name>')
+@jwt_required()
+@role_required(['admin', 'user'])
+def campaign_details(campaign_name):
+    # Get the MongoDB collection
+
+    if not campaign_name:
+        return jsonify({'success': False, 'message': 'Missing campaign name parameter'}), 400
+    
+    mongo_db = current_app.mongo
+    final_campaign_response_collection = mongo_db.final_campaign_response
+
+
+    campaign = final_campaign_response_collection.find_one({'campaign_name': campaign_name})
+
+    report_data = get_report(campaign_name)
+
+    data = []
+    for stat in ['sent', 'delivered', 'read', 'failed']:
+        data.extend(report_data['data_by_status'].get(stat, []))
+
+    table_data = []
+    for item in data:
+        # Extract message ID safely, with a fallback in case it's missing
+        message_id = item.get('wamid', 'N/A')  # Using 'wamid' from the combined data
+
+        # Extract error details from the item (assumed structure from webhook)
+        errors = item.get('errors', [])
+        error_code = errors[0]['code'] if errors else 'N/A'
+        error_message = errors[0]['message'] if errors else 'N/A'
+
+        # Extract billable status from 'pricing'
+        billable = 'Yes' if item.get('billable', False) else 'No'
+
+        table_data.append({
+            'campaign_name': item['campaign_name'],
+            'number': item['number'],
+            'message_id': message_id,
+            'status': item.get('status', 'unknown'),  # Extracting status from the combined data
+            'error_code': error_code,
+            'error_message': error_message,
+            'billable': billable
+        })
+
+
+    # Check if the campaign exists
+    if not campaign:
+        # If no campaign is found, return an error message
+        return f"No campaign found with the name '{campaign_name}'", 404
+
+    # Convert the MongoDB ObjectId to a string for easier handling
+    
+    campaign['_id'] = str(campaign['_id'])
+
+
+    # Return the campaign details (for now, just a basic response)
+    return render_template('campaigns_details_page.html', campaign=campaign,table_data =  table_data)
+
 @bp.route('/send_campaign')
 @jwt_required()
 @role_required(['admin', 'user']) 
@@ -539,3 +597,9 @@ def view_collection_content():
 
     except Exception as e:
         return jsonify({"success": False, "message": str(e)}), 500
+
+
+
+
+
+

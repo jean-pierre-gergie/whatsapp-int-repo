@@ -79,6 +79,8 @@
                                     <p><strong>Total Failed:</strong> {{ campaign.total_failed }}</p>
                                     <p><strong>Success Percentage:</strong> {{ campaign.success_percentage }}</p>
                                     <p><strong>Failed Percentage:</strong> {{ campaign.failed_percentage }}</p>
+
+                                    <a href="{{ url_for('campaigns.campaign_details', campaign_name=campaign.campaign_name) }}" class="btn btn-primary mt-3">View Details</a>
                                 </div>
                             </div>
                         </div>

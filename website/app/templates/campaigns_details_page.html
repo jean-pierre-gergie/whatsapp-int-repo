@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campaign Details</title>
+
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <!-- Dynamic static links for CSS files -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bootstrap.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendors/iconly/bold.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendors/perfect-scrollbar/perfect-scrollbar.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='vendors/bootstrap-icons/bootstrap-icons.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/sidebar.css') }}">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='images/favicon.svg') }}" type="image/x-icon">
+
+    <!-- Add Chart.js for the pie chart -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Add Plotly.js for the timeline -->
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
+</head>
+
+<body>
+    <div id="app">
+        {% include 'sidebar.html' %}
+
+        <div id="main">
+            <header class="mb-3">
+                <a href="#" class="burger-btn d-block d-xl-none">
+                    <i class="bi bi-justify fs-3"></i>
+                </a>
+            </header>
+
+            <section class="section">
+                <h1 class="my-4">Campaign Details</h1>
+                <h2 class="my-4">{{ campaign.campaign_name }}</h2>
+
+                <!-- Campaign Data Table -->
+                <div class="row">
+                    <div class="col-12">
+                        <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+                            <table class="table table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>Campaign Name</th>
+                                        <th>Phone Number</th>
+                                        <th>Message ID</th>
+                                        <th>Status</th>
+                                        <th>Error Code</th>
+                                        <th>Error Message</th>
+                                        <th>Billable</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for row in table_data %}
+                                    <tr>
+                                        <td>{{ row.campaign_name }}</td>
+                                        <td>{{ row.number }}</td>
+                                        <td>{{ row.message_id }}</td>
+                                        <td>{{ row.status }}</td>
+                                        <td>{{ row.error_code }}</td>
+                                        <td>{{ row.error_message }}</td>
+                                        <td>{{ row.billable }}</td>
+                                    </tr>
+                                    {% else %}
+                                    <tr>
+                                        <td colspan="7">No message data available</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Pie Chart and Timeline -->
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <h3>Campaign Success vs Failure</h3>
+                        <div class="chart-container" style="position: relative; width: 100%; max-width: 500px; height: 400px;">
+                            <canvas id="campaignPieChart"></canvas>
+                        </div>
+                    </div>
+                
+                    <div class="col-md-6">
+                        <h3>Campaign Timeline</h3>
+                        <div class="chart-container" style="position: relative; width: 100%; max-width: 500px; height: 400px;">
+                            <div id="campaignTimeline" style="width: 100%; height: 100%;"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+     <!-- Dynamic static links for JS files -->
+     <script src="{{ url_for('static', filename='vendors/perfect-scrollbar/perfect-scrollbar.min.js') }}"></script>
+     <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+     <script src="{{ url_for('static', filename='vendors/apexcharts/apexcharts.js') }}"></script>
+     <script src="{{ url_for('static', filename='js/pages/dashboard.js') }}"></script>
+     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+     <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
+
+    <!-- JS for rendering Pie Chart -->
+    <script>
+        var ctx = document.getElementById('campaignPieChart').getContext('2d');
+        var campaignPieChart = new Chart(ctx, {
+            type: 'pie',
+            data: {
+                labels: ['Success', 'Failure'],
+                datasets: [{
+                    data: [4, 0], // Replace with dynamic values
+                    backgroundColor: ['#4CAF50', '#FF5733'],
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                title: {
+                    display: true,
+                    text: 'Campaign Success vs Failure'
+                }
+            }
+        });
+    </script>
+
+    <!-- JS for rendering Timeline -->
+    <script>
+        var timelineData = [
+            {
+                x: ['Submitted', 'Started', 'Finished'],
+                y: ['2024-10-18T07:19:33.792Z', '2024-10-18T07:19:36.210Z', '2024-10-18T07:19:37.170Z'], // Replace with dynamic values
+                mode: 'lines+markers',
+                type: 'scatter'
+            }
+        ];
+
+        var layout = {
+            title: 'Campaign Timeline',
+            xaxis: {
+                title: 'Event'
+            },
+            yaxis: {
+                title: 'Timestamp',
+                type: 'date'
+            }
+        };
+
+        Plotly.newPlot('campaignTimeline', timelineData, layout);
+    </script>
+</body>
+</html>
