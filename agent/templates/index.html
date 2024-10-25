@@ -39,9 +39,7 @@
         window.onload = () => {
 
             const socketUrl = "{{ socket_url }}";
-            const socket = io(socketUrl, {
-                path: '/agent_namespace/socket.io'
-                });
+            const socket = io(`${socketUrl}/agent_namespace`);
     
             let currentRoom = null;
     
