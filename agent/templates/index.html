@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <title>Chat App</title>
-    <link rel="stylesheet" href="/agent_server/static/styles.css">
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+
+    <link rel="stylesheet" href="/agent/{{ url_for('static', filename='styles.css') }}">
     <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
 </head>
 <body>
@@ -40,7 +40,7 @@
         window.onload = () => {
 
             const socketUrl = "{{ socket_url }}";
-            const socket = io(`${socketUrl}/agent_namespace`);
+            const socket = io(`${socketUrl}/agent/agent_namespace`);
     
             let currentRoom = null;
     
