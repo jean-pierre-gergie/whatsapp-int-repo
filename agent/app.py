@@ -27,7 +27,7 @@ pymongo_logger.setLevel(logging.WARNING)
 
 chat_rooms_collection  = get_rooms_collection()
 
-app = Flask(__name__, static_folder='./static', template_folder='./templates')
+app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'  
 
 class AgentNamespace(Namespace):
