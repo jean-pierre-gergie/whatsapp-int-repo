@@ -3,7 +3,7 @@ eventlet.monkey_patch()
 
 import logging
 from flask import Flask, render_template
-from flask_socketio import SocketIO, join_room, leave_room, send, emit
+from flask_socketio import SocketIO, join_room, leave_room, send, emit,Namespace
 import requests
 import os 
 from utils.db_helper import get_rooms_collection , handle_chat_room
@@ -27,12 +27,19 @@ pymongo_logger.setLevel(logging.WARNING)
 
 chat_rooms_collection  = get_rooms_collection()
 
-app = Flask(__name__)
+app = Flask(__name__, static_folder='./static', template_folder='./templates')
 app.config['SECRET_KEY'] = 'secret!'  
+
+class AgentNamespace(Namespace):
+    def on_connect(self):
+        print('Client connected')
+
+    def on_disconnect(self):
+        print('Client disconnected')
 
 # Initialize SocketIO with eventlet
 socketio = SocketIO(app, cors_allowed_origins="*")
-
+socketio.on_namespace(AgentNamespace('/agent_namespace'))
 socketIO_URL = os.getenv('CHAT_AGENT_URL')
 
 @app.route('/agent_server')
