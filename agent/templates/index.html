@@ -37,7 +37,9 @@
         }
 
         window.onload = () => {
-            const socket = io("http://localhost:5001/agent_namespace"); // Ensure correct namespace connection
+
+            const socketUrl = "{{ socket_url }}";
+            const socket = io(`${socketUrl}/agent_namespace`); 
     
             let currentRoom = null;
     

@@ -33,11 +33,11 @@ app.config['SECRET_KEY'] = 'secret!'
 # Initialize SocketIO with eventlet
 socketio = SocketIO(app, cors_allowed_origins="*")
 
+socketIO_URL = os.getenv('CHAT_AGENT_URL')
 
-
-@app.route('/')
+@app.route('/agent_server')
 def index():
-    return render_template('index.html')
+    return render_template('index.html', socket_url=socketIO_URL)
 
 @socketio.on('connect', namespace='/agent_namespace')
 def connect():

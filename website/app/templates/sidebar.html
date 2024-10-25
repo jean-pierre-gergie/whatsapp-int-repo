@@ -51,7 +51,10 @@
                         </li> 
                         <li class="submenu-item">
                             <a href="{{url_for('campaigns.audience')}}">Audience</a>
-                        </li>                         
+                        </li>   
+                        <li class="submenu-item">
+                            <a href="#" onclick="openDynamicRedirectPage()">Open Agent Page</a>
+                        </li>                      
                     </ul>
                 </li>
 
@@ -73,3 +76,9 @@
         <button class="sidebar-toggler btn x"><i data-feather="x"></i></button>
     </div>
 </div>
+<script>
+    function openDynamicRedirectPage() {
+        // Open the route in a new browser tab
+        window.open("{{ url_for('campaigns.dynamic_redirect') }}", "_blank");
+    }
+</script>

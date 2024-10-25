@@ -1,4 +1,4 @@
-from flask import Blueprint, render_template, request, jsonify, send_file, url_for, current_app, make_response
+from flask import Blueprint, redirect, render_template, request, jsonify, send_file, url_for, current_app, make_response
 from datetime import datetime, timedelta
 from dateutil import parser
 from flask_jwt_extended import jwt_required, get_jwt_identity
@@ -600,6 +600,11 @@ def view_collection_content():
 
 
 
-
+@bp.route('/dynamic_redirect', methods=['GET'])
+@jwt_required()
+@role_required(['admin', 'user'])
+def dynamic_redirect():
+    agent_server_url = os.getenv('CHAT_AGENT_SERVER_URL')
+    return redirect(agent_server_url)
 
 
