@@ -44,7 +44,7 @@ socketIO_URL = os.getenv('CHAT_AGENT_URL')
 
 @app.route('/agent_server')
 def index():
-    return render_template('index.html', socket_url='/agent/socket.io')
+    return render_template('index.html', socket_url='https://www.ocmymada.com/agent/socket.io/')
 
 @socketio.on('connect', namespace='/agent_namespace')
 def connect():
