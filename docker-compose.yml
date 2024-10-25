@@ -35,6 +35,8 @@ services:
       - ./webhook_fa:/app  # Mounts the current directory to the container's /app directory
     depends_on:
       - mongodb
+      - agent
+
     networks:
       - network_internal
 

@@ -11,7 +11,7 @@ from dotenv import load_dotenv
 import socketio
 from datetime import datetime
 from utils.helper_functions import WhatsAppDataHandler
-
+from tenacity import retry, wait_exponential, stop_after_attempt, RetryError
 
 
 # Set up logging
@@ -60,7 +60,15 @@ user_to_business_collection = main_db[USER_TO_BUSINESS_COLLECTION]
 agent_db = client[AGENT_CHAT_DB]
 chat_rooms_collection = agent_db[ROOMS_COLLECTION]
 
-# Call create_collections() during startup
+
+
+@retry(wait=wait_exponential(multiplier=1, min=1, max=30), stop=stop_after_attempt(5), reraise=True)
+def connect_to_agent_service():
+    # Try to connect to the agent service using Socket.IO
+    sio.connect("http://agent:5001", namespaces=['/agent_namespace'])
+    logger.info("Successfully connected to the agent service.")
+
+
 @app.on_event("startup")
 async def startup_event():
     logger.info("Starting the needed stuff")
@@ -71,10 +79,11 @@ async def startup_event():
         logger.error(f"Error creating collections on startup: {e}")
 
     try:
-        sio.connect("http://agent:5001", namespaces=['/agent_namespace'])
-        logger.info("Successfully connected to the agent service.")
+        connect_to_agent_service()
+    except RetryError as e:
+        logger.error(f"Failed to connect to the agent service after multiple attempts: {e}")
     except socketio.exceptions.ConnectionError as e:
-        logger.error(f"Failed to connect to the agent service: {e}")
+        logger.error(f"Connection error encountered: {e}")
 
 class WebhookPayload(BaseModel):
     entry: Optional[list[Dict[str, Any]]]
