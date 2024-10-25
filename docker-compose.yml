@@ -18,6 +18,8 @@ services:
       - ./website:/app  # Mounts the current directory to the container's /app directory
     depends_on:
       - mongodb
+    networks:
+      - network_internal
 
   webhook_fa:
     build: 
@@ -33,36 +35,62 @@ services:
       - ./webhook_fa:/app  # Mounts the current directory to the container's /app directory
     depends_on:
       - mongodb
+    networks:
+      - network_internal
+
+  agent:
+    build: 
+      context: ./agent  # Specifies the directory containing your Dockerfile
+      dockerfile: Dockerfile  # Optional, specifies the Dockerfile to use
+    container_name: agent
+    restart: unless-stopped
+    ports:
+      - "5001:5001"  # Exposes the FastAPI app on port 5000
+    env_file: 
+      - .env  # Loads environment variables from the .env file
+    volumes:
+      - ./agent:/app  # Mounts the current directory to the container's /app directory
+    depends_on:
+      - mongodb
+
+    networks:
+      - network_internal
 
   microservice:
-      build: 
-        context: ./microservice  # Specifies the directory containing your FastAPI app
-        dockerfile: Dockerfile
-      container_name: microservice
-      restart: unless-stopped
-      ports:
-        - "1616:1616"  # Exposes the FastAPI app on port 1616
-      volumes:
-        - ./microservice:/app  # Mounts the current directory to the container's /app directory
-      env_file:
-        - .env  # MongoDB as the result backend
-      command: uvicorn app:app --host 0.0.0.0 --port 1616 --reload
+    build: 
+      context: ./microservice  # Specifies the directory containing your FastAPI app
+      dockerfile: Dockerfile
+    container_name: microservice
+    restart: unless-stopped
+    ports:
+      - "1616:1616"  # Exposes the FastAPI app on port 1616
+    volumes:
+      - ./microservice:/app  # Mounts the current directory to the container's /app directory
+    env_file:
+      - .env  # MongoDB as the result backend
+    command: uvicorn app:app --host 0.0.0.0 --port 1616 --reload
+
+    networks:
+    - network_internal
 
   celery_worker:
-      build:
-        context: ./microservice  # Uses the same codebase for FastAPI and Celery
-      container_name: celery_worker
-      restart: unless-stopped
-      
-      volumes:
-        - ./microservice:/app
+    build:
+      context: ./microservice  # Uses the same codebase for FastAPI and Celery
+    container_name: celery_worker
+    restart: unless-stopped
+    
+    volumes:
+      - ./microservice:/app
 
-      depends_on:
-        - rabbitmq
-        - mongodb
-      env_file:
-        - .env 
-      command: celery -A celery_app worker --loglevel=info  # Start Celery worker
+    depends_on:
+      - rabbitmq
+      - mongodb
+    env_file:
+      - .env 
+    command: celery -A celery_app worker --loglevel=info  # Start Celery worker
+
+    networks:
+    - network_internal  
 
 
   rabbitmq:
@@ -74,6 +102,8 @@ services:
     restart: unless-stopped
     env_file:
       - .env 
+    networks:
+    - network_internal
 
   mongodb:
     image: mongodb/mongodb-community-server:latest
@@ -86,8 +116,13 @@ services:
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD} 
+    networks:
+    - network_internal
 
     
 volumes:
   mongo_data:
     driver: local
+networks:
+  network_internal:
+    driver: bridge

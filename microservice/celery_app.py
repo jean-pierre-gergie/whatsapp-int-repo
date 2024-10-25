@@ -10,8 +10,10 @@ from flask import jsonify
 from datetime import datetime, timezone
 from pymongo import MongoClient
 from celery.utils.log import get_task_logger
-from utils import *
+from utils.send_campaigns_helpers import *
+from utils.chat_rooms_helper import WhatsAppChatCampaignHandler
 from dateutil import parser
+import asyncio
 
 logger = get_task_logger(__name__)
 
@@ -48,11 +50,15 @@ celery_app = Celery(
 @celery_app.task(bind=True)
 def send_message_campaign(self, campaign_timing, scheduled_date,scheduled_date_local, selected_campaign, template_json, variables, campaign_name, media_id=None,campaign_id_db =None):
 
+    logger = get_task_logger(__name__)
+
     logger.debug(f"Task started with: campaign_timing={campaign_timing}, scheduled_datetime={scheduled_date},scheduled_datetime_local={scheduled_date_local}, "
                  f"selected_campaign={selected_campaign}, template_json={template_json}, variables={variables}, "
                  f"campaign_name={campaign_name}, media_id={media_id}")
     
     logger.debug(f"campaign_id_db: {campaign_id_db}")
+
+    
 
     success_rows = []
     failed_rows = []
@@ -60,6 +66,12 @@ def send_message_campaign(self, campaign_timing, scheduled_date,scheduled_date_l
 
     mongo_client = get_mongo_client(mongo_url)
     mongo_db = mongo_client.whatsapp_data
+    agent_db = mongo_client.agent_data
+    chat_room_collection = agent_db.rooms
+
+
+    chat_room_handler = WhatsAppChatCampaignHandler(chat_room_collection,logger=logger)
+
 
     members = get_member_list(mongo_db, selected_campaign=selected_campaign)
     total_members = len(members)
@@ -76,6 +88,7 @@ def send_message_campaign(self, campaign_timing, scheduled_date,scheduled_date_l
 
     campaign_responses_collection = mongo_db.campaign_responses
     final_campaign_response_collection = mongo_db.final_campaign_response
+
 
     self.update_state(state='PENDING', meta={
         'Total_members': 0,
@@ -187,7 +200,21 @@ def send_message_campaign(self, campaign_timing, scheduled_date,scheduled_date_l
 
                 insert_message_response(campaign_responses_collection=campaign_responses_collection, data_to_insert=data_to_insert)
 
+                
+
+
                 process_response(response=response, number=number, response_time=response_time, success_rows=success_rows, failed_rows=failed_rows)
+
+
+                logger.info (f"handeling chat data for {member}")
+                asyncio.run(chat_room_handler._handle_chat_room(
+                    user_phone_number=number,
+                    wa_mid=None,  # or actual wa_mid value if available
+                    campaign_name=campaign_name,
+                    timestamp=datetime.utcnow()
+                ))
+
+
             else:
                 logger.error(f"No response received for member {number}. Skipping this member.")
                 failed_rows.append({
