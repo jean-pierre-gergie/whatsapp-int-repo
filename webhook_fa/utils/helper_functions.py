@@ -162,7 +162,7 @@ class WhatsAppDataHandler:
     async def emit_event(self, event_name, data,room=None):
         """Emit an event using the connected Socket.IO client."""
         try:
-            self.sio.emit(event_name, data, namespace='/agent_namespace')
+            self.sio.emit(event_name, data, namespace='/agent/agent_namespace')
             self.logger.info(f"Emitted event '{event_name}' with data: {data}")
         except Exception as e:
             self.logger.error(f"Failed to emit event '{event_name}': {e}")
