@@ -2,7 +2,7 @@ import eventlet
 eventlet.monkey_patch() 
 
 import logging
-from flask import Flask, render_template
+from flask import Flask, render_template , request
 from flask_socketio import SocketIO, join_room, leave_room, send, emit,Namespace
 import requests
 import os 
@@ -11,6 +11,7 @@ from utils.dialog_360 import send_message_to_users_through_360
 from dotenv import load_dotenv
 from pymongo import MongoClient
 from datetime import datetime
+
 
 
 
@@ -32,13 +33,17 @@ app.config['SECRET_KEY'] = 'secret!'
 
 class AgentNamespace(Namespace):
     def on_connect(self):
-        logger.info('AgentNamespace----  Client connected to /agent_namespace')
+        client_info = request.environ.get('REMOTE_ADDR', 'Unknown IP')
+        user_agent = request.headers.get('User-Agent', 'Unknown User-Agent')
+        logger.info(f'AgentNamespace---- Client connected to /agent_namespace from IP: {client_info}, User-Agent: {user_agent}')
+        emit('connect_ack', {'message': 'Connected successfully'}, namespace='/agent_namespace')
 
     def on_disconnect(self):
-        logger.info('AgentNamespace----  Client disconnected from /agent_namespace')
+        client_info = request.environ.get('REMOTE_ADDR', 'Unknown IP')
+        logger.info(f'AgentNamespace---- Client disconnected from /agent_namespace, IP: {client_info}')
 
 # Initialize SocketIO with eventlet
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet', logger=True, engineio_logger=True)
 socketio.on_namespace(AgentNamespace('/agent_namespace'))
 socketIO_URL = os.getenv('CHAT_AGENT_URL')
 
