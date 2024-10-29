@@ -2,7 +2,7 @@ import eventlet
 eventlet.monkey_patch() 
 
 import logging
-from flask import Flask, render_template , request
+from flask import Flask, render_template , request,jsonify
 from flask_socketio import SocketIO, join_room, leave_room, send, emit,Namespace
 import requests
 import os 
@@ -11,8 +11,8 @@ from utils.dialog_360 import send_message_to_users_through_360
 from dotenv import load_dotenv
 from pymongo import MongoClient
 from datetime import datetime
-
-
+from functools import wraps
+import jwt 
 
 
 
@@ -30,20 +30,75 @@ chat_rooms_collection  = get_rooms_collection()
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'  
+SECRET_KEY = os.getenv('JWT_SECRET_KEY')
+
+
+
+def verify_jwt(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        token = request.args.get('token')  # Get the token from the URL parameter
+
+        if not token:
+            return jsonify({"message": "Token is missing!"}), 403
+
+        try:
+            # Verify and decode the JWT using the same secret and algorithm as in the first app
+            user_data = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+            # Attach user data to the request context if needed
+            request.user = user_data
+        except jwt.ExpiredSignatureError:
+            return jsonify({"message": "Token has expired!"}), 401
+        except jwt.InvalidTokenError:
+            return jsonify({"message": "Invalid token!"}), 403
+
+        return f(*args, **kwargs)
+    return decorated_function
+
 
 class AgentNamespace(Namespace):
     def on_connect(self):
         try:
-            client_info = request.remote_addr or 'Unknown IP'
-            user_agent = request.headers.get('User-Agent', 'Unknown User-Agent')
-            logger.info(f'AgentNamespace---- Client attempting connection to {active_agent_namespace} from IP: {client_info}, User-Agent: {user_agent}')
-            emit('connect_ack', {'message': 'Connected successfully'}, namespace=active_agent_namespace)
+            # Fetch the JWT token from the headers
+            token = request.headers.get('Authorization', '').replace('Bearer ', '')  # Assuming "Bearer" scheme
+
+            # Validate the token
+            if not token:
+                logger.error("Authentication token is missing!")
+                emit('connect_error', {'message': 'Authentication token is missing!'}, namespace=active_agent_namespace)
+                return False
+
+            try:
+                # Decode and verify the token
+                user_data = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+                logger.info(f"User authenticated: {user_data}")
+
+                # Emit successful connection acknowledgment
+                emit('connect_ack', {'message': 'Connected successfully'}, namespace=active_agent_namespace)
+
+                # Log client information
+                client_info = request.remote_addr or 'Unknown IP'
+                user_agent = request.headers.get('User-Agent', 'Unknown User-Agent')
+                logger.info(f'AgentNamespace---- Client attempting connection to {active_agent_namespace} from IP: {client_info}, User-Agent: {user_agent}')
+                
+            except jwt.ExpiredSignatureError:
+                logger.error("Token has expired!")
+                emit('connect_error', {'message': 'Token has expired!'}, namespace=active_agent_namespace)
+                return False
+            except jwt.InvalidTokenError:
+                logger.error("Invalid token!")
+                emit('connect_error', {'message': 'Invalid token!'}, namespace=active_agent_namespace)
+                return False
+
         except Exception as e:
             logger.error(f'Connection error in {active_agent_namespace}: {str(e)}')
+            emit('connect_error', {'message': 'Connection error occurred'}, namespace=active_agent_namespace)
+            return False
 
     def on_disconnect(self):
         client_info = request.environ.get('REMOTE_ADDR', 'Unknown IP')
         logger.info(f'AgentNamespace---- Client disconnected from /agent_namespace, IP: {client_info}')
+
 
 # Initialize SocketIO with eventlet
 # socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet', logger=True, engineio_logger=True)
@@ -55,8 +110,11 @@ active_agent_namespace = '/agent/agent_namespace'
 # socketio = SocketIO(app, cors_allowed_origins="*")
 
 @app.route('/agent_server')
+@verify_jwt
 def index():
-    return render_template('index.html', socket_url='https://www.ocmymada.com/agent/socket.io/')
+    token = request.args.get('token')  # Get the token that was passed during the redirect
+    # Render the template with the token included as a context variable
+    return render_template('index.html', socket_url='https://www.ocmymada.com/agent/socket.io/', token=token)
 
 @socketio.on('connect', namespace=active_agent_namespace)
 def connect():

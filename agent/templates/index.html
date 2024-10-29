@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <title>Chat App</title>
-
-    <link rel="stylesheet" href="/agent/{{ url_for('static', filename='styles.css') }}">
+     <!-- todo  -->
+    <!-- <link rel="stylesheet" href="/agent/{{ url_for('static', filename='styles.css') }}"> -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
 </head>
 <body>
@@ -48,10 +49,25 @@
 
             // todo change this get from backend
 
-            const socket = io('https://www.ocmymada.com/agent/agent_namespace', {
-            path: '/agent/socket.io',
+            const token = "{{ token }}"; // Passed from Flask
+
+
+            // const socket = io('https://www.ocmymada.com/agent/agent_namespace', {
+            // path: '/agent/socket.io',
+            // transports: ['websocket', 'polling'],
+            // withCredentials: true,
+            // auth: {
+            //         token: token
+            //     }
+            // });
+
+            const socket = io('http://localhost:5001/agent/agent_namespace', {
+            // path: 'socket.io',
             transports: ['websocket', 'polling'],
             withCredentials: true,
+            auth: {
+                    token: token
+                }
             });
             
             // Listen for connection success

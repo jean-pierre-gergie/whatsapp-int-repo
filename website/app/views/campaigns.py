@@ -1,7 +1,7 @@
 from flask import Blueprint, redirect, render_template, request, jsonify, send_file, url_for, current_app, make_response
 from datetime import datetime, timedelta
 from dateutil import parser
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt ,create_access_token
 from ..utils.decorators import role_required
 from ..utils.helper_functions import send_message, upload_image,get_report,transform_template_json, get_template_details, send_message_campaign,get_all_collections_content
 from ..utils.template_updater import fetch_and_update_templates
@@ -604,7 +604,9 @@ def view_collection_content():
 @jwt_required()
 @role_required(['admin', 'user'])
 def dynamic_redirect():
+    # Create a new token or get the existing one
+    current_identity = get_jwt_identity()  # Get the current user's identity
+    token = create_access_token(identity=current_identity)  # Create a new token with the same identity
     agent_server_url = os.getenv('CHAT_AGENT_SERVER_URL')
-    return redirect(agent_server_url)
-
-
+    logger.info(f"redirecting to {agent_server_url}")
+    return redirect(f"{agent_server_url}?token={token}")
