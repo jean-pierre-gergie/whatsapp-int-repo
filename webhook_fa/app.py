@@ -65,7 +65,7 @@ chat_rooms_collection = agent_db[ROOMS_COLLECTION]
 @retry(wait=wait_exponential(multiplier=1, min=1, max=30), stop=stop_after_attempt(5), reraise=True)
 def connect_to_agent_service():
     # Try to connect to the agent service using Socket.IO
-    sio.connect("http://agent:5001", namespaces=['/agent_namespace'])
+    sio.connect("http://agent:5001", namespaces=['/agent/agent_namespace'])
     logger.info("Successfully connected to the agent service.")
 
 

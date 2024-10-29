@@ -46,7 +46,8 @@ class AgentNamespace(Namespace):
         logger.info(f'AgentNamespace---- Client disconnected from /agent_namespace, IP: {client_info}')
 
 # Initialize SocketIO with eventlet
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet', logger=True, engineio_logger=True)
+# socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet', logger=True, engineio_logger=True)
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 socketio.on_namespace(AgentNamespace('/agent/agent_namespace'))
 socketIO_URL = os.getenv('CHAT_AGENT_URL')
 
