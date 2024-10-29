@@ -32,14 +32,14 @@ app.config['SECRET_KEY'] = 'secret!'
 
 class AgentNamespace(Namespace):
     def on_connect(self):
-        print('Client connected')
+        logger.info('AgentNamespace----  Client connected to /agent_namespace')
 
     def on_disconnect(self):
-        print('Client disconnected')
+        logger.info('AgentNamespace----  Client disconnected from /agent_namespace')
 
 # Initialize SocketIO with eventlet
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
-socketio.on_namespace(AgentNamespace('/agent_namespace'))
+# socketio.on_namespace(AgentNamespace('/agent_namespace'))
 socketIO_URL = os.getenv('CHAT_AGENT_URL')
 
 @app.route('/agent_server')
