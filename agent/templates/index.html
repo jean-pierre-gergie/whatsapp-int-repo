@@ -39,11 +39,20 @@
 
         window.onload = () => {
 
-            const socketUrl = "{{ socket_url }}";
-            const fullSocketUrl = `${socketUrl}/agent_namespace`;
-            console.log("Socket URL being used:", fullSocketUrl); // Print the full URL to the console
+            // const socketUrl = "{{ socket_url }}";
+            // const fullSocketUrl = `${socketUrl}/agent_namespace`;
+            // console.log("Socket URL being used:", fullSocketUrl); // Print the full URL to the console
 
-            const socket = io(fullSocketUrl);
+            // const socket = io(fullSocketUrl);
+
+
+            // todo change this get from backend
+
+            const socket = io('https://www.ocmymada.com/agent/agent_namespace', {
+            path: '/agent/socket.io',
+            transports: ['websocket', 'polling'],
+            withCredentials: true,
+            });
 
             // Listen for connection success
             socket.on('connect', () => {
