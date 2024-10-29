@@ -40,13 +40,29 @@
         window.onload = () => {
 
             const socketUrl = "{{ socket_url }}";
-            const socket = io(`${socketUrl}/agent_namespace`);
-    
-            let currentRoom = null;
-    
+            const fullSocketUrl = `${socketUrl}/agent_namespace`;
+            console.log("Socket URL being used:", fullSocketUrl); // Print the full URL to the console
+
+            const socket = io(fullSocketUrl);
+
+            // Listen for connection success
             socket.on('connect', () => {
-                console.log("Connected to Socket.IO server");
+                console.log("Successfully connected to Socket.IO server at:", fullSocketUrl);
             });
+
+            // Listen for connection errors
+            socket.on('connect_error', (error) => {
+                console.error("Failed to connect to Socket.IO server:", error);
+            });
+
+            // Listen for disconnection events
+            socket.on('disconnect', (reason) => {
+                console.warn("Disconnected from Socket.IO server. Reason:", reason);
+            });
+
+
+
+            let currentRoom = null;
     
             socket.on('available_rooms', (rooms) => {
                 console.log("FE---Available rooms:", rooms);
