@@ -48,7 +48,7 @@
 
             // todo change this get from backend
 
-            const socket = io('https://www.ocmymada.com/agent', {
+            const socket = io('https://www.ocmymada.com/agent/agent_namespace', {
                 path: '/agent/socket.io',
                 transports: ['websocket', 'polling'],
                 withCredentials: true,
@@ -58,7 +58,7 @@
             socket.on('connect', () => {
                 console.log("Successfully connected to Socket.IO server at:", fullSocketUrl);
 
-                socket.emit('join', '/agent_namespace'); // Example of emitting an event or joining the namespace after connecting
+                // socket.emit('join', '/agent_namespace'); // Example of emitting an event or joining the namespace after connecting
             });
             
 
