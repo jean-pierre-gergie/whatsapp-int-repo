@@ -48,12 +48,12 @@
 
             // todo change this get from backend
 
-            const socket = io('https://www.ocmymada.com/agent/agent_namespace', {
-                path: '/agent/socket.io',
-                transports: ['websocket', 'polling'],
-                withCredentials: true,
-                });
-
+            const socket = io('https://www.ocmymada.com/agent', {
+            path: '/agent/socket.io',
+            transports: ['websocket', 'polling'],
+            withCredentials: true,
+            });
+            
             // Listen for connection success
             socket.on('connect', () => {
                 console.log("Successfully connected to Socket.IO server at:", fullSocketUrl);

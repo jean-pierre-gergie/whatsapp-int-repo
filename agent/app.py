@@ -30,20 +30,20 @@ chat_rooms_collection  = get_rooms_collection()
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'  
 
-# class AgentNamespace(Namespace):
-#     def on_connect(self):
-#         logger.info('AgentNamespace----  Client connected to /agent_namespace')
+class AgentNamespace(Namespace):
+    def on_connect(self):
+        logger.info('AgentNamespace----  Client connected to /agent_namespace')
 
-#     def on_disconnect(self):
-#         logger.info('AgentNamespace----  Client disconnected from /agent_namespace')
+    def on_disconnect(self):
+        logger.info('AgentNamespace----  Client disconnected from /agent_namespace')
 
 # Initialize SocketIO with eventlet
-# socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
-# socketio.on_namespace(AgentNamespace('/agent_namespace'))
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
+socketio.on_namespace(AgentNamespace('/agent_namespace'))
 socketIO_URL = os.getenv('CHAT_AGENT_URL')
 
 
-socketio = SocketIO(app, cors_allowed_origins="*")
+# socketio = SocketIO(app, cors_allowed_origins="*")
 
 @app.route('/agent_server')
 def index():
