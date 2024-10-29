@@ -52,8 +52,9 @@
             path: '/agent/socket.io',
             transports: ['websocket', 'polling'],
             withCredentials: true,
+            namespace: '/agent_namespace'  // Ensure this matches
             });
-            
+
             // Listen for connection success
             socket.on('connect', () => {
                 console.log("Successfully connected to Socket.IO server at:", fullSocketUrl);
