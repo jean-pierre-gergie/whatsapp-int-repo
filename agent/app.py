@@ -33,10 +33,13 @@ app.config['SECRET_KEY'] = 'secret!'
 
 class AgentNamespace(Namespace):
     def on_connect(self):
-        client_info = request.environ.get('REMOTE_ADDR', 'Unknown IP')
-        user_agent = request.headers.get('User-Agent', 'Unknown User-Agent')
-        logger.info(f'AgentNamespace---- Client connected to /agent_namespace from IP: {client_info}, User-Agent: {user_agent}')
-        emit('connect_ack', {'message': 'Connected successfully'}, namespace='/agent_namespace')
+        try:
+            client_info = request.remote_addr or 'Unknown IP'
+            user_agent = request.headers.get('User-Agent', 'Unknown User-Agent')
+            logger.info(f'AgentNamespace---- Client attempting connection to /agent_namespace from IP: {client_info}, User-Agent: {user_agent}')
+            emit('connect_ack', {'message': 'Connected successfully'}, namespace='/agent_namespace')
+        except Exception as e:
+            logger.error(f'Connection error in /agent_namespace: {str(e)}')
 
     def on_disconnect(self):
         client_info = request.environ.get('REMOTE_ADDR', 'Unknown IP')
