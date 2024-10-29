@@ -36,10 +36,10 @@ class AgentNamespace(Namespace):
         try:
             client_info = request.remote_addr or 'Unknown IP'
             user_agent = request.headers.get('User-Agent', 'Unknown User-Agent')
-            logger.info(f'AgentNamespace---- Client attempting connection to /agent_namespace from IP: {client_info}, User-Agent: {user_agent}')
-            emit('connect_ack', {'message': 'Connected successfully'}, namespace='/agent_namespace')
+            logger.info(f'AgentNamespace---- Client attempting connection to {active_agent_namespace} from IP: {client_info}, User-Agent: {user_agent}')
+            emit('connect_ack', {'message': 'Connected successfully'}, namespace=active_agent_namespace)
         except Exception as e:
-            logger.error(f'Connection error in /agent_namespace: {str(e)}')
+            logger.error(f'Connection error in {active_agent_namespace}: {str(e)}')
 
     def on_disconnect(self):
         client_info = request.environ.get('REMOTE_ADDR', 'Unknown IP')
@@ -51,28 +51,28 @@ socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 socketio.on_namespace(AgentNamespace('/agent/agent_namespace'))
 socketIO_URL = os.getenv('CHAT_AGENT_URL')
 
-
+active_agent_namespace = '/agent/agent_namespace'
 # socketio = SocketIO(app, cors_allowed_origins="*")
 
 @app.route('/agent_server')
 def index():
     return render_template('index.html', socket_url='https://www.ocmymada.com/agent/socket.io/')
 
-@socketio.on('connect', namespace='/agent_namespace')
+@socketio.on('connect', namespace=active_agent_namespace)
 def connect():
-    logger.info(f"Client connected to '/agent_namespace'")
+    logger.info(f"Client connected to {active_agent_namespace}")
 
     try:
         # Fetch only the 'room_id' field from all documents
         chat_rooms = chat_rooms_collection.find({}, {'room_id': 1, '_id': 0})  
         room_ids = [chat['room_id'] for chat in chat_rooms]  # Extract room IDs
         logger.info(f"Available rooms: {room_ids}")
-        emit('available_rooms', room_ids, namespace='/agent_namespace')
+        emit('available_rooms', room_ids, namespace=active_agent_namespace)
     except Exception as e:
         logger.error(f"Error fetching room IDs: {str(e)}")
-        emit('error', {'message': 'Failed to fetch chat rooms'}, namespace='/agent_namespace')
+        emit('error', {'message': 'Failed to fetch chat rooms'}, namespace=active_agent_namespace)
 
-@socketio.on('new_room', namespace='/agent_namespace')
+@socketio.on('new_room', namespace=active_agent_namespace)
 def handle_new_room(data):
     """
     Event handler for 'new_room' events.
@@ -83,12 +83,12 @@ def handle_new_room(data):
         chat_rooms = chat_rooms_collection.find({}, {'room_id': 1, '_id': 0})  
         room_ids = [chat['room_id'] for chat in chat_rooms]  # Extract room IDs
         logger.info(f"EVENT---Added--Available rooms: {room_ids}")
-        emit('available_rooms', room_ids, namespace='/agent_namespace')
+        emit('available_rooms', room_ids, namespace=active_agent_namespace)
     except Exception as e:
         logger.error(f"Error fetching room IDs: {str(e)}")
-        emit('error', {'message': 'Failed to fetch chat rooms'}, namespace='/agent_namespace')
+        emit('error', {'message': 'Failed to fetch chat rooms'}, namespace=active_agent_namespace)
 
-@socketio.on('message_from_user', namespace='/agent_namespace')
+@socketio.on('message_from_user', namespace=active_agent_namespace)
 def handle_message(data):
     """
     Event handler for 'message_from_user' events.
@@ -101,7 +101,7 @@ def handle_message(data):
     
     try:
         # Emit the received message to the same room
-        socketio.emit('message_from_user', data, room=room_id, namespace='/agent_namespace')
+        socketio.emit('message_from_user', data, room=room_id, namespace=active_agent_namespace)
         logger.info(f"EVENT-message_from_user-Sent message to room {room_id}: {message_body}")
         
         # Fetch and reorder the rooms, moving the active room to the top
@@ -114,15 +114,15 @@ def handle_message(data):
         room_ids.insert(0, room_id)
         
         # Emit the updated list of rooms
-        socketio.emit('available_rooms', room_ids, namespace='/agent_namespace')
+        socketio.emit('available_rooms', room_ids, namespace=active_agent_namespace)
         logger.info(f"EVENT-message_from_user-Updated available rooms: {room_ids}")
     
     except Exception as e:
         logger.error(f"Error processing message or fetching room IDs: {str(e)}")
-        emit('error', {'message': 'Failed to process message or fetch chat rooms'}, namespace='/agent_namespace')
+        emit('error', {'message': 'Failed to process message or fetch chat rooms'}, namespace=active_agent_namespace)
 
    
-@socketio.on('message_from_business', namespace='/agent_namespace')
+@socketio.on('message_from_business', namespace=active_agent_namespace)
 def handle_message(data):
     """
     Event handler for 'message_from_business' events.
@@ -142,7 +142,7 @@ def handle_message(data):
         try:
             # Emit the received message to the same room
             logger.debug(f"EVENT-message_from_business-Emitting message to room {room_id}")
-            socketio.emit('message_from_business', data, room=room_id, namespace='/agent_namespace')
+            socketio.emit('message_from_business', data, room=room_id, namespace=active_agent_namespace)
         except Exception as e:
             logger.error(f"EVENT-message_from_business-Error emitting message to room {room_id}: {e}")
             return
@@ -167,7 +167,7 @@ def handle_message(data):
         logger.error(f"EVENT-message_from_business-Error processing event: {e}")
 
 
-@socketio.on('join_room', namespace='/agent_namespace')
+@socketio.on('join_room', namespace=active_agent_namespace)
 def on_join_room(data):
     """
     Event handler for 'join_room' event.
@@ -181,7 +181,7 @@ def on_join_room(data):
         logger.info(f"Client joined room: {room}")
         
         # Join the client to the specified room
-        join_room(room, namespace='/agent_namespace')
+        join_room(room, namespace=active_agent_namespace)
 
         try:
             # Fetch chat history from the chat_rooms_collection
@@ -193,11 +193,11 @@ def on_join_room(data):
                         message['timestamp'] = message['timestamp'].isoformat()
                 
                 # Emit the chat history to the client
-                socketio.emit('chat_history', {"room": room, "messages": chat_history['messages']}, namespace='/agent_namespace')
+                socketio.emit('chat_history', {"room": room, "messages": chat_history['messages']}, namespace=active_agent_namespace)
                 logger.info(f"Sent chat history for room: {room}")
             else:
                 logger.info(f"No chat history found for room: {room}")
-                socketio.emit('chat_history', {"room": room, "messages": []}, namespace='/agent_namespace')
+                socketio.emit('chat_history', {"room": room, "messages": []}, namespace=active_agent_namespace)
         except Exception as e:
             logger.error(f"Error fetching chat history for room {room}: {e}")
     except Exception as e:
