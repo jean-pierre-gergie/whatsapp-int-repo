@@ -39,7 +39,7 @@ class AgentNamespace(Namespace):
 
 # Initialize SocketIO with eventlet
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
-socketio.on_namespace(AgentNamespace('/'))
+socketio.on_namespace(AgentNamespace('/agent_namespace'))
 socketIO_URL = os.getenv('CHAT_AGENT_URL')
 
 
