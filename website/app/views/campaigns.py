@@ -610,5 +610,12 @@ def dynamic_redirect():
     agent_server_url = os.getenv('CHAT_AGENT_SERVER_URL')
     logger.info(f"redirecting to {agent_server_url}")
     response = make_response(redirect(agent_server_url))
-    response.set_cookie('jwt_token', token, httponly=False, secure=True, samesite='Lax' ,domain='www.ocmymada.com')
+    response.set_cookie(
+        'jwt_token', 
+        token, 
+        httponly=True, 
+        secure=True, 
+        samesite='None', 
+        domain='.ocmymada.com'
+    )
     return response
