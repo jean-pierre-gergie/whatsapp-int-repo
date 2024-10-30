@@ -609,4 +609,6 @@ def dynamic_redirect():
     token = create_access_token(identity=current_identity)  # Create a new token with the same identity
     agent_server_url = os.getenv('CHAT_AGENT_SERVER_URL')
     logger.info(f"redirecting to {agent_server_url}")
-    return redirect(f"{agent_server_url}?token={token}")
+    response = make_response(redirect(agent_server_url))
+    response.set_cookie('jwt_token', token, httponly=False, secure=True, samesite='Strict')
+    return response

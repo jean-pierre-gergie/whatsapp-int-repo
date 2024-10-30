@@ -4,107 +4,30 @@ eventlet.monkey_patch()
 import logging
 from flask import Flask, render_template , request,jsonify
 from flask_socketio import SocketIO, join_room, leave_room, send, emit,Namespace
-import requests
+
 import os 
 from utils.db_helper import get_rooms_collection , handle_chat_room
-from utils.dialog_360 import send_message_to_users_through_360
+from utils.logging_config import configure_logging
+from utils.jwt_helper import verify_jwt
+
+from services.socketio_events import register_socketio_events 
+from services.agent_namespace import AgentNamespace
 from dotenv import load_dotenv
-from pymongo import MongoClient
-from datetime import datetime
-from functools import wraps
-import jwt 
 
 
-
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger('app')
-
-pymongo_logger = logging.getLogger('pymongo')
-pymongo_logger.setLevel(logging.WARNING)
-
-
-chat_rooms_collection  = get_rooms_collection()
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'  
-SECRET_KEY = os.getenv('JWT_SECRET_KEY')
 
 
+logger = configure_logging()
 
-def verify_jwt(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        token = request.args.get('token')  # Get the token from the URL parameter
-
-        if not token:
-            return jsonify({"message": "Token is missing!"}), 403
-
-        try:
-            # Verify and decode the JWT using the same secret and algorithm as in the first app
-            user_data = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
-            # Attach user data to the request context if needed
-            request.user = user_data
-        except jwt.ExpiredSignatureError:
-            return jsonify({"message": "Token has expired!"}), 401
-        except jwt.InvalidTokenError:
-            return jsonify({"message": "Invalid token!"}), 403
-
-        return f(*args, **kwargs)
-    return decorated_function
-
-
-class AgentNamespace(Namespace):
-    def on_connect(self):
-        try:
-            # Fetch the JWT token from the headers
-            token = request.headers.get('Authorization', '').replace('Bearer ', '')  # Assuming "Bearer" scheme
-
-            # Validate the token
-            if not token:
-                logger.error("Authentication token is missing!")
-                emit('connect_error', {'message': 'Authentication token is missing!'}, namespace=active_agent_namespace)
-                return False
-
-            try:
-                # Decode and verify the token
-                user_data = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
-                logger.info(f"User authenticated: {user_data}")
-
-                # Emit successful connection acknowledgment
-                emit('connect_ack', {'message': 'Connected successfully'}, namespace=active_agent_namespace)
-
-                # Log client information
-                client_info = request.remote_addr or 'Unknown IP'
-                user_agent = request.headers.get('User-Agent', 'Unknown User-Agent')
-                logger.info(f'AgentNamespace---- Client attempting connection to {active_agent_namespace} from IP: {client_info}, User-Agent: {user_agent}')
-                
-            except jwt.ExpiredSignatureError:
-                logger.error("Token has expired!")
-                emit('connect_error', {'message': 'Token has expired!'}, namespace=active_agent_namespace)
-                return False
-            except jwt.InvalidTokenError:
-                logger.error("Invalid token!")
-                emit('connect_error', {'message': 'Invalid token!'}, namespace=active_agent_namespace)
-                return False
-
-        except Exception as e:
-            logger.error(f'Connection error in {active_agent_namespace}: {str(e)}')
-            emit('connect_error', {'message': 'Connection error occurred'}, namespace=active_agent_namespace)
-            return False
-
-    def on_disconnect(self):
-        client_info = request.environ.get('REMOTE_ADDR', 'Unknown IP')
-        logger.info(f'AgentNamespace---- Client disconnected from /agent_namespace, IP: {client_info}')
-
+load_dotenv()
 
 # Initialize SocketIO with eventlet
 # socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet', logger=True, engineio_logger=True)
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 socketio.on_namespace(AgentNamespace('/agent/agent_namespace'))
-socketIO_URL = os.getenv('CHAT_AGENT_URL')
 
 active_agent_namespace = '/agent/agent_namespace'
 # socketio = SocketIO(app, cors_allowed_origins="*")
@@ -116,151 +39,7 @@ def index():
     # Render the template with the token included as a context variable
     return render_template('index.html', socket_url='https://www.ocmymada.com/agent/socket.io/', token=token)
 
-@socketio.on('connect', namespace=active_agent_namespace)
-def connect():
-    logger.info(f"Client connected to {active_agent_namespace}")
-
-    try:
-        # Fetch only the 'room_id' field from all documents
-        chat_rooms = chat_rooms_collection.find({}, {'room_id': 1, '_id': 0})  
-        room_ids = [chat['room_id'] for chat in chat_rooms]  # Extract room IDs
-        logger.info(f"Available rooms: {room_ids}")
-        emit('available_rooms', room_ids, namespace=active_agent_namespace)
-    except Exception as e:
-        logger.error(f"Error fetching room IDs: {str(e)}")
-        emit('error', {'message': 'Failed to fetch chat rooms'}, namespace=active_agent_namespace)
-
-@socketio.on('new_room', namespace=active_agent_namespace)
-def handle_new_room(data):
-    """
-    Event handler for 'new_room' events.
-    """
-    logger.info(f"EVENT---Received 'new_room' event with data: {data}")
-    try:
-    # Fetch only the 'room_id' field from all documents
-        chat_rooms = chat_rooms_collection.find({}, {'room_id': 1, '_id': 0})  
-        room_ids = [chat['room_id'] for chat in chat_rooms]  # Extract room IDs
-        logger.info(f"EVENT---Added--Available rooms: {room_ids}")
-        emit('available_rooms', room_ids, namespace=active_agent_namespace)
-    except Exception as e:
-        logger.error(f"Error fetching room IDs: {str(e)}")
-        emit('error', {'message': 'Failed to fetch chat rooms'}, namespace=active_agent_namespace)
-
-@socketio.on('message_from_user', namespace=active_agent_namespace)
-def handle_message(data):
-    """
-    Event handler for 'message_from_user' events.
-    """
-    logger.info(f"EVENT-message_from_user-Received event with data: {data}")
-    
-    room_id = data.get('room')
-    message_body = data.get('message')
-    sender = data.get('sender', 'system')
-    
-    try:
-        # Emit the received message to the same room
-        socketio.emit('message_from_user', data, room=room_id, namespace=active_agent_namespace)
-        logger.info(f"EVENT-message_from_user-Sent message to room {room_id}: {message_body}")
-        
-        # Fetch and reorder the rooms, moving the active room to the top
-        chat_rooms = chat_rooms_collection.find({}, {'room_id': 1, '_id': 0})
-        room_ids = [chat['room_id'] for chat in chat_rooms]
-        
-        # Move the active room to the top of the list
-        if room_id in room_ids:
-            room_ids.remove(room_id)
-        room_ids.insert(0, room_id)
-        
-        # Emit the updated list of rooms
-        socketio.emit('available_rooms', room_ids, namespace=active_agent_namespace)
-        logger.info(f"EVENT-message_from_user-Updated available rooms: {room_ids}")
-    
-    except Exception as e:
-        logger.error(f"Error processing message or fetching room IDs: {str(e)}")
-        emit('error', {'message': 'Failed to process message or fetch chat rooms'}, namespace=active_agent_namespace)
-
-   
-@socketio.on('message_from_business', namespace=active_agent_namespace)
-def handle_message(data):
-    """
-    Event handler for 'message_from_business' events.
-    """
-    try:
-        logger.info(f"EVENT-message_from_business-Received event with data: {data}")
-        
-        # Extracting information from the event data
-        room_id = data.get('room')
-        message_body = data.get('message')
-        sender = data.get('sender', 'system')
-        
-        if not room_id or not message_body:
-            logger.warning(f"EVENT-message_from_business-Missing required information: room_id={room_id}, message_body={message_body}")
-            return
-
-        try:
-            # Emit the received message to the same room
-            logger.debug(f"EVENT-message_from_business-Emitting message to room {room_id}")
-            socketio.emit('message_from_business', data, room=room_id, namespace=active_agent_namespace)
-        except Exception as e:
-            logger.error(f"EVENT-message_from_business-Error emitting message to room {room_id}: {e}")
-            return
-
-        try:
-            # Sending message through 360dialog
-            send_message_to_users_through_360(room_id, message=message_body)
-        except Exception as e:
-            logger.error(f"EVENT-message_from_business-Error sending message through 360dialog for room {room_id}: {e}")
-
-        try:
-            # Updating chat room collection
-            handle_chat_room(chat_rooms_collection=chat_rooms_collection,
-                             room=room_id,
-                             message_body=message_body)
-        except Exception as e:
-            logger.error(f"EVENT-message_from_business-Error handling chat room for room_id {room_id}: {e}")
-
-        logger.info(f"EVENT-message_from_business-Successfully sent message to room {room_id}: {message_body}")
-
-    except Exception as e:
-        logger.error(f"EVENT-message_from_business-Error processing event: {e}")
-
-
-@socketio.on('join_room', namespace=active_agent_namespace)
-def on_join_room(data):
-    """
-    Event handler for 'join_room' event.
-    """
-    try:
-        room = data.get('room')
-        if not room:
-            logger.warning("No room provided in join_room event")
-            return
-        
-        logger.info(f"Client joined room: {room}")
-        
-        # Join the client to the specified room
-        join_room(room, namespace=active_agent_namespace)
-
-        try:
-            # Fetch chat history from the chat_rooms_collection
-            chat_history = chat_rooms_collection.find_one({"room_id": room}, {"_id": 0, "messages": 1})
-            if chat_history:
-                # Convert datetime fields to ISO format strings
-                for message in chat_history['messages']:
-                    if isinstance(message.get('timestamp'), datetime):
-                        message['timestamp'] = message['timestamp'].isoformat()
-                
-                # Emit the chat history to the client
-                socketio.emit('chat_history', {"room": room, "messages": chat_history['messages']}, namespace=active_agent_namespace)
-                logger.info(f"Sent chat history for room: {room}")
-            else:
-                logger.info(f"No chat history found for room: {room}")
-                socketio.emit('chat_history', {"room": room, "messages": []}, namespace=active_agent_namespace)
-        except Exception as e:
-            logger.error(f"Error fetching chat history for room {room}: {e}")
-    except Exception as e:
-        logger.error(f"Error in join_room event: {e}")
-
+register_socketio_events(socketio)
 
 
 
