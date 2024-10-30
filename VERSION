@@ -1,1 +1,2 @@
-Agent-1.0.1
+Agent-1.0.2
+jwt token for agent not for socketIO
