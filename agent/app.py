@@ -32,14 +32,18 @@ socketio.on_namespace(AgentNamespace('/agent/agent_namespace'))
 active_agent_namespace = '/agent/agent_namespace'
 # socketio = SocketIO(app, cors_allowed_origins="*")
 
+
+
+register_socketio_events(socketio)
+
+
 @app.route('/agent_server')
 @verify_jwt
 def index():
-    token = request.args.get('token')  # Get the token that was passed during the redirect
+    # token = request.args.get('token')  # Get the token that was passed during the redirect
     # Render the template with the token included as a context variable
-    return render_template('index.html', socket_url='https://www.ocmymada.com/agent/socket.io/', token=token)
-
-register_socketio_events(socketio)
+    # return render_template('index.html', socket_url='https://www.ocmymada.com/agent/socket.io/', token=token)
+    return render_template('index.html', socket_url='https://www.ocmymada.com/agent/socket.io/')
 
 
 
