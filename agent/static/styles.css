@@ -27,7 +27,9 @@ body {
     padding: 10px;
 }
 
-.sidebar .rooms button {
+/* Room Button Styles */
+.sidebar .rooms button.room-button {
+    position: relative;
     width: 100%;
     padding: 10px;
     margin: 5px 0;
@@ -36,10 +38,48 @@ body {
     border: none;
     cursor: pointer;
     transition: background 0.3s ease;
+    display: flex;
+    justify-content: space-between; /* Align items to left and right edges */
+    align-items: center;
+    font-size: 16px;
+}
+.sidebar .rooms button.room-button:hover {
+    background: #777;
 }
 
-.sidebar .rooms button:hover {
-    background: #777;
+/* Container for Close Button and Unread Badge */
+.room-button .button-controls {
+    display: flex;
+    align-items: center;
+    gap: 4px; /* Controls spacing between the close button and unread badge */
+}
+
+/* Notification Badge for Unread Messages */
+.unread-badge {
+    background-color: red;
+    color: white;
+    border-radius: 50%;
+    padding: 2px 6px;
+    font-size: 12px;
+    font-weight: bold;
+    display: inline-block;
+}
+
+.close-button {
+    font-size: 14px;
+    color: white;
+    background: none;
+    border: none;
+    cursor: pointer;
+    line-height: 1;
+    font-weight: bold;
+    opacity: 0.7;
+    transition: opacity 0.2s ease;
+}
+
+.close-button:hover {
+    opacity: 1;
+    color: #ff4d4d; /* Light red color on hover */
 }
 
 /* Chat Window Styles */
@@ -66,10 +106,24 @@ body {
 }
 
 .chat-body .message {
+    max-width: 60%;
     margin: 5px 0;
     padding: 10px;
-    background-color: #eee;
-    border-radius: 5px;
+    border-radius: 10px;
+    word-break: break-word;
+}
+
+/* Message Styles */
+.message.user {
+    background-color: lightblue;
+    align-self: flex-start;
+    text-align: left;
+}
+
+.message.business {
+    background-color: lightgreen;
+    align-self: flex-end;
+    text-align: left;
 }
 
 /* Chat Footer Styles */
@@ -100,29 +154,9 @@ body {
     background: #555;
 }
 
-
-.message {
-    max-width: 60%; 
-    margin: 5px 0;
-    padding: 10px;
-    border-radius: 10px;
-    word-break: break-word; 
-}
-
-.message.user {
-    background-color: lightblue;
-    align-self: flex-start;
-    text-align: left;
-}
-
-.message.business {
-    background-color: lightgreen;
-    align-self: flex-end;
-    text-align: left;
-}
-
+/* Tabs for Switching Views */
 .tabs button {
-    background-color: #87CEFA; /* Light blue background color */
+    background-color: #87CEFA;
     border: none;
     color: white;
     padding: 10px 20px;
@@ -135,16 +169,16 @@ body {
 }
 
 .tabs button:hover {
-    background-color: #5DADE2; /* Darker blue on hover */
-    transform: scale(1.05); /* Slightly larger */
+    background-color: #5DADE2;
+    transform: scale(1.05);
 }
 
 .tabs button:active {
-    background-color: #3498DB; /* Even darker blue on click */
-    transform: scale(0.98); /* Slightly smaller on click */
+    background-color: #3498DB;
+    transform: scale(0.98);
 }
 
 .tabs button.selected {
-    background-color: #2980B9; /* Distinct shade for selected tab */
+    background-color: #2980B9;
     font-weight: bold;
 }

@@ -20,13 +20,15 @@ function initSocket(jwtToken) {
         console.log("FE --- Received available rooms data:", roomData);
         displayAvailableRooms(roomData);
         showOpenRooms();
-        showClosedRooms();
+
     });
     socket.on('chat_history', displayChatHistory);
 
     socket.on('message_from_user', data => {
-        console.log("FE --- Received message from user:", data)
-        displayMessage(data, 'user')
+        console.log("FE --- Received message from user:", data);
+        displayMessage(data, 'user');
+        showOpenRooms();
+        
     });
     socket.on('message_from_business', data => displayMessage(data, 'business'));
 

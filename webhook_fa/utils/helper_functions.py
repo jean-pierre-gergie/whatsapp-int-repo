@@ -122,7 +122,7 @@ class WhatsAppDataHandler:
 
             
             await self.emit_event(event_name='message_from_user',
-                            data= {'room': sender_phone,'sender':'user', 'message': message_body},
+                            data= {'room': sender_phone,'sender':'user', 'message': message_body,"timestamp":timestamp},
                             )
 
     def extract_whatsapp_data(self, response_json):
