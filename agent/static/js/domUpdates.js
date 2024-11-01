@@ -77,29 +77,51 @@ function closeRoom(roomId) {
 //     const chatBody = document.getElementById("chat-body");
 //     data.messages.forEach(message => addMessageToChatBody(message.body ?? message.message, message.sender));
 // }
+function formatTimestamp(timestamp) {
+    const date = new Date(timestamp);
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    return `${hours}:${minutes}`;
+}
+
 export function displayChatHistory(data) {
     if (data.room !== getCurrentRoom()) return;
     const chatBody = document.getElementById("chat-body");
-    data.messages.forEach(message => addMessageToChatBody(message.body , message.sender));
+    data.messages.forEach(message => {
+        const formattedTime = formatTimestamp(message.timestamp);
+        addMessageToChatBody(message.body, message.sender, formattedTime);
+    });
 }
-
-// export function displayMessage(data, sender) {
-//     if (data.room !== getCurrentRoom()) return console.warn("Message for different room:", data.room);
-//     addMessageToChatBody(data.body ?? data.message, sender);
-// }
 
 export function displayMessage(data, sender) {
-    console.log("updating message coming form:", sender)
+    console.log("Updating message coming from:", sender);
     if (data.room !== getCurrentRoom()) return console.warn("Message for different room:", data.room);
-    addMessageToChatBody(data.message, sender);
+    const formattedTime = formatTimestamp(data.timestamp);
+    addMessageToChatBody(data.message, sender, formattedTime);
 }
 
-function addMessageToChatBody(message, sender) {
+function addMessageToChatBody(message, sender, timestamp) {
     const chatBody = document.getElementById("chat-body");
+
+    // Create the main message container
     const messageElement = document.createElement("div");
     messageElement.className = `message ${sender}`;
-    messageElement.textContent = message;
+
+    // Create the message body element
+    const messageBody = document.createElement("p");
+    messageBody.className = "message-body";
+    messageBody.textContent = message;
+
+    // Create the timestamp element
+    const timestampElement = document.createElement("span");
+    timestampElement.className = "timestamp";
+    timestampElement.textContent = timestamp;
+
+    // Append message body and timestamp to the main message element
+    messageElement.appendChild(messageBody);
+    messageElement.appendChild(timestampElement);
     chatBody.appendChild(messageElement);
+
     scrollToBottom(chatBody);
 }
 

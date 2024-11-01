@@ -43,6 +43,7 @@ body {
     align-items: center;
     font-size: 16px;
 }
+
 .sidebar .rooms button.room-button:hover {
     background: #777;
 }
@@ -96,6 +97,7 @@ body {
     text-align: center;
 }
 
+/* Chat Body Styles */
 .chat-body {
     flex-grow: 1;
     padding: 20px;
@@ -111,9 +113,11 @@ body {
     padding: 10px;
     border-radius: 10px;
     word-break: break-word;
+    display: flex;
+    flex-direction: column;
 }
 
-/* Message Styles */
+/* Specific Styles for User and Business Messages */
 .message.user {
     background-color: lightblue;
     align-self: flex-start;
@@ -124,6 +128,21 @@ body {
     background-color: lightgreen;
     align-self: flex-end;
     text-align: left;
+}
+
+/* Message Body Styling */
+.message-body {
+    margin: 0;
+    font-size: 16px; /* Adjust font size as needed */
+}
+
+/* Timestamp Styling */
+.timestamp {
+    font-size: 12px;
+    color: gray;
+    margin-top: 4px;
+    text-align: right;
+    align-self: flex-end; /* Ensures timestamp aligns to the right */
 }
 
 /* Chat Footer Styles */

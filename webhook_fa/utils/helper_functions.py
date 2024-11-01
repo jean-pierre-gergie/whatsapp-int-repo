@@ -66,7 +66,7 @@ class WhatsAppDataHandler:
             await self._handle_chat_room(sender_phone=sender_phone,
                                    wa_mid=wa_mid,
                                    message_body=message_body,
-                                   timestamp=time_stamp)
+                                   timestamp=datetime.utcnow())
             
 
     async def _handle_chat_room(self, sender_phone, wa_mid, message_body, timestamp, sender_type="user"):
@@ -75,12 +75,13 @@ class WhatsAppDataHandler:
             existing_room = self.chat_rooms_collection.find_one({'room_id': sender_phone})
 
             open_discussion = True if sender_type == "user" else False
+            timestamp =timestamp.isoformat() if isinstance(timestamp, datetime) else timestamp
 
 
             message_data = {
                     "wa_mid": wa_mid,
                     "sender": sender_type,
-                    "timestamp": timestamp,
+                    "timestamp":  timestamp ,
                     "body": message_body,
                     "info": "unread"
                 }

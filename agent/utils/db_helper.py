@@ -54,10 +54,10 @@ def handle_chat_room(chat_rooms_collection, room, message_body, timestamp=None, 
             except Exception as e:
                 logger.error(f"Error finding room with room_id: {room}: {e}")
                 return
-
+            timestamp =timestamp.isoformat() if isinstance(timestamp, datetime) else timestamp
             message_data = {
                 "sender": "business",
-                "timestamp": timestamp if timestamp else datetime.utcnow(),
+                "timestamp": timestamp,
                 "body": message_body,
                 "wa_mid": wa_mid
             }
