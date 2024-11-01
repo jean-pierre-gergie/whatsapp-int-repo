@@ -69,22 +69,27 @@ class WhatsAppDataHandler:
                                    timestamp=time_stamp)
             
 
-    async def _handle_chat_room(self, sender_phone , wa_mid , message_body,timestamp):
+    async def _handle_chat_room(self, sender_phone, wa_mid, message_body, timestamp, sender_type="user"):
         if sender_phone:
 
             existing_room = self.chat_rooms_collection.find_one({'room_id': sender_phone})
 
+            open_discussion = True if sender_type == "user" else False
+
+
             message_data = {
                     "wa_mid": wa_mid,
-                    "sender": "user",
+                    "sender": sender_type,
                     "timestamp": timestamp,
-                    "body": message_body
+                    "body": message_body,
+                    "info": "unread"
                 }
 
             if not existing_room:
                 room_data = {
                     "room_id": sender_phone,
                     "created_at": datetime.utcnow(),
+                    "open_discussion": open_discussion,
                     "messages": [message_data]
                 }
                 self.chat_rooms_collection.insert_one(room_data)
@@ -108,7 +113,10 @@ class WhatsAppDataHandler:
                     # Update the existing room with the new message
                     self.chat_rooms_collection.update_one(
                         {'room_id': sender_phone},
-                        {'$push': {'messages': message_data}}
+                        {
+                            '$push': {'messages': message_data},
+                            '$set': {'open_discussion': open_discussion}
+                        }
                     )
                     self.logger.info(f"Updated chat room with new message for room_id: {sender_phone}")
 

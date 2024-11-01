@@ -2,7 +2,9 @@ import logging
 from flask_socketio import emit, join_room
 from utils.db_helper import get_rooms_collection, handle_chat_room
 from utils.dialog_360 import send_message_to_users_through_360
+from utils.chat_room_helper import get_opened_closed_discussions
 from datetime import datetime
+
 
 logger = logging.getLogger('app')
 chat_rooms_collection = get_rooms_collection()
@@ -14,10 +16,12 @@ def register_socketio_events(socketio):
     def connect():
         logger.info(f"Client connected to {active_agent_namespace}")
         try:
-            chat_rooms = chat_rooms_collection.find({}, {'room_id': 1, '_id': 0})
-            room_ids = [chat['room_id'] for chat in chat_rooms]
-            logger.info(f"Available rooms: {room_ids}")
-            emit('available_rooms', room_ids, namespace=active_agent_namespace)
+            open_rooms,closed_rooms=get_opened_closed_discussions(chat_rooms_collection)
+            logger.info(f"BACKEND---Open rooms: {open_rooms}")
+            logger.info(f"BACKEND---Closed rooms: {closed_rooms}")
+
+            emit('available_rooms', {'openRooms': open_rooms, 'closedRooms': closed_rooms}, namespace=active_agent_namespace)
+            
         except Exception as e:
             logger.error(f"Error fetching room IDs: {str(e)}")
             emit('error', {'message': 'Failed to fetch chat rooms'}, namespace=active_agent_namespace)
@@ -26,10 +30,11 @@ def register_socketio_events(socketio):
     def handle_new_room(data):
         logger.info(f"EVENT---Received 'new_room' event with data: {data}")
         try:
-            chat_rooms = chat_rooms_collection.find({}, {'room_id': 1, '_id': 0})
-            room_ids = [chat['room_id'] for chat in chat_rooms]
-            logger.info(f"EVENT---Added--Available rooms: {room_ids}")
-            emit('available_rooms', room_ids, namespace=active_agent_namespace)
+            open_rooms,closed_rooms=get_opened_closed_discussions(chat_rooms_collection)
+            logger.info(f"BACKEND---Open rooms: {open_rooms}")
+            logger.info(f"BACKEND---Closed rooms: {closed_rooms}")
+
+            emit('available_rooms', {'openRooms': open_rooms, 'closedRooms': closed_rooms}, namespace=active_agent_namespace)
         except Exception as e:
             logger.error(f"Error fetching room IDs: {str(e)}")
             emit('error', {'message': 'Failed to fetch chat rooms'}, namespace=active_agent_namespace)
@@ -41,16 +46,15 @@ def register_socketio_events(socketio):
         message_body = data.get('message')
         sender = data.get('sender', 'system')
         try:
-            socketio.emit('message_from_user', data, room=room_id, namespace=active_agent_namespace)
+            emit('message_from_user', data, room=room_id, namespace=active_agent_namespace)
             logger.info(f"EVENT-message_from_user-Sent message to room {room_id}: {message_body}")
 
-            chat_rooms = chat_rooms_collection.find({}, {'room_id': 1, '_id': 0})
-            room_ids = [chat['room_id'] for chat in chat_rooms]
-            if room_id in room_ids:
-                room_ids.remove(room_id)
-            room_ids.insert(0, room_id)
-            socketio.emit('available_rooms', room_ids, namespace=active_agent_namespace)
-            logger.info(f"EVENT-message_from_user-Updated available rooms: {room_ids}")
+            open_rooms,closed_rooms=get_opened_closed_discussions(chat_rooms_collection)
+            logger.info(f"BACKEND---Open rooms: {open_rooms}")
+            logger.info(f"BACKEND---Closed rooms: {closed_rooms}")
+
+            emit('available_rooms', {'openRooms': open_rooms, 'closedRooms': closed_rooms}, namespace=active_agent_namespace)
+            logger.info(f"EVENT-message_from_user-Updated available rooms: open {open_rooms} closed {closed_rooms}")
         except Exception as e:
             logger.error(f"Error processing message or fetching room IDs: {str(e)}")
             emit('error', {'message': 'Failed to process message or fetch chat rooms'}, namespace=active_agent_namespace)

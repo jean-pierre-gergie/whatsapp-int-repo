@@ -121,3 +121,30 @@ body {
     text-align: left;
 }
 
+.tabs button {
+    background-color: #87CEFA; /* Light blue background color */
+    border: none;
+    color: white;
+    padding: 10px 20px;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: background-color 0.3s, transform 0.3s;
+    margin: 5px;
+    outline: none;
+}
+
+.tabs button:hover {
+    background-color: #5DADE2; /* Darker blue on hover */
+    transform: scale(1.05); /* Slightly larger */
+}
+
+.tabs button:active {
+    background-color: #3498DB; /* Even darker blue on click */
+    transform: scale(0.98); /* Slightly smaller on click */
+}
+
+.tabs button.selected {
+    background-color: #2980B9; /* Distinct shade for selected tab */
+    font-weight: bold;
+}

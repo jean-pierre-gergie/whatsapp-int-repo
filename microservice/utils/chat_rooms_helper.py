@@ -40,6 +40,7 @@ class WhatsAppChatCampaignHandler:
                 room_data = {
                     "room_id": user_phone_number,
                     "created_at": datetime.utcnow(),
+                    "open_discussion":False,
                     "messages": [message_data]
                 }
                 self.chat_rooms_collection.insert_one(room_data)
