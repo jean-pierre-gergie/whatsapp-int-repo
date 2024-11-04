@@ -3,6 +3,14 @@ import { displayAvailableRooms, displayChatHistory, displayMessage } from './dom
 
 import { showClosedRooms,showOpenRooms } from './tabSwitch.js';
 
+const jwtToken = getCookie('jwt_token');
+console.log(jwtToken)
+if (!jwtToken) {
+    console.error("JWT token is missing, cannot connect to Socket.IO server.");
+}
+
+
+
 export const socket = initSocket(getCookie('jwt_token'));
 
 function initSocket(jwtToken) {
@@ -13,6 +21,9 @@ function initSocket(jwtToken) {
     });
 
     socket.on('connect', () => console.log("Successfully connected"));
+    socket.on('connect_ack', (data) => {
+        console.log(data.message); // Should output: "Connected successfully"
+    });
     socket.on('connect_error', error => console.error("Connection failed:", error));
     socket.on('disconnect', reason => console.warn("Disconnected:", reason));
 

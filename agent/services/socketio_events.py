@@ -3,6 +3,7 @@ from flask_socketio import emit, join_room
 from utils.db_helper import get_rooms_collection, handle_chat_room
 from utils.dialog_360 import send_message_to_users_through_360
 from utils.chat_room_helper import get_opened_closed_discussions
+from utils.jwt_helper import socket_io_jwt
 from datetime import datetime
 
 
@@ -13,6 +14,7 @@ active_agent_namespace = '/agent/agent_namespace'
 
 def register_socketio_events(socketio):
     @socketio.on('connect', namespace=active_agent_namespace)
+    @socket_io_jwt
     def connect():
         logger.info(f"Client connected to {active_agent_namespace}")
         try:
@@ -27,6 +29,7 @@ def register_socketio_events(socketio):
             emit('error', {'message': 'Failed to fetch chat rooms'}, namespace=active_agent_namespace)
 
     @socketio.on('new_room', namespace=active_agent_namespace)
+    @socket_io_jwt
     def handle_new_room(data):
         logger.info(f"EVENT---Received 'new_room' event with data: {data}")
         try:
@@ -40,6 +43,7 @@ def register_socketio_events(socketio):
             emit('error', {'message': 'Failed to fetch chat rooms'}, namespace=active_agent_namespace)
 
     @socketio.on('message_from_user', namespace=active_agent_namespace)
+    @socket_io_jwt
     def handle_message(data):
         logger.info(f"EVENT-message_from_user-Received event with data: {data}")
         room_id = data.get('room')
@@ -60,6 +64,7 @@ def register_socketio_events(socketio):
             socketio.emit('error', {'message': 'Failed to process message or fetch chat rooms'}, namespace=active_agent_namespace)
 
     @socketio.on('message_from_business', namespace=active_agent_namespace)
+    @socket_io_jwt
     def handle_message(data):
         try:
             logger.info(f"EVENT-message_from_business-Received event with data: {data}")
@@ -88,6 +93,7 @@ def register_socketio_events(socketio):
             logger.error(f"EVENT-message_from_business-Error processing event: {e}")
 
     @socketio.on('join_room', namespace=active_agent_namespace)
+    @socket_io_jwt
     def on_join_room(data):
         try:
             room = data.get('room')
@@ -142,6 +148,7 @@ def register_socketio_events(socketio):
 
 
     @socketio.on('close_conversation', namespace=active_agent_namespace)
+    @socket_io_jwt
     def close_conversation(data):
         room_id = data.get('room_id')
         try:

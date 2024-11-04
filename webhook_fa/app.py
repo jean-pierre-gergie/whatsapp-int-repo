@@ -11,6 +11,7 @@ from dotenv import load_dotenv
 import socketio
 from datetime import datetime
 from utils.helper_functions import WhatsAppDataHandler
+from utils.generate_long_lived_token import generate_forever_token
 from tenacity import retry, wait_exponential, stop_after_attempt, RetryError
 
 
@@ -61,12 +62,13 @@ agent_db = client[AGENT_CHAT_DB]
 chat_rooms_collection = agent_db[ROOMS_COLLECTION]
 
 
-
+token = generate_forever_token()
+logger.info(f"WEBHOOK --- --- Token {token}")
 @retry(wait=wait_exponential(multiplier=1, min=1, max=30), stop=stop_after_attempt(5), reraise=True)
 def connect_to_agent_service():
-    # Try to connect to the agent service using Socket.IO
-    sio.connect("http://agent:5001", namespaces=['/agent/agent_namespace'])
-    logger.info("Successfully connected to the agent service.")
+    # Pass the token in the `auth` parameter
+    sio.connect(f"http://agent:5001/?token={token}", namespaces=['/agent/agent_namespace'])
+    logger.info("Successfully connected to the agent service with JWT authentication.")
 
 
 @app.on_event("startup")

@@ -625,7 +625,7 @@ def view_collection_content():
 def dynamic_redirect():
     # Create a new token or get the existing one
     current_identity = get_jwt_identity()  # Get the current user's identity
-    token = create_access_token(identity=current_identity)  # Create a new token with the same identity
+    token = create_access_token(identity=current_identity,expires_delta=timedelta(hours=1))  # Create a new token with the same identity
     agent_server_url = os.getenv('CHAT_AGENT_SERVER_URL')
     logger.info(f"redirecting to {agent_server_url}")
     response = make_response(redirect(agent_server_url))
