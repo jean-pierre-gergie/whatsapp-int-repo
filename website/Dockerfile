@@ -3,6 +3,9 @@ FROM python:3.10-slim
 # Set the working directory in the container
 WORKDIR /app
 
+ENV PYTHONDONTWRITEBYTECODE=1
+
+
 COPY . /app/
 
 RUN apt-get update && \

@@ -12,6 +12,7 @@ import socketio
 from datetime import datetime
 from utils.helper_functions import WhatsAppDataHandler
 from utils.generate_long_lived_token import generate_forever_token
+from utils.auto_reply_helper import AutoReplyHandler
 from tenacity import retry, wait_exponential, stop_after_attempt, RetryError
 
 
@@ -90,10 +91,15 @@ async def startup_event():
 class WebhookPayload(BaseModel):
     entry: Optional[list[Dict[str, Any]]]
 
+auto_reply_handler = AutoReplyHandler(chat_rooms_collection,logger = logger) 
 
 
-
-handler = WhatsAppDataHandler(raw_collection, user_to_business_collection, business_to_user_collection,chat_rooms_collection,sio=sio)
+handler = WhatsAppDataHandler(raw_collection, 
+                            user_to_business_collection,
+                            business_to_user_collection,
+                            chat_rooms_collection,
+                            auto_reply_handler=auto_reply_handler,
+                            sio=sio)
 
 
 

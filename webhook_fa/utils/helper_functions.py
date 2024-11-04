@@ -6,11 +6,12 @@ from datetime import datetime
 
 
 class WhatsAppDataHandler:
-    def __init__(self, raw_collection, user_to_business_collection, business_to_user_collection,chat_rooms_collection,sio):
+    def __init__(self, raw_collection, user_to_business_collection, business_to_user_collection,chat_rooms_collection,auto_reply_handler,sio):
         self.raw_collection = raw_collection
         self.user_to_business_collection = user_to_business_collection
         self.business_to_user_collection = business_to_user_collection
         self.chat_rooms_collection =chat_rooms_collection
+        self.auto_reply_handler = auto_reply_handler  
         self.sio = sio 
         self.logger = logging.getLogger(__name__)
 
@@ -68,6 +69,8 @@ class WhatsAppDataHandler:
                                    message_body=message_body,
                                    timestamp=datetime.utcnow())
             
+            await self.auto_reply_handler.auto_reply(sender_phone)
+            
 
     async def _handle_chat_room(self, sender_phone, wa_mid, message_body, timestamp, sender_type="user"):
         if sender_phone:
@@ -90,8 +93,9 @@ class WhatsAppDataHandler:
                     "room_id": sender_phone,
                     "created_at": datetime.utcnow(),
                     "open_discussion": open_discussion,
-                    "messages": [message_data],
-                    "last_message_time": timestamp  # Set last_message_time
+                    "last_message_time": timestamp,
+                    "messages": [message_data]
+                      # Set last_message_time
                 }
                 self.chat_rooms_collection.insert_one(room_data)
                 self.logger.info(f"Created new chat room with room_id: {sender_phone}")
