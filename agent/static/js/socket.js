@@ -25,7 +25,10 @@ function initSocket(jwtToken) {
         console.log(data.message); // Should output: "Connected successfully"
     });
     socket.on('connect_error', error => console.error("Connection failed:", error));
-    socket.on('disconnect', reason => console.warn("Disconnected:", reason));
+    socket.on('disconnect', (reason) => {
+        console.warn("Disconnected:", reason);
+        alert(`Disconnected from the server. Reason: ${reason}`);
+    });
 
     socket.on('available_rooms', roomData => {
         console.log("FE --- Received available rooms data:", roomData);
