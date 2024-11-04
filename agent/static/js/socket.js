@@ -4,7 +4,7 @@ import { displayAvailableRooms, displayChatHistory, displayMessage } from './dom
 import { showClosedRooms,showOpenRooms } from './tabSwitch.js';
 
 const jwtToken = getCookie('jwt_token');
-console.log(jwtToken)
+// console.log(jwtToken)
 if (!jwtToken) {
     console.error("JWT token is missing, cannot connect to Socket.IO server.");
 }

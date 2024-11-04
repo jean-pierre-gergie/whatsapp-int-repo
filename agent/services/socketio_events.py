@@ -85,7 +85,13 @@ def register_socketio_events(socketio):
             except Exception as e:
                 logger.error(f"EVENT-message_from_business-Error sending message through 360dialog for room {room_id}: {e}")
             try:
-                handle_chat_room(chat_rooms_collection, room=room_id, message_body=message_body)
+                handle_chat_room(chat_rooms_collection, room=room_id, message_body=message_body,timestamp=datetime.utcnow())
+
+                open_rooms,closed_rooms=get_opened_closed_discussions(chat_rooms_collection)
+                logger.info(f"BACKEND---Open rooms: {open_rooms}")
+                logger.info(f"BACKEND---Closed rooms: {closed_rooms}")
+
+                socketio.emit('available_rooms', {'openRooms': open_rooms, 'closedRooms': closed_rooms}, namespace=active_agent_namespace)
             except Exception as e:
                 logger.error(f"EVENT-message_from_business-Error handling chat room for room_id {room_id}: {e}")
             logger.info(f"EVENT-message_from_business-Successfully sent message to room {room_id}: {message_body}")
