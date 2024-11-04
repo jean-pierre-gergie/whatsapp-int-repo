@@ -8,7 +8,7 @@ logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
-logger = logging.getLogger('app')
+logger = logging.getLogger('AGENT-HANDLE-ROOM')
 
 
 
@@ -54,7 +54,9 @@ def handle_chat_room(chat_rooms_collection, room, message_body, timestamp=None, 
             except Exception as e:
                 logger.error(f"Error finding room with room_id: {room}: {e}")
                 return
-            timestamp =timestamp.isoformat() if isinstance(timestamp, datetime) else timestamp
+
+            # Ensure timestamp is in ISO format if it's a datetime object
+            timestamp = timestamp.isoformat() if isinstance(timestamp, datetime) else timestamp
             message_data = {
                 "sender": "business",
                 "timestamp": timestamp,
@@ -68,7 +70,8 @@ def handle_chat_room(chat_rooms_collection, room, message_body, timestamp=None, 
                     room_data = {
                         "room_id": room,
                         "created_at": datetime.utcnow(),
-                        "messages": [message_data]
+                        "messages": [message_data],
+                        "last_message_time": timestamp  # Set last_message_time for a new room
                     }
                     chat_rooms_collection.insert_one(room_data)
                     logger.info(f"Created new chat room with room_id: {room}")
@@ -79,7 +82,10 @@ def handle_chat_room(chat_rooms_collection, room, message_body, timestamp=None, 
                     logger.debug(f"Updating existing room with room_id: {room} with a new message")
                     chat_rooms_collection.update_one(
                         {'room_id': room},
-                        {'$push': {'messages': message_data}}
+                        {
+                            '$push': {'messages': message_data},
+                            '$set': {'last_message_time': timestamp}  # Update last_message_time for an existing room
+                        }
                     )
                     logger.info(f"Updated chat room with new message for room_id: {room}")
                 except Exception as e:

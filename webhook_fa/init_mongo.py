@@ -1,6 +1,6 @@
 import json
 import logging
-from pymongo import MongoClient, errors
+from pymongo import MongoClient, errors,DESCENDING
 
 # Configure the logger
 logger = logging.getLogger(__name__)
@@ -37,10 +37,20 @@ def create_collections():
         agent_db = client.agent_data
 
         try:
+        # Create the 'rooms' collection if it doesn't exist
             agent_db.create_collection("rooms")
             logger.info("Collection 'rooms' created successfully in 'agent_data' database.")
+            
+            # Reference the 'rooms' collection
+            rooms_collection = agent_db["rooms"]
+            
+            # Set an index on 'last_message_time' field in descending order
+            rooms_collection.create_index([("last_message_time", DESCENDING)], name="last_message_time_desc")
+            logger.info("Index 'last_message_time_desc' created on 'last_message_time' in 'rooms' collection.")
+            
         except Exception as e:
-            logger.error(f"An error occurred while creating the rooms collection: {e}")
+            # Log an error if collection creation or indexing fails
+            logger.error(f"An error occurred while creating the 'rooms' collection or setting the index: {e}")
 
         collections = [
             'campaign', 'campaign_responses', 'language', 'members',

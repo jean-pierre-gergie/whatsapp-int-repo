@@ -17,8 +17,12 @@ def get_opened_closed_discussions(chat_rooms_collection):
     try:
         logger.debug("Getting all conversations from the database...")
 
-        # Fetch chat rooms from the collection
-        chat_rooms = chat_rooms_collection.find({}, {'room_id': 1, 'open_discussion': 1, 'messages': 1, '_id': 0})
+        # Fetch chat rooms from the collection, sorted by last_message_time in descending order
+        chat_rooms = chat_rooms_collection.find(
+            {}, 
+            {'room_id': 1, 'open_discussion': 1, 'messages': 1, '_id': 0}
+        ).sort("last_message_time", -1)  # Sort by last_message_time descending
+
         chat_rooms = list(chat_rooms)  # Convert to a list for easier processing
 
         open_rooms = []
@@ -54,6 +58,7 @@ def get_opened_closed_discussions(chat_rooms_collection):
     except Exception as e:
         # Log the exception with an error level
         logger.error(f"An error occurred while fetching and processing chat rooms: {e}")
+
 
         
 
