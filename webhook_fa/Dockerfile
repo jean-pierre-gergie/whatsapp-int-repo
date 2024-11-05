@@ -4,6 +4,9 @@ FROM python:3.10-slim
 # Set the working directory in the container
 WORKDIR /app
 
+ENV PYTHONDONTWRITEBYTECODE=1
+
+
 # Copy the requirements file into the container
 COPY requirements.txt /app/
 COPY init_mongo.py /app/

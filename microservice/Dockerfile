@@ -2,6 +2,8 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
+ENV PYTHONDONTWRITEBYTECODE=1
+
 COPY . /app/
 
 

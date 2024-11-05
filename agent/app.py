@@ -25,8 +25,8 @@ logger = configure_logging()
 load_dotenv()
 
 # Initialize SocketIO with eventlet
-# socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet', logger=True, engineio_logger=True)
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet', logger=True)
+# socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 socketio.on_namespace(AgentNamespace('/agent/agent_namespace'))
 
 active_agent_namespace = '/agent/agent_namespace'

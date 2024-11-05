@@ -3,18 +3,38 @@
 <head>
     <meta charset="UTF-8">
     <title>Chat App</title>
-     <!-- todo  -->
-    <link rel="stylesheet" href="/agent/{{ url_for('static', filename='styles.css') }}">
-    <!-- <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}"> -->
+    <!-- Link to the CSS file -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+
+    <!-- Socket.IO library -->
     <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+
+    <!-- Main JavaScript file as a module -->
+    
+    <script type="module" src="{{ url_for('static', filename='js/utils.js') }}"></script>
+    <script type="module" src="{{ url_for('static', filename='js/socket.js') }}"></script>
+    <script type="module" src="{{ url_for('static', filename='js/roomManagement.js') }}"></script>
+    <script type="module" src="{{ url_for('static', filename='js/domUpdates.js') }}"></script>
+    <script type="module" src="{{ url_for('static', filename='js/sendMessage.js') }}"></script>
+    <script type="module" src="{{ url_for('static', filename='js/eventListeners.js') }}"></script>
+    <script type="module" src="{{ url_for('static', filename='js/tabSwitch.js') }}"></script>
+
+    
 </head>
 <body>
     <div class="sidebar">
         <div class="header">
             <h2>Chat Rooms</h2>
+            <div class="tabs">
+                <button onclick="showOpenRooms()">Open Conv</button>
+                <button onclick="showClosedRooms()">Closed Conv</button>
+            </div>
         </div>
-        <div class="rooms" id="room-list">
-            <!-- Room list will be populated here -->
+        <div class="rooms" id="open-room-list">
+            <!-- Open rooms will be populated here -->
+        </div>
+        <div class="rooms" id="closed-room-list" style="display: none;">
+            <!-- Closed rooms will be populated here -->
         </div>
     </div>
 
@@ -30,179 +50,5 @@
             <button onclick="sendMessage()">Send</button>
         </div>
     </div>
-
-    <script>
-
-        const chatBody = document.querySelector('.chat-body');
-        function scrollToBottom() {
-            chatBody.scrollTop = chatBody.scrollHeight;
-        }
-
-        window.onload = () => {
-
-            // const socketUrl = "{{ socket_url }}";
-            // const fullSocketUrl = `${socketUrl}/agent_namespace`;
-            // console.log("Socket URL being used:", fullSocketUrl); // Print the full URL to the console
-
-            // const socket = io(fullSocketUrl);
-
-
-            // todo change this get from backend
-
-            function getCookie(name) {
-                const value = `; ${document.cookie}`;
-                const parts = value.split(`; ${name}=`);
-                if (parts.length === 2) return parts.pop().split(';').shift();
-            }
-
-            // Get the JWT token from the cookie
-            const jwtToken = getCookie('jwt_token');
-
-
-            const socket = io('https://www.ocmymada.com/agent/agent_namespace', {
-            path: '/agent/socket.io',
-            transports: ['websocket', 'polling'],
-            withCredentials: true,
-            auth: {
-                    token: jwtToken
-                }
-            });
-
-            // const socket = io('http://localhost:5001/agent/agent_namespace', {
-            // // path: 'socket.io',
-            // transports: ['websocket', 'polling'],
-            // withCredentials: true,
-            // auth: {
-            //         token: jwtToken
-            //     }
-            // });
-            
-            // Listen for connection success
-            socket.on('connect', () => {
-                console.log("Successfully connected to Socket.IO server at:");
-
-                // socket.emit('join', '/agent_namespace'); // Example of emitting an event or joining the namespace after connecting
-            });
-            
-
-            // Listen for connection errors
-            socket.on('connect_error', (error) => {
-                console.error("Failed to connect to Socket.IO server:", error);
-            });
-
-            // Listen for disconnection events
-            socket.on('disconnect', (reason) => {
-                console.warn("Disconnected from Socket.IO server. Reason:", reason);
-            });
-
-
-
-            let currentRoom = null;
-    
-            socket.on('available_rooms', (rooms) => {
-                console.log("FE---Available rooms:", rooms);
-                const roomList = document.getElementById("room-list");
-                if (roomList) {
-                    roomList.innerHTML = '';
-    
-                    rooms.forEach(room => {
-                        const roomButton = document.createElement("button");
-                        roomButton.className = "room-button";
-                        roomButton.textContent = room;
-    
-                        roomButton.onclick = () => {
-                            joinRoom(room);
-                            currentRoom = room;
-                        };
-    
-                        roomList.appendChild(roomButton);
-                    });
-                } else {
-                    console.error("Room list element not found");
-                }
-            });
-    
-            function joinRoom(room) {
-                console.log("Joining room:", room);
-                currentRoom = room;
-                socket.emit('join_room', { room });
-                document.getElementById("room-name").textContent = `Room: ${room}`;
-                document.getElementById("chat-body").innerHTML = ''; // Clear chat body
-            }
-    
-            socket.on('chat_history', (data) => {
-                console.log("Received chat history:", data);
-                const chatBody = document.getElementById("chat-body");
-                if (data.room === currentRoom) {
-                    // Populate chat history
-                    data.messages.forEach(message => {
-                        console.log(message)
-                        const messageElement = document.createElement("div");
-                        if(message.sender === "user") {
-                            messageElement.className = "message user";
-                        } else if(message.sender === "business") {
-                            messageElement.className ="message business"
-                        }
-                        messageElement.textContent = `${message.body}`;
-                        chatBody.appendChild(messageElement);
-                    });
-                }
-            });
-    
-            socket.on('message_from_user', (data) => {
-                console.log("Received 'message_from_user' event:", data);
-                console.log("Current room:", currentRoom);
-                
-                if (data.room === currentRoom) {
-                    console.log(`Message received in room ${currentRoom}:`, data);
-                    const chatBody = document.getElementById("chat-body");
-                    const messageElement = document.createElement("div");
-                    messageElement.className = "message user";
-                    messageElement.textContent = `${data.message}`;
-                    chatBody.appendChild(messageElement);
-                    scrollToBottom();
-                } else {
-                    console.warn("Received message for different room:", data.room);
-                }
-            });
-    
-            socket.on('message_from_business', (data) => {
-                console.log("Received 'message_from_business' event:", data);
-                console.log("Current room:", currentRoom);
-                
-                if (data.room === currentRoom) {
-                    console.log(`Message received in room ${currentRoom}:`, data);
-                    const chatBody = document.getElementById("chat-body");
-                    const messageElement = document.createElement("div");
-                    messageElement.className = "message business";
-                    messageElement.textContent = `${data.message}`;
-                    chatBody.appendChild(messageElement);
-                    scrollToBottom();
-                } else {
-                    console.warn("Received message for different room:", data.room);
-                }
-            });
-    
-            function sendMessage() {
-                const message = document.getElementById("message-input").value;
-                if (currentRoom && message.trim() !== '') {
-                    socket.emit('message_from_business', { room: currentRoom, message, sender: 'business' });
-                    document.getElementById("message-input").value = '';
-                } else {
-                    console.error("No room selected or message is empty");
-                }
-            }
-    
-            // Add event listener to send message on pressing "Enter"
-            document.getElementById("message-input").addEventListener("keydown", (event) => {
-                if (event.key === "Enter") {
-                    sendMessage();
-                    event.preventDefault(); // Prevent default form submission behavior
-                }
-            });
-    
-            document.querySelector("button").onclick = sendMessage;
-        };
-    </script>
 </body>
 </html>

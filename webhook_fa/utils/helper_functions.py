@@ -6,11 +6,12 @@ from datetime import datetime
 
 
 class WhatsAppDataHandler:
-    def __init__(self, raw_collection, user_to_business_collection, business_to_user_collection,chat_rooms_collection,sio):
+    def __init__(self, raw_collection, user_to_business_collection, business_to_user_collection,chat_rooms_collection,auto_reply_handler,sio):
         self.raw_collection = raw_collection
         self.user_to_business_collection = user_to_business_collection
         self.business_to_user_collection = business_to_user_collection
         self.chat_rooms_collection =chat_rooms_collection
+        self.auto_reply_handler = auto_reply_handler  
         self.sio = sio 
         self.logger = logging.getLogger(__name__)
 
@@ -66,33 +67,41 @@ class WhatsAppDataHandler:
             await self._handle_chat_room(sender_phone=sender_phone,
                                    wa_mid=wa_mid,
                                    message_body=message_body,
-                                   timestamp=time_stamp)
+                                   timestamp=datetime.utcnow())
+            
+            await self.auto_reply_handler.auto_reply(sender_phone)
             
 
-    async def _handle_chat_room(self, sender_phone , wa_mid , message_body,timestamp):
+    async def _handle_chat_room(self, sender_phone, wa_mid, message_body, timestamp, sender_type="user"):
         if sender_phone:
-
             existing_room = self.chat_rooms_collection.find_one({'room_id': sender_phone})
 
+            open_discussion = True if sender_type == "user" else False
+            timestamp = timestamp.isoformat() if isinstance(timestamp, datetime) else timestamp
+
             message_data = {
-                    "wa_mid": wa_mid,
-                    "sender": "user",
-                    "timestamp": timestamp,
-                    "body": message_body
-                }
+                "wa_mid": wa_mid,
+                "sender": sender_type,
+                "timestamp": timestamp,
+                "body": message_body,
+                "info": "unread"
+            }
 
             if not existing_room:
+                # Set 'last_message_time' as the current message timestamp for a new room
                 room_data = {
                     "room_id": sender_phone,
                     "created_at": datetime.utcnow(),
+                    "open_discussion": open_discussion,
+                    "last_message_time": timestamp,
                     "messages": [message_data]
+                      # Set last_message_time
                 }
                 self.chat_rooms_collection.insert_one(room_data)
                 self.logger.info(f"Created new chat room with room_id: {sender_phone}")
 
                 await self.emit_event(event_name='new_room',
-                                data=  {'room': sender_phone}
-                            )
+                                    data={'room': sender_phone})
             
             else:
                 # Check if the wa_mid already exists in the room's messages
@@ -103,19 +112,23 @@ class WhatsAppDataHandler:
 
                 if wa_mid_exists:
                     self.logger.info(f"Message with wa_mid {wa_mid} already exists for room_id: {sender_phone}")
-                    return 
+                    return
                 else:
-                    # Update the existing room with the new message
+                    # Update the existing room with the new message and update 'last_message_time'
                     self.chat_rooms_collection.update_one(
                         {'room_id': sender_phone},
-                        {'$push': {'messages': message_data}}
+                        {
+                            '$push': {'messages': message_data},
+                            '$set': {
+                                'open_discussion': open_discussion,
+                                'last_message_time': timestamp  # Update last_message_time
+                            }
+                        }
                     )
                     self.logger.info(f"Updated chat room with new message for room_id: {sender_phone}")
 
-            
             await self.emit_event(event_name='message_from_user',
-                            data= {'room': sender_phone,'sender':'user', 'message': message_body},
-                            )
+                                data={'room': sender_phone, 'sender': 'user', 'message': message_body, "timestamp": timestamp})
 
     def extract_whatsapp_data(self, response_json):
         try:

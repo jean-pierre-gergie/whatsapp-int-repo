@@ -32,6 +32,7 @@ class WhatsAppChatCampaignHandler:
                 "body": None,
                 "campaign": True,
                 "body":f"**CAMPAIGN** {campaign_name}"
+                
             }
             self.logger.debug(f"Prepared message data: {message_data}")
 
@@ -40,6 +41,8 @@ class WhatsAppChatCampaignHandler:
                 room_data = {
                     "room_id": user_phone_number,
                     "created_at": datetime.utcnow(),
+                    "open_discussion":False,
+                    "last_message_time": timestamp,
                     "messages": [message_data]
                 }
                 self.chat_rooms_collection.insert_one(room_data)
@@ -48,9 +51,15 @@ class WhatsAppChatCampaignHandler:
             else:
                 # Update the existing room with the new message
                 update_result = self.chat_rooms_collection.update_one(
-                    {'room_id': user_phone_number},
-                    {'$push': {'messages': message_data}}
-                )
+                        {'room_id': user_phone_number},
+                        {
+                            '$push': {'messages': message_data},
+                            '$set': {
+                                'open_discussion': user_phone_number,
+                                'last_message_time': timestamp  # Update last_message_time
+                            }
+                        }
+                    )
                 self.logger.info(f"Updated chat room with new message for room_id: {user_phone_number}")
                 self.logger.debug(f"Update result: {update_result.raw_result}")
         except Exception as e:
