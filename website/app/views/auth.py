@@ -11,8 +11,12 @@ bp = Blueprint('auth', __name__)
 
 # Initialize logger for this module
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
 
+logging.basicConfig(level=logging.DEBUG, 
+                    format='- %(name)s - %(levelname)s - %(message)s')
+
+
+# TODO : add a function in session_config_helper to set the session configs
 @bp.route('/', methods=['GET', 'POST'])
 def login():
     default_db = current_app.default_db

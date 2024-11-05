@@ -25,9 +25,9 @@ logger.addHandler(handler)
 pymongo_logger = logging.getLogger("pymongo")
 pymongo_logger.setLevel(logging.ERROR) 
 
-api_key_360 = Config.API_KEY
 
-def get_template_texts(template_name):
+
+def get_template_texts(template_name,api_key_360):
     url = "https://waba-v2.360dialog.io/v1/configs/templates"
     headers = {
         "D360-API-KEY": api_key_360,

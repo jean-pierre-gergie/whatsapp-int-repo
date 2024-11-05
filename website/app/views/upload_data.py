@@ -7,10 +7,12 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from ..utils.decorators import role_required
 from ..utils.helper_functions import check_df_validity
 from ..utils.country_number_cleaning import is_valid_phone_number
+from ..utils.session_config_helper import get_session_foundation_config
 from werkzeug.utils import secure_filename
 import logging
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.DEBUG, 
+                    format='- %(name)s - %(levelname)s - %(message)s')
 
 logger = logging.getLogger(__name__)
 
@@ -20,6 +22,11 @@ bp = Blueprint('upload_data', __name__)
 @jwt_required()
 @role_required(['admin', 'user']) 
 def upload_file():
+
+    session_configs =get_session_foundation_config()
+  
+    foundation_name = session_configs.get('foundation_name')
+
     if request.method == 'POST':
         file = request.files.get('file')
         if not file:
@@ -51,7 +58,8 @@ def upload_file():
                                    csv_columns=csv_columns, 
                                    db_columns=db_columns, 
                                    csv_data=csv_data_html, 
-                                   temp_file_path=temp_file_path)
+                                   temp_file_path=temp_file_path,
+                                   foundation_name= foundation_name)
 
         except pd.errors.EmptyDataError:
             flash('No columns to parse from file. The file might be empty.', 'error')
@@ -59,7 +67,7 @@ def upload_file():
         except Exception as e:
             flash(f'An error occurred while uploading file : {str(e)}', 'error')
             return render_template('upload.html')
-    return render_template('upload.html')
+    return render_template('upload.html',foundation_name= foundation_name)
 
 
 @bp.route('/download_sample', methods=['GET'])
@@ -149,8 +157,11 @@ def map_columns():
 
             # Insert cleaned data into MongoDB
             unique_fields = ['first_name', 'last_name', 'mobile', 'tag']
-            mongo_db = current_app.mongo
-            collection = mongo_db.members
+
+            session_configs =get_session_foundation_config()
+
+            whatsapp_data_db = session_configs.get('whatsapp_data_db')
+            collection = whatsapp_data_db.members
 
             logger.info("Starting insertion of cleaned data into MongoDB...")
             for _, row in cleaned_df.iterrows():
@@ -172,7 +183,7 @@ def map_columns():
 
             if 'tag' in db_columns:
                 tags = cleaned_df['tag'].unique()
-                campaign_collection = mongo_db.campaign
+                campaign_collection = whatsapp_data_db.campaign
                 
                 duplicate_tags = []
                 new_tags = []
@@ -236,8 +247,11 @@ def add_member():
         }
 
         # Connect to MongoDB and get the members collection
-        mongo_db = current_app.mongo
-        collection = mongo_db.members
+        session_configs =get_session_foundation_config()
+
+        whatsapp_data_db = session_configs.get('whatsapp_data_db')
+
+        collection = whatsapp_data_db.members
 
         # Check for existing member with the same mobile number
         existing_member = collection.find_one({'mobile': formatted_number, 'tag': tag})
@@ -248,7 +262,8 @@ def add_member():
         collection.insert_one(member_data)
 
         # Update campaign tags if the tag does not already exist in the campaign collection
-        campaign_collection = mongo_db.campaign
+        campaign_collection = whatsapp_data_db.campaign
+
         if not campaign_collection.find_one({'tag': tag}):
             campaign_collection.insert_one({'tag': tag})
 

@@ -5,6 +5,8 @@ from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt ,create_a
 from ..utils.decorators import role_required
 from ..utils.helper_functions import send_message, upload_image,get_report,transform_template_json, get_template_details, send_message_campaign,get_all_collections_content
 from ..utils.template_updater import fetch_and_update_templates
+from ..utils.session_config_helper import get_session_foundation_config
+
 
 import os
 import csv
@@ -14,21 +16,23 @@ import requests
 
 import logging
 
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.DEBUG, 
+                    format='- %(name)s - %(levelname)s - %(message)s')
 
 logger = logging.getLogger(__name__)
 
 
 bp = Blueprint('campaigns', __name__)
 
-
+# FIXME : no need to do anything start with th enext url 
 @bp.route('/audience', methods=['GET'])
 @jwt_required()
 @role_required(['admin', 'user']) 
 def audience():
-    current_user = get_jwt_identity()
-    mongo_db = current_app.mongo
-    audience_collection = mongo_db.members
+    session_configs =get_session_foundation_config()
+    whatsapp_data_db = session_configs.get('whatsapp_data_db')
+    foundation_name = session_configs.get("foundation_name")
+    audience_collection = whatsapp_data_db.members
     
     page = int(request.args.get('page', 1))  
     per_page = 15  
@@ -50,7 +54,13 @@ def audience():
 
     total_pages = (total_audience + per_page - 1) // per_page  
 
-    return render_template('audience.html', audience_list=audience_list, tags=tags, selected_tag=selected_tag, page=page, total_pages=total_pages)
+    return render_template('audience.html',
+                           audience_list=audience_list,
+                           tags=tags,
+                           selected_tag=selected_tag,
+                           page=page,
+                           total_pages=total_pages,
+                           foundation_name =foundation_name)
 
 
 
