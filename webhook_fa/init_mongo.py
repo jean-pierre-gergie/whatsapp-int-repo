@@ -31,7 +31,9 @@ def create_collections():
     for foundation_name, api_key in api_keys.items():
         document = {
             "foundation": foundation_name,
-            "api_key": api_key
+            "api_key": api_key,
+            "whatsapp_data_db": f"whatsapp_data_{foundation_name}",
+            "agent_data_db": f"agent_data_{foundation_name}"
         }
         
         # Insert document if not already present

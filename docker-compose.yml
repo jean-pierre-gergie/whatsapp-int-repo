@@ -18,6 +18,7 @@ services:
       - ./website:/app  # Mounts the current directory to the container's /app directory
     depends_on:
       - mongodb
+      - webhook_fa
     networks:
       - network_internal
 

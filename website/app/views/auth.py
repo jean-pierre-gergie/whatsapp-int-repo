@@ -4,6 +4,7 @@ from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identi
 import bcrypt
 from bson.objectid import ObjectId
 from ..utils.decorators import  role_required
+from ..utils.session_config_helper import get_session_foundation_config
 import uuid
 
 bp = Blueprint('auth', __name__)
@@ -14,8 +15,8 @@ logger.setLevel(logging.DEBUG)
 
 @bp.route('/', methods=['GET', 'POST'])
 def login():
-    mongo_db = current_app.mongo
-    collection = mongo_db.user_credentials
+    default_db = current_app.default_db
+    collection = default_db.user_credentials
 
     if request.method == 'POST':
         username = request.form['username']
@@ -40,7 +41,29 @@ def login():
 
                 # Fetch the role from the user document
                 role = user.get('role', 'user')  # Default to 'user' role if not specified
-                logger.debug(f"User {username} has role: {role}")
+                
+
+                foundation_name = user.get('foundation')
+
+                logger.debug(f"User {username} has role: {role} is in foundation {foundation_name}")
+
+
+                foundations_collection = current_app.mongo['foundations_db']['foundations']
+                foundation_config = foundations_collection.find_one({"foundation": foundation_name})
+
+                if foundation_config:
+                    # Store foundation-specific details in session
+                    session['foundation'] = {
+                        'foundation_name':foundation_name,
+                        'api_key': foundation_config['api_key'],
+                        'whatsapp_data_db': foundation_config['whatsapp_data_db'],
+                        'agent_data_db': foundation_config['agent_data_db']
+                    }
+                    logger.debug(f"Foundation configuration set in session for {foundation_name}")
+
+                else:
+                    logger.debug(f"Foundation configuration  {foundation_name}   not found in db ")
+
 
                 # Create JWT token with username and role
                 access_token = create_access_token(identity={'username': user['username'], 'role': role})
@@ -77,16 +100,19 @@ def index():
     role = current_user.get('role', 'user')  # Default to 'user' role if not specified
     logger.debug(f"User {current_user['username']} has role: {role}")
     
-    mongo_db = current_app.mongo
     
+    session_configs =get_session_foundation_config()
+
+    whatsapp_data_db = session_configs.get('whatsapp_data_db')
+    foundation_name = session_configs.get('foundation_name')
     # Fetch campaigns from the database
-    campaigns_collection = mongo_db.campaign
+    campaigns_collection = whatsapp_data_db.campaign
     campaigns = list(campaigns_collection.find())
     campaigns_data = [{"id": campaign.get('campaign_id'), "name": campaign.get('campaign_name')} for campaign in campaigns]
     logger.debug(f"Retrieved {len(campaigns_data)} campaigns from the database.")
     
     # Fetch templates from the database
-    templates_collection = mongo_db.templates
+    templates_collection = whatsapp_data_db.templates
     templates = list(templates_collection.find())
     templates_data = [{"id": template.get('template_id'), "name": template.get('template_name')} for template in templates]
     logger.debug(f"Retrieved {len(templates_data)} templates from the database.")
@@ -94,11 +120,23 @@ def index():
     # Render the index page with user, campaigns, and templates data
     if role == 'admin':
         logger.info(f"Rendering index page for admin {current_user['username']}.")
-        return render_template('index.html', current_user=current_user, campaigns=campaigns_data, templates=templates_data, is_admin=True)
+        return render_template('index.html', 
+                                current_user=current_user,
+                                campaigns=campaigns_data,
+                                templates=templates_data,
+                                is_admin=True,
+                                foundation_name=foundation_name)
     else:
         logger.info(f"Rendering index page for user {current_user['username']}.")
-        return render_template('index.html', current_user=current_user, campaigns=campaigns_data, templates=templates_data, is_admin=False)
+        return render_template('index.html',
+                               current_user=current_user,
+                               campaigns=campaigns_data,
+                               templates=templates_data,
+                               is_admin=False,
+                               foundation_name=foundation_name)
+    
 
+# TODO :
 @bp.route('/change_password', methods=['GET', 'POST'])
 @jwt_required()
 def change_password():
@@ -152,7 +190,7 @@ def change_password():
             flash('Error updating password', 'error')
 
     return render_template('change_password.html')
-
+# TODO :
 @bp.route('/signup', methods=['GET', 'POST'])
 def signup():
     if request.method == 'POST':
@@ -182,7 +220,7 @@ def signup():
         return render_template('signup.html', message='User created successfully', success=True)
 
     return render_template('signup.html', message='')
-
+# TODO :
 @bp.route('/logout')
 def logout():
     session.clear() 
@@ -190,8 +228,3 @@ def logout():
     response.set_cookie('access_token_cookie', '', expires=0)  
     return redirect(url_for('auth.login'))
 
-# @bp.before_request
-# def before_request():
-#     token = request.cookies.get('access_token_cookie')
-#     if token:
-#         request.headers.environ['HTTP_AUTHORIZATION'] = f'Bearer {token}'
