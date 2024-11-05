@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import logging
 from utils.dialog_360 import send_message_to_users_through_360
 from dotenv import load_dotenv
@@ -95,11 +94,3 @@ class AutoReplyHandler:
 
         except Exception as e:
             self.logger.error(f"Error handling chat room for user: {user_phone_number}. Exception: {e}")
-=======
-
-
-
-def  auto_reply (room_id):
-
-    pass
->>>>>>> 335f148ed93f638e948c2acd6186314a6bec4bf8
