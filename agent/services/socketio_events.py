@@ -9,10 +9,10 @@ from datetime import datetime
 
 logger = logging.getLogger('app')
 chat_rooms_collection = get_rooms_collection()
-active_agent_namespace = '/agent/agent_namespace'
 
 
-def register_socketio_events(socketio):
+
+def register_socketio_events(socketio,active_agent_namespace):
     @socketio.on('connect', namespace=active_agent_namespace)
     @socket_io_jwt
     def connect():
