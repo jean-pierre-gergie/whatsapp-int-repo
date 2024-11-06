@@ -1,8 +1,32 @@
 /* sidebar.css */
 #sidebar {
-    background-color: #d0eaff !important; /* Even lighter light blue */
+    background-color: #d0eaff !important;
+    /* Even lighter light blue */
 }
 
 .sidebar-wrapper {
-    background-color: #d0eaff !important; /* Even lighter light blue */
+    background-color: #d0eaff !important;
+    /* Even lighter light blue */
+}
+
+select {
+    width: 200px;
+    padding: 8px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background-color: #f9f9f9;
+    color: #333;
+    cursor: pointer;
+}
+
+option {
+    font-size: 16px;
+    color: #333;
+    padding: 8px;
+    background-color: #fff;
+}
+
+option:hover {
+    background-color: #e9e9e9;
 }

@@ -3,7 +3,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from ..utils.decorators import role_required
 from ..utils.helper_functions import get_template_texts
 from ..utils.template_updater import fetch_and_update_templates
-from ..utils.session_config_helper import get_session_foundation_config
+from ..utils.session_config_helper import get_session_foundation_config,get_all_foundations
 import requests
 import json
 from app.config import Config  
@@ -17,6 +17,14 @@ logging.basicConfig(level=logging.DEBUG,
 logger = logging.getLogger(__name__)
 
 bp = Blueprint('templates', __name__)
+
+@bp.app_context_processor
+def inject_foundation_data():
+    session_configs = get_session_foundation_config()
+    foundation_name = session_configs.get('foundation_name')
+    all_foundations = get_all_foundations()
+    return dict(foundation_name=foundation_name, foundations=all_foundations)
+
 
 @bp.route('/templates')
 @jwt_required()
@@ -37,8 +45,14 @@ def templates_list():
 
     for template in templates:
         template['_id'] = str(template['_id'])  
+    
 
-    return render_template('templates.html', templates=templates,foundation_name=foundation_name)
+    all_foundations = get_all_foundations()
+
+    return render_template('templates.html',
+                           templates=templates,
+                           foundation_name=foundation_name,
+                           foundations=all_foundations)
 
 @bp.route('/remove_template', methods=['POST'])
 @jwt_required()

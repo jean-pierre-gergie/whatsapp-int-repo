@@ -4,16 +4,26 @@ from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identi
 import bcrypt
 from bson.objectid import ObjectId
 from ..utils.decorators import  role_required
-from ..utils.session_config_helper import get_session_foundation_config
+from ..utils.session_config_helper import get_session_foundation_config,get_all_foundations
 import uuid
 
 bp = Blueprint('auth', __name__)
+
 
 # Initialize logger for this module
 logger = logging.getLogger(__name__)
 
 logging.basicConfig(level=logging.DEBUG, 
                     format='- %(name)s - %(levelname)s - %(message)s')
+
+
+@bp.app_context_processor
+def inject_foundation_data():
+    session_configs = get_session_foundation_config()
+    foundation_name = session_configs.get('foundation_name')
+    all_foundations = get_all_foundations()
+    return dict(foundation_name=foundation_name, foundations=all_foundations)
+
 
 
 # TODO : add a function in session_config_helper to set the session configs
@@ -50,6 +60,9 @@ def login():
                 foundation_name = user.get('foundation')
 
                 logger.debug(f"User {username} has role: {role} is in foundation {foundation_name}")
+
+                foundations_collection = current_app.mongo['foundations_db']['foundations']
+                foundations = list(foundations_collection.find({}, {'_id': 0, 'foundation': 1}))
 
 
                 foundations_collection = current_app.mongo['foundations_db']['foundations']
@@ -120,6 +133,12 @@ def index():
     templates = list(templates_collection.find())
     templates_data = [{"id": template.get('template_id'), "name": template.get('template_name')} for template in templates]
     logger.debug(f"Retrieved {len(templates_data)} templates from the database.")
+
+
+    # Fetch all available foundations for the sidebar
+    foundations_collection = current_app.mongo['foundations_db']['foundations']
+    all_foundations = list(foundations_collection.find({}, {'_id': 0, 'foundation': 1}))
+    logger.debug(f"Retrieved available foundations: {[f['foundation'] for f in all_foundations]}")
     
     # Render the index page with user, campaigns, and templates data
     if role == 'admin':
@@ -129,7 +148,8 @@ def index():
                                 campaigns=campaigns_data,
                                 templates=templates_data,
                                 is_admin=True,
-                                foundation_name=foundation_name)
+                                foundation_name=foundation_name,
+                                foundations=all_foundations)
     else:
         logger.info(f"Rendering index page for user {current_user['username']}.")
         return render_template('index.html',
@@ -137,8 +157,34 @@ def index():
                                campaigns=campaigns_data,
                                templates=templates_data,
                                is_admin=False,
-                               foundation_name=foundation_name)
+                               foundation_name=foundation_name,
+                               foundations=all_foundations)
+
+
+
+@bp.route('/switch_foundation/<foundation_name>')
+def switch_foundation(foundation_name):
+    logging.debug(f"Switching foundation to: {foundation_name}")
     
+    foundations_collection = current_app.mongo['foundations_db']['foundations']
+    foundation_config = foundations_collection.find_one({"foundation": foundation_name})
+    
+    if foundation_config:
+        logging.debug(f"Foundation config found: {foundation_config}")
+        
+        session['foundation'] = {
+            'foundation_name': foundation_name,
+            'api_key': foundation_config['api_key'],
+            'whatsapp_data_db': foundation_config['whatsapp_data_db'],
+            'agent_data_db': foundation_config['agent_data_db']
+        }
+        
+        logging.debug(f"Session updated with foundation: {session['foundation']}")
+    else:
+        logging.warning(f"Foundation {foundation_name} not found in the database.")
+
+    return redirect(url_for('auth.index'))
+
 
 # TODO :
 @bp.route('/change_password', methods=['GET', 'POST'])
@@ -194,6 +240,9 @@ def change_password():
             flash('Error updating password', 'error')
 
     return render_template('change_password.html')
+
+
+
 # TODO :
 @bp.route('/signup', methods=['GET', 'POST'])
 def signup():
@@ -224,6 +273,9 @@ def signup():
         return render_template('signup.html', message='User created successfully', success=True)
 
     return render_template('signup.html', message='')
+
+
+
 # TODO :
 @bp.route('/logout')
 def logout():

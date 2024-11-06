@@ -65,7 +65,7 @@ def get_template_texts(template_name,api_key_360):
     return None
 
 
-def upload_image(file_path):
+def upload_image(file_path,api_key_360):
     api_url = "https://waba-v2.360dialog.io/media"
     headers = {"D360-API-KEY": api_key_360}
     files = {
@@ -76,7 +76,7 @@ def upload_image(file_path):
     return response.json().get('id') if response.status_code == 200 else None
 
 
-def get_template_details(template_name):
+def get_template_details(template_name,api_key_360):
     url = "https://waba-v2.360dialog.io/v1/configs/templates"
     headers = {
         "D360-API-KEY": api_key_360,
@@ -99,7 +99,7 @@ def get_template_details(template_name):
     return None
 
 
-def send_message(users, template_json, media_id, single=False):
+def send_message(users, template_json, media_id, api_key_360,single = False):
     success_rows = []
     failed_rows = []
     start_time = time.time()
@@ -199,7 +199,8 @@ def transform_template_json(input_json):
         payload_json = payload_json.replace(f'"PLACEHOLDER_VAR_{var}"', f'"Variable_{var}"')
     return payload_json
 
-def send_message_campaign(members, template_json, variables, media_id=None, campaign=None, campaign_name=None):
+# TODO : DELETE THIS FUNCTION IT IS DEPRICATED 
+def send_message_campaign(members, template_json, variables, api_key_360 , media_id=None, campaign=None, campaign_name=None):
     success_rows = []
     failed_rows = []
     start_time = time.time()
@@ -338,12 +339,12 @@ def send_message_campaign(members, template_json, variables, media_id=None, camp
 
 
 
-def get_report(campaign_name):
+def get_report(campaign_name,whatsapp_data_db):
     logger.info(f"Fetching report for campaign: {campaign_name}")
     
-    mongo_db = current_app.mongo
-    webhook_latest_to_user_collection = mongo_db.webhook_latest_to_user
-    campaign_responses_collection = mongo_db.campaign_responses
+    
+    webhook_latest_to_user_collection = whatsapp_data_db.webhook_latest_to_user
+    campaign_responses_collection = whatsapp_data_db.campaign_responses
 
     # Fetch campaign responses from the database
     logger.info(f"Fetching campaign responses from the database for campaign: {campaign_name}")
@@ -463,13 +464,13 @@ def get_report(campaign_name):
     return {'status_counts': message_statuses, 'data_by_status': data_by_status}
 
 
-def get_all_collections_content():
-    mongo_db = current_app.mongo
-    all_collections = mongo_db.list_collection_names()
+def get_all_collections_content(whatsapp_data_db):
+    
+    all_collections = whatsapp_data_db.list_collection_names()
     collections_content = {}
 
     for collection_name in all_collections:
-        collection = mongo_db[collection_name]
+        collection = whatsapp_data_db[collection_name]
         documents = list(collection.find())
         collections_content[collection_name] = documents
 

@@ -7,7 +7,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from ..utils.decorators import role_required
 from ..utils.helper_functions import check_df_validity
 from ..utils.country_number_cleaning import is_valid_phone_number
-from ..utils.session_config_helper import get_session_foundation_config
+from ..utils.session_config_helper import get_session_foundation_config,get_all_foundations
 from werkzeug.utils import secure_filename
 import logging
 
@@ -17,6 +17,16 @@ logging.basicConfig(level=logging.DEBUG,
 logger = logging.getLogger(__name__)
 
 bp = Blueprint('upload_data', __name__)
+
+@bp.app_context_processor
+def inject_foundation_data():
+    session_configs = get_session_foundation_config()
+    foundation_name = session_configs.get('foundation_name')
+    all_foundations = get_all_foundations()
+    return dict(foundation_name=foundation_name, foundations=all_foundations)
+
+
+
 
 @bp.route('/upload_file', methods=['GET', 'POST'])
 @jwt_required()

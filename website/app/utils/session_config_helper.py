@@ -42,3 +42,9 @@ def get_session_foundation_config():
         logger.error("Foundation configuration not found in session.")
         flash("Configuration error. Please log in again.", "error")
         return redirect(url_for('auth.login'))
+    
+def get_all_foundations():
+    foundations_collection = current_app.mongo['foundations_db']['foundations']
+    all_foundations = list(foundations_collection.find({}, {'_id': 0, 'foundation': 1}))
+    logger.debug(f"Retrieved available foundations: {[f['foundation'] for f in all_foundations]}")
+    return all_foundations

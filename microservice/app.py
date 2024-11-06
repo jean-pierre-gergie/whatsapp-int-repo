@@ -25,6 +25,7 @@ async def start_campaign_task(request: Request):
     # logger.debug(f"Final kwargs /for task: {kwargs}")
     task = send_message_campaign.apply_async(
             kwargs={
+                'foundation_name':payload['foundation_name'],
                 'campaign_timing': payload['campaign_timing'],
                 'scheduled_date': payload['scheduled_date'],
                 'scheduled_date_local':payload['scheduled_date_local'],

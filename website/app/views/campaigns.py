@@ -5,7 +5,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt ,create_a
 from ..utils.decorators import role_required
 from ..utils.helper_functions import send_message, upload_image,get_report,transform_template_json, get_template_details, send_message_campaign,get_all_collections_content
 from ..utils.template_updater import fetch_and_update_templates
-from ..utils.session_config_helper import get_session_foundation_config
+from ..utils.session_config_helper import get_session_foundation_config, get_all_foundations
 
 
 import os
@@ -23,6 +23,17 @@ logger = logging.getLogger(__name__)
 
 
 bp = Blueprint('campaigns', __name__)
+
+
+@bp.app_context_processor
+def inject_foundation_data():
+    session_configs = get_session_foundation_config()
+    foundation_name = session_configs.get('foundation_name')
+    all_foundations = get_all_foundations()
+    return dict(foundation_name=foundation_name, foundations=all_foundations)
+
+
+
 
 # FIXME : no need to do anything start with th enext url 
 @bp.route('/audience', methods=['GET'])
@@ -63,13 +74,17 @@ def audience():
                            foundation_name =foundation_name)
 
 
-
+# FIXME 
 @bp.route('/audience/<member_id>', methods=['DELETE'])
 @jwt_required()
 @role_required(['admin', 'user']) 
 def remove_member(member_id):
-    mongo_db = current_app.mongo
-    audience_collection = mongo_db.members
+
+
+    session_configs =get_session_foundation_config()
+    whatsapp_data_db = session_configs.get('whatsapp_data_db')
+    
+    audience_collection = whatsapp_data_db.members
 
     result = audience_collection.delete_one({'_id': ObjectId(member_id)})
 
@@ -78,14 +93,17 @@ def remove_member(member_id):
     else:
         return jsonify({'success': False, 'error': 'Member not found'}), 404
 
-
+# FIXME
 @bp.route('/audience/tag/<tag>', methods=['DELETE'])
 @jwt_required()
 @role_required(['admin', 'user']) 
 def remove_members_by_tag(tag):
-    mongo_db = current_app.mongo
-    audience_collection = mongo_db.members
-    campaign_collection = mongo_db.campaign
+    
+    
+    session_configs =get_session_foundation_config()
+    whatsapp_data_db = session_configs.get('whatsapp_data_db')
+    audience_collection = whatsapp_data_db.members
+    campaign_collection = whatsapp_data_db.campaign
 
     result = audience_collection.delete_many({'tag': tag})
     campaign_collection.delete_one({'tag': tag})
@@ -96,16 +114,18 @@ def remove_members_by_tag(tag):
     else:
         return jsonify({'success': False, 'error': 'No members found with this tag'}), 404
 
-
+# FIXME
 @bp.route('/whatsapp')
 @jwt_required()
 @role_required(['admin']) 
 def whatsapp():
-    current_user = get_jwt_identity()
 
-    mongo_db = current_app.mongo
-    campaigns_collection = mongo_db.campaign  
-    templates_collection = mongo_db.templates  
+    session_configs =get_session_foundation_config()
+    whatsapp_data_db = session_configs.get('whatsapp_data_db')
+    foundation_name = session_configs.get("foundation_name")
+
+    campaigns_collection = whatsapp_data_db.campaign  
+    templates_collection = whatsapp_data_db.templates  
 
     campaigns = list(campaigns_collection.find())
     templates = list(templates_collection.find())
@@ -116,20 +136,26 @@ def whatsapp():
     for template in templates:
         template['_id'] = str(template['_id'])
 
-    return render_template('whatsapp.html', campaigns=campaigns, templates=templates)
+    return render_template('whatsapp.html',
+                           campaigns=campaigns,
+                           templates=templates,
+                           foundation_name = foundation_name)
 
-
+# FIXME
 @bp.route('/send_single_message', methods=['POST'])
 @jwt_required()
 @role_required(['admin', 'user']) 
 def send_single_message():
-    current_user = get_jwt_identity()
+    
+    session_configs =get_session_foundation_config()
+    api_key_360 = session_configs.get('api_key')
+
     phone_number = request.form['phone_number']
     variables = request.form.getlist('variables[]')
     print(variables)
 
     selected_template = request.form['single_template']
-    template_details = get_template_details(selected_template)
+    template_details = get_template_details(selected_template,api_key_360=api_key_360)
     template_json = transform_template_json(template_details)
 
     file = request.files.get('file')
@@ -144,21 +170,24 @@ def send_single_message():
         [{'phone': phone_number, 'variables': variables}],
         template_json,
         media_id,
+        api_key_360=api_key_360,
         single=True
     )
     return response
 
 
 
-
+# FIXME
 @bp.route('/campaigns')
 @jwt_required()
 @role_required(['admin', 'user'])
 def campaigns():
 
-    # Get the MongoDB collection
-    mongo_db = current_app.mongo
-    final_campaign_response_collection = mongo_db.final_campaign_response
+    session_configs =get_session_foundation_config()
+
+    whatsapp_data_db = session_configs.get('whatsapp_data_db')
+    foundation_name = session_configs.get('foundation_name')
+    final_campaign_response_collection = whatsapp_data_db.final_campaign_response
 
     # Fetch campaigns from the collection
     campaigns = list(final_campaign_response_collection.find().sort('campaign_submitted_at', -1))
@@ -190,9 +219,10 @@ def campaigns():
                         current_app.logger.error(f"Error parsing date field {field}: {e}")
 
     # Render the template with the formatted campaigns
-    return render_template('campaigns_page.html', campaigns=campaigns)
+    return render_template('campaigns_page.html', campaigns=campaigns,foundation_name=foundation_name)
 
 
+# FIXME 
 @bp.route('/campaign_details/<campaign_name>')
 @jwt_required()
 @role_required(['admin', 'user'])
@@ -202,13 +232,16 @@ def campaign_details(campaign_name):
     if not campaign_name:
         return jsonify({'success': False, 'message': 'Missing campaign name parameter'}), 400
     
-    mongo_db = current_app.mongo
-    final_campaign_response_collection = mongo_db.final_campaign_response
+    session_configs =get_session_foundation_config()
+
+    whatsapp_data_db = session_configs.get('whatsapp_data_db')
+    foundation_name = session_configs.get('foundation_name')
+    final_campaign_response_collection = whatsapp_data_db.final_campaign_response
 
 
     campaign = final_campaign_response_collection.find_one({'campaign_name': campaign_name})
 
-    report_data = get_report(campaign_name)
+    report_data = get_report(campaign_name,whatsapp_data_db)
 
     data = []
     for stat in ['sent', 'delivered', 'read', 'failed']:
@@ -249,20 +282,26 @@ def campaign_details(campaign_name):
 
 
     # Return the campaign details (for now, just a basic response)
-    return render_template('campaigns_details_page.html', campaign=campaign,table_data =  table_data)
+    return render_template('campaigns_details_page.html', campaign=campaign,table_data =  table_data,foundation_name=foundation_name)
 
+
+# FIXME
 @bp.route('/send_campaign')
 @jwt_required()
 @role_required(['admin', 'user']) 
 def send_campaign():
-    current_user = get_jwt_identity()
+    session_configs =get_session_foundation_config()
+
+    whatsapp_data_db = session_configs.get('whatsapp_data_db')
+    foundation_name = session_configs.get('foundation_name')
+    api_key_360 = session_configs.get('api_key')
     
 
-    fetch_and_update_templates()
+    fetch_and_update_templates(api_key_360=api_key_360,whatsapp_data_db=whatsapp_data_db)
 
-    mongo_db = current_app.mongo
-    campaigns_collection = mongo_db.campaign  
-    templates_collection = mongo_db.templates  
+   
+    campaigns_collection = whatsapp_data_db.campaign  
+    templates_collection = whatsapp_data_db.templates  
 
     campaigns = list(campaigns_collection.find())
     templates = list(templates_collection.find())
@@ -275,9 +314,9 @@ def send_campaign():
 
     print("Campaigns: ", campaigns)  # Debug print
 
-    return render_template('send_campaign.html', campaigns=campaigns, templates=templates)
+    return render_template('send_campaign.html', campaigns=campaigns, templates=templates , foundation_name=foundation_name)
 
-
+# BUG : NEED TO FIX FOR MICROSERVICE PAYLOAD 
 @bp.route('/send_campaign', methods=['POST'])
 @jwt_required()
 @role_required(['admin', 'user']) 
@@ -292,14 +331,23 @@ def send_campaign_messages():
     scheduled_date = request.form['scheduled_date_utc']
     logger.debug(f"----UTC Time {scheduled_date}")
     logger.debug(f"----Local Time {scheduled_date_local}")
+
+
     # MongoDB connection
-    mongo_db = current_app.mongo
-    campaign_name_collection = mongo_db.campaign_name
+    session_configs =get_session_foundation_config()
+
+    whatsapp_data_db = session_configs.get('whatsapp_data_db')
+    foundation_name = session_configs.get('foundation_name')
+    api_key_360 = session_configs.get('api_key')
+
+
+
+    campaign_name_collection = whatsapp_data_db.campaign_name
 
     if campaign_name_collection.find_one({"name": campaign_name}):
         return jsonify({"success": False, "error": "Campaign name already exists. Please choose a different name."}), 400
 
-    template_details = get_template_details(selected_template)
+    template_details = get_template_details(selected_template,api_key_360=api_key_360)
     template_json = transform_template_json(template_details)
 
     file = request.files.get('file')
@@ -317,11 +365,13 @@ def send_campaign_messages():
         file.save(file_path)
 
         # Upload the file and get the media_id (assuming upload_image is a function to upload to a remote service)
-        media_id = upload_image(file_path)
+        media_id = upload_image(file_path,api_key_360=api_key_360)
 
     variables = request.form.getlist('variables[]')
 
     payload = {
+
+        "foundation_name":foundation_name,
         "campaign_timing": campaign_timing,  
         "scheduled_date": scheduled_date,
         "scheduled_date_local":scheduled_date_local,  
@@ -348,6 +398,7 @@ def send_campaign_messages():
 
             # Add campaign name and task_id to the campaign_name collection
             campaign_name_collection.insert_one({
+                "foundation_name":foundation_name,
                 "name": campaign_name,
                 "task_id": task_id,
                 "created_by": current_user,  
@@ -368,18 +419,20 @@ def send_campaign_messages():
         return jsonify({"success": False, "error": "An error occurred while processing the campaign."}), 500
 
   
-
+# FIXME BUG THIS IS POLLING FROM THE MICROSERVICE 
 @bp.route('/campaign_task_status_polling/<campaign_name>', methods=['GET'])
 @jwt_required()
 @role_required(['admin', 'user']) 
 def get_campaign_status(campaign_name):
-    mongo_db = current_app.mongo
+    session_configs =get_session_foundation_config()
+
+    whatsapp_data_db = session_configs.get('whatsapp_data_db')
 
     logger.debug("Polling for campaign status.")
     logger.debug(f"Polling status for campaign: {campaign_name}")
 
     try:
-        campaign_collection = mongo_db.campaign_name  # MongoDB collection name is campaign_name
+        campaign_collection = whatsapp_data_db.campaign_name  # MongoDB collection name is campaign_name
         campaign_doc = campaign_collection.find_one({"name": campaign_name})
 
         if not campaign_doc:
@@ -425,7 +478,7 @@ def get_campaign_status(campaign_name):
 
         elif microservice_data.get('status') == 'Task completed!':
             # Fetch the final results from the campaign_responses collection
-            final_campaign_response_collection = mongo_db.final_campaign_response
+            final_campaign_response_collection = whatsapp_data_db.final_campaign_response
             response_data = final_campaign_response_collection.find_one({"campaign_name": campaign_name})
 
             if not response_data:
@@ -443,7 +496,7 @@ def get_campaign_status(campaign_name):
                 "task_id": task_id,
                 "status": "Task completed!",
                 "total_members": total_members,
-                "processed": total_members,  # All members should be processed by now
+                "processed": total_members,  
                 "current_success": success_count,
                 "current_failed": failed_count
             })
@@ -470,15 +523,20 @@ def download_file(filename):
         return jsonify(error="File not found"), 404
     return send_file(path, as_attachment=True)
 
+# FIXME
 @bp.route('/generate_report_page') 
 @jwt_required()
 @role_required(['admin', 'user']) 
 def generate_report_page():
-    current_user = get_jwt_identity()
-    mongo_db = current_app.mongo
+
+
+    session_configs =get_session_foundation_config()
+
+    whatsapp_data_db = session_configs.get('whatsapp_data_db')
+    foundation_name = session_configs.get('foundation_name')
 
     # Collections
-    campaign_name_collection = mongo_db.campaign_name
+    campaign_name_collection = whatsapp_data_db.campaign_name
 
     # Sort by 'created_at' in descending order (-1)
     campaign_names = list(campaign_name_collection.find().sort("created_at", -1))
@@ -487,9 +545,9 @@ def generate_report_page():
     for cn in campaign_names:
         cn['_id'] = str(cn['_id'])
 
-    return render_template('generate_report.html', campaign_names=campaign_names)
+    return render_template('generate_report.html', campaign_names=campaign_names,foundation_name = foundation_name)
 
-
+# FIXME 
 @bp.route('/generate_report', methods=['POST'])
 @jwt_required()
 @role_required(['admin', 'user']) 
@@ -502,9 +560,11 @@ def generate_report():
         if not campaign_name:
             return jsonify({'success': False, 'message': 'Missing campaign name parameter'}), 400
 
-        current_user = get_jwt_identity()
+        session_configs =get_session_foundation_config()
 
-        report_data = get_report(campaign_name)
+        whatsapp_data_db = session_configs.get('whatsapp_data_db')
+
+        report_data = get_report(campaign_name,whatsapp_data_db)
 
         if report_data:
             return jsonify({'success': True, 'status_counts': report_data['status_counts']}), 200
@@ -515,12 +575,18 @@ def generate_report():
         current_app.logger.error(f"Error generating report: {e}")
         return jsonify({'success': False, 'message': 'An error occurred while generating the report'}), 500
 
+
+# FIXME
 @bp.route('/download_csv/<status>', methods=['GET'])
 @jwt_required()
 @role_required(['admin', 'user']) 
 def download_csv(status):
     campaign_name = request.args.get('campaign_name')
-    report_data = get_report(campaign_name)
+
+    session_configs =get_session_foundation_config()
+    whatsapp_data_db = session_configs.get('whatsapp_data_db')
+
+    report_data = get_report(campaign_name,whatsapp_data_db=whatsapp_data_db)
     
     if status == 'all':
         # Combine all message statuses into a single list
@@ -579,16 +645,25 @@ def download_csv(status):
     return output
 
 
+
+# FIXME
 @bp.route('/show_all_collections_html', methods=['GET'])
 @jwt_required()
 @role_required(['admin']) 
 def show_all_collections_html():
-    collections_content = get_all_collections_content()
+
+    session_configs =get_session_foundation_config()
+
+    whatsapp_data_db = session_configs.get('whatsapp_data_db')
+    foundation_name = session_configs.get('foundation_name')
+    collections_content = get_all_collections_content(whatsapp_data_db)
     collection_names = collections_content.keys()
-    return render_template('show_collections.html', collections=collection_names)
+    return render_template('show_collections.html', collections=collection_names,foundation_name=foundation_name)
 
 from bson import json_util
 
+
+# FIXME
 @bp.route('/view_collection_content', methods=['POST'])
 @jwt_required()
 @role_required(['admin']) 
@@ -598,8 +673,11 @@ def view_collection_content():
         if not collection_name:
             return jsonify({"success": False, "message": "No collection name provided."}), 400
 
-        mongo_db = current_app.mongo
-        collection = mongo_db[collection_name]
+        session_configs =get_session_foundation_config()
+
+        whatsapp_data_db = session_configs.get('whatsapp_data_db')
+        
+        collection = whatsapp_data_db[collection_name]
         documents = list(collection.find())
 
         # Use json_util to serialize ObjectId and other BSON types
