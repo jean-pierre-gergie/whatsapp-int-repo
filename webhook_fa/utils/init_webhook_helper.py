@@ -4,6 +4,12 @@ from dotenv import load_dotenv
 from pymongo import MongoClient
 import logging 
 
+from utils.generate_long_lived_token import generate_forever_token
+import socketio
+from tenacity import retry, wait_exponential, stop_after_attempt, RetryError
+from utils.helper_functions import WhatsAppDataHandler
+from utils.auto_reply_helper import AutoReplyHandler
+
 logging.basicConfig(
     level=logging.DEBUG,
     format="- %(name)s - %(levelname)s - %(message)s",
@@ -28,7 +34,7 @@ def get_mongo_client():
 
     return client
 
-<<<<<<< HEAD
+
 def get_foundation_dependencies(foundation_name):
     
     try:
@@ -140,20 +146,3 @@ def create_handlers_for_all_foundations():
     except Exception as e:
         logger.error(f"Error creating handlers for all foundations: {e}")
         raise
-=======
-
-def get_foundation_dependencies_names(foundation_name):
-    mongo_db  = get_mongo_client()
-
-    foundations = mongo_db['foundations_db']['foundations']
-
-    whatsapp_data_db = mongo_db.foun
-
-
-
-
-
-
-
-
->>>>>>> d626070c9e7ed32c029e743f1937145aa959d651
