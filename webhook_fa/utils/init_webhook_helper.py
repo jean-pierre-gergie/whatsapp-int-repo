@@ -65,12 +65,15 @@ def get_foundation_dependencies(foundation_name):
         agent_db = mongo_client[agent_data_db]
         chat_rooms_collection = agent_db[ROOMS_COLLECTION]
 
+        api_key_360 = foundation_doc.get("api_key", "api_key")
+
         logger.debug(f"Successfully retrieved dependencies for foundation: {foundation_name}")
         return {
             "raw_collection": raw_collection,
             "business_to_user_collection": business_to_user_collection,
             "user_to_business_collection": user_to_business_collection,
-            "chat_rooms_collection": chat_rooms_collection
+            "chat_rooms_collection": chat_rooms_collection,
+            "api_key_360":api_key_360
         }
     except ValueError as ve:
         logger.error(f"ValueError: {ve}")
@@ -123,13 +126,18 @@ def create_handlers_for_all_foundations():
 
                 connect_to_agent_service()
 
-                auto_reply_handler = AutoReplyHandler(dependencies['chat_rooms_collection'], logger=logger)
+                
+
+                auto_reply_handler = AutoReplyHandler(chat_rooms_collection=dependencies['chat_rooms_collection'],
+                                                      api_key_360=dependencies['api_key_360'],
+                                                      logger=logger)
                 handler = WhatsAppDataHandler(
                     dependencies['raw_collection'],
                     dependencies['user_to_business_collection'],
                     dependencies['business_to_user_collection'],
                     dependencies['chat_rooms_collection'],
                     auto_reply_handler=auto_reply_handler,
+                    name_space=f"/agent/agent_namespace/{foundation_name}",
                     sio=sio
                 )
 

@@ -17,12 +17,12 @@ logging.basicConfig(level=logging.DEBUG,
                     format='- %(name)s - %(levelname)s - %(message)s')
 
 
-@bp.app_context_processor
-def inject_foundation_data():
-    session_configs = get_session_foundation_config()
-    foundation_name = session_configs.get('foundation_name')
-    all_foundations = get_all_foundations()
-    return dict(foundation_name=foundation_name, foundations=all_foundations)
+# @bp.app_context_processor
+# def inject_foundation_data():
+#     session_configs = get_session_foundation_config()
+#     foundation_name = session_configs.get('foundation_name')
+#     all_foundations = get_all_foundations()
+#     return dict(foundation_name=foundation_name, foundations=all_foundations)
 
 
 

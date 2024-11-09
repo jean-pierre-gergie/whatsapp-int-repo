@@ -1,6 +1,6 @@
 import logging
 from flask_socketio import emit, join_room
-from utils.db_helper import get_rooms_collection, handle_chat_room
+from utils.db_helper import  handle_chat_room
 from utils.dialog_360 import send_message_to_users_through_360
 from utils.chat_room_helper import get_opened_closed_discussions
 from utils.jwt_helper import socket_io_jwt
@@ -8,11 +8,11 @@ from datetime import datetime
 
 
 logger = logging.getLogger('app')
-chat_rooms_collection = get_rooms_collection()
 
 
 
-def register_socketio_events(socketio,active_agent_namespace):
+
+def register_socketio_events(socketio,active_agent_namespace, chat_rooms_collection):
     @socketio.on('connect', namespace=active_agent_namespace)
     @socket_io_jwt
     def connect():

@@ -31,16 +31,33 @@ except Exception as e:
     logger.error(f"Failed to connect to MongoDB: {e}")
     raise
 
-def get_rooms_collection():
+def get_chat_rooms_collection(foundation_name):
     try:
-        agent_db = client[AGENT_CHAT_DB]
-        chat_rooms_collection = agent_db[ROOMS_COLLECTION]
-        logger.debug("Rooms collection retrieved successfully")
+        # Connect to agent_data_db and retrieve the foundations collection
+        foundations_collection = client['foundations_db']['foundations']
+    
+
+        # Retrieve the entry for the specified foundation
+        foundation_entry = foundations_collection.find_one({"foundation": foundation_name})
+        if not foundation_entry:
+            logger.error(f"Foundation '{foundation_name}' not found in the foundations collection")
+            raise ValueError(f"Foundation '{foundation_name}' not found in the foundations collection")
+
+        if 'agent_data_db' not in foundation_entry:
+            logger.error(f"Agent data DB not specified for foundation '{foundation_name}'")
+            raise ValueError(f"Agent data DB is missing for foundation '{foundation_name}'")
+        
+        agent_data_db_name = foundation_entry['agent_data_db']
+        logger.debug(f"Agent data DB '{agent_data_db_name}' retrieved successfully for foundation '{foundation_name}'")
+
+        # Connect to the specified agent_data_db and retrieve the rooms collection
+        agent_db = client[agent_data_db_name]
+        chat_rooms_collection = agent_db["rooms"]
+        
         return chat_rooms_collection
     except Exception as e:
-        logger.error(f"Error retrieving rooms collection: {e}")
+        logger.error(f"Error retrieving rooms collection for foundation '{foundation_name}': {e}")
         raise
-
 
 
 def handle_chat_room(chat_rooms_collection, room, message_body, timestamp=None, wa_mid=None):
