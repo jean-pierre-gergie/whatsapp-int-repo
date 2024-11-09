@@ -3,7 +3,8 @@ import logging
 from fastapi import FastAPI, Request, HTTPException, Header
 from pymongo import MongoClient
 from pydantic import BaseModel
-from init_mongo import create_collections
+from init_scripts.init_mongo import create_collections
+from init_scripts.init_webhook_urls import init_webhook_urls
 from typing import Optional, Dict, Any
 from fastapi.responses import JSONResponse
 import os
@@ -30,6 +31,7 @@ pymongo_logger.setLevel(logging.ERROR)
 app = FastAPI()
 
 create_collections()
+init_webhook_urls()
 foundation_handlers = create_handlers_for_all_foundations()
 
 @app.on_event("startup")
