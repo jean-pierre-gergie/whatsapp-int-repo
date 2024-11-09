@@ -34,10 +34,14 @@ create_dynamic_namespaces(socketio=socketio,
 @app.route('/agent_server')
 @verify_jwt
 def index():
-    # token = request.args.get('token')  # Get the token that was passed during the redirect
-    # Render the template with the token included as a context variable
-    # return render_template('index.html', socket_url='https://www.ocmymada.com/agent/socket.io/', token=token)
-    return render_template('index.html', socket_url='https://www.ocmymada.com/agent/socket.io/')
+
+    foundation_name = request.args.get('foundation_name')
+    name_space = f"/agent/agent_namespace/{foundation_name}"
+
+    return render_template('index.html',
+                           socket_url='https://www.ocmymada.com/agent/socket.io/',
+                           name_space = name_space,
+                           foundation_name=foundation_name)
 
 
 

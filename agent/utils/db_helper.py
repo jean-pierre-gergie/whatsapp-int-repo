@@ -31,7 +31,7 @@ except Exception as e:
     logger.error(f"Failed to connect to MongoDB: {e}")
     raise
 
-def get_chat_rooms_collection(foundation_name):
+def get_foundation_dependencies(foundation_name):
     try:
         # Connect to agent_data_db and retrieve the foundations collection
         foundations_collection = client['foundations_db']['foundations']
@@ -53,8 +53,10 @@ def get_chat_rooms_collection(foundation_name):
         # Connect to the specified agent_data_db and retrieve the rooms collection
         agent_db = client[agent_data_db_name]
         chat_rooms_collection = agent_db["rooms"]
+
+        api_key = foundation_entry['api_key']
         
-        return chat_rooms_collection
+        return chat_rooms_collection , api_key 
     except Exception as e:
         logger.error(f"Error retrieving rooms collection for foundation '{foundation_name}': {e}")
         raise

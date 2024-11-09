@@ -25,12 +25,12 @@ logger = logging.getLogger(__name__)
 bp = Blueprint('campaigns', __name__)
 
 
-# @bp.app_context_processor
-# def inject_foundation_data():
-#     session_configs = get_session_foundation_config()
-#     foundation_name = session_configs.get('foundation_name')
-#     all_foundations = get_all_foundations()
-#     return dict(foundation_name=foundation_name, foundations=all_foundations)
+@bp.app_context_processor
+def inject_foundation_data():
+    session_configs = get_session_foundation_config()
+    foundation_name = session_configs.get('foundation_name')
+    all_foundations = get_all_foundations()
+    return dict(foundation_name=foundation_name, foundations=all_foundations)
 
 
 
@@ -687,7 +687,7 @@ def view_collection_content():
         return jsonify({"success": False, "message": str(e)}), 500
 
 
-
+# TODO for deployment
 # @bp.route('/dynamic_redirect', methods=['GET'])
 # @jwt_required()
 # @role_required(['admin', 'user'])
@@ -712,10 +712,21 @@ def view_collection_content():
 @role_required(['admin', 'user'])
 def dynamic_redirect():
     # Create a new token or get the existing one
-    current_identity = get_jwt_identity()  # Get the current user's identity
-    token = create_access_token(identity=current_identity,expires_delta=timedelta(hours=1))  # Create a new token with the same identity
+    current_identity = get_jwt_identity()  
+    token = create_access_token(identity=current_identity,expires_delta=timedelta(hours=1))  
+
     agent_server_url = os.getenv('CHAT_AGENT_SERVER_URL')
-    logger.info(f"redirecting to {agent_server_url}")
-    response = make_response(redirect(agent_server_url))
+
+    session_configs = get_session_foundation_config()
+    foundation_name = session_configs.get('foundation_name')
+
+    agent_server_url = os.getenv('CHAT_AGENT_SERVER_URL')
+    redirect_url = f"{agent_server_url}?foundation_name={foundation_name}"
+    logger.info(f"redirecting to {redirect_url}")
+
+
+    response = make_response(redirect(redirect_url))
     response.set_cookie('jwt_token', token, httponly=False, secure=True, samesite='Strict')
+
+    
     return response

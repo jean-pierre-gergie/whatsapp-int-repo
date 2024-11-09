@@ -13,10 +13,10 @@ logger = logging.getLogger(__name__)
 
 load_dotenv()
 
-api_key  = os.getenv("API_KEY")
+
 dialog_360_message_url = os.getenv("DIALOG_360_MESSAGE_URL")
 
-def send_message_to_users_through_360(number,message):
+def send_message_to_users_through_360(number,message,api_key):
 
     try:
         # Prepare the 360dialog payload

@@ -10,6 +10,13 @@
     <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
 
     <!-- Main JavaScript file as a module -->
+
+    <script>
+        window.config = {
+            nameSpace: "{{ name_space }}",
+            foundation_name : "{{ foundation_name }}"
+        };
+    </script>
     
     <script type="module" src="{{ url_for('static', filename='js/utils.js') }}"></script>
     <script type="module" src="{{ url_for('static', filename='js/socket.js') }}"></script>
@@ -21,10 +28,11 @@
 
     
 </head>
-<body>
+<body data-name-space="{{ name_space }}">
     <div class="sidebar">
         <div class="header">
             <h2>Chat Rooms</h2>
+            <span id="foundation-name"></span>
             <div class="tabs">
                 <button onclick="showOpenRooms()">Open Conv</button>
                 <button onclick="showClosedRooms()">Closed Conv</button>
@@ -41,6 +49,7 @@
     <div class="chat-window">
         <div class="chat-header">
             <h2 id="room-name">Select a Room</h2>
+            
         </div>
         <div class="chat-body" id="chat-body">
             <!-- Messages will appear here -->
@@ -50,5 +59,17 @@
             <button onclick="sendMessage()">Send</button>
         </div>
     </div>
+    <script>
+        // Display the foundation name directly in the chat header
+        document.addEventListener('DOMContentLoaded', () => {
+            const foundationNameElement = document.getElementById('foundation-name');
+            const foundationName = window.config.foundation_name;
+
+            if (foundationName) {
+                foundationNameElement.textContent = foundationName;
+            }
+        });
+    </script>
+
 </body>
 </html>

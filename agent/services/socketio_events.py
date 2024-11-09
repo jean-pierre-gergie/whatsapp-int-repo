@@ -12,7 +12,10 @@ logger = logging.getLogger('app')
 
 
 
-def register_socketio_events(socketio,active_agent_namespace, chat_rooms_collection):
+def register_socketio_events(socketio,
+                             active_agent_namespace,
+                             chat_rooms_collection,
+                             api_key):
     @socketio.on('connect', namespace=active_agent_namespace)
     @socket_io_jwt
     def connect():
@@ -81,7 +84,9 @@ def register_socketio_events(socketio,active_agent_namespace, chat_rooms_collect
                 logger.error(f"EVENT-message_from_business-Error emitting message to room {room_id}: {e}")
                 return
             try:
-                send_message_to_users_through_360(room_id, message=message_body)
+                send_message_to_users_through_360(room_id,
+                                                  message=message_body,
+                                                  api_key = api_key)
             except Exception as e:
                 logger.error(f"EVENT-message_from_business-Error sending message through 360dialog for room {room_id}: {e}")
             try:
