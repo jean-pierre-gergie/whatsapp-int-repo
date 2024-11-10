@@ -21,6 +21,8 @@ bp = Blueprint('upload_data', __name__)
 @bp.app_context_processor
 def inject_foundation_data():
     session_configs = get_session_foundation_config()
+    if not session_configs:
+        return {}  # Or handle it gracefully if the data is missing
     foundation_name = session_configs.get('foundation_name')
     all_foundations = get_all_foundations()
     return dict(foundation_name=foundation_name, foundations=all_foundations)
