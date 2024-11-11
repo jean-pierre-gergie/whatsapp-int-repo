@@ -4,13 +4,8 @@
     <meta charset="UTF-8">
     <title>Chat App</title>
 
-    <!-- Set base path based on production flag -->
-    <script>
-        var basePath = "{{ '/agent' if production else '' }}";
-    </script>
-
     <!-- Link to the CSS file -->
-    <link rel="stylesheet" href="{{ basePath + url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="{{ base_path }}{{ url_for('static', filename='styles.css') }}">
 
     <!-- Socket.IO library -->
     <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
@@ -23,13 +18,13 @@
     </script>
 
     <!-- Main JavaScript files as modules -->
-    <script type="module" src="{{ basePath + url_for('static', filename='js/utils.js') }}"></script>
-    <script type="module" src="{{ basePath + url_for('static', filename='js/socket.js') }}"></script>
-    <script type="module" src="{{ basePath + url_for('static', filename='js/roomManagement.js') }}"></script>
-    <script type="module" src="{{ basePath + url_for('static', filename='js/domUpdates.js') }}"></script>
-    <script type="module" src="{{ basePath + url_for('static', filename='js/sendMessage.js') }}"></script>
-    <script type="module" src="{{ basePath + url_for('static', filename='js/eventListeners.js') }}"></script>
-    <script type="module" src="{{ basePath + url_for('static', filename='js/tabSwitch.js') }}"></script>
+    <script type="module" src="{{ base_path }}{{ url_for('static', filename='js/utils.js') }}"></script>
+    <script type="module" src="{{ base_path }}{{ url_for('static', filename='js/socket.js') }}"></script>
+    <script type="module" src="{{ base_path }}{{ url_for('static', filename='js/roomManagement.js') }}"></script>
+    <script type="module" src="{{ base_path }}{{ url_for('static', filename='js/domUpdates.js') }}"></script>
+    <script type="module" src="{{ base_path }}{{ url_for('static', filename='js/sendMessage.js') }}"></script>
+    <script type="module" src="{{ base_path }}{{ url_for('static', filename='js/eventListeners.js') }}"></script>
+    <script type="module" src="{{ base_path }}{{ url_for('static', filename='js/tabSwitch.js') }}"></script>
 </head>
 <body data-name-space="{{ name_space }}">
     <div class="sidebar">

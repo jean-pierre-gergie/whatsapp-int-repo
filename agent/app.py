@@ -37,12 +37,13 @@ def index():
 
     foundation_name = request.args.get('foundation_name')
     name_space = f"/agent/agent_namespace/{foundation_name}"
+    base_path = '/agent' if app.config['PRODUCTION'] else ''
 
     return render_template('index.html',
                            socket_url='https://www.omnichanneltv.com/agent/socket.io/',
                            name_space = name_space,
                            foundation_name=foundation_name,
-                           production=app.config['PRODUCTION']
+                           base_path=base_path
                            )
 
 
