@@ -16,7 +16,7 @@ from dotenv import load_dotenv
 
 app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'  
-
+app.config['PRODUCTION'] = os.getenv('FLASK_ENV') == 'production'
 
 logger = configure_logging()
 
@@ -39,9 +39,11 @@ def index():
     name_space = f"/agent/agent_namespace/{foundation_name}"
 
     return render_template('index.html',
-                           socket_url='https://www.ocmymada.com/agent/socket.io/',
+                           socket_url='https://www.omnichanneltv.com/agent/socket.io/',
                            name_space = name_space,
-                           foundation_name=foundation_name)
+                           foundation_name=foundation_name,
+                           production=app.config['PRODUCTION']
+                           )
 
 
 

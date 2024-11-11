@@ -3,30 +3,33 @@
 <head>
     <meta charset="UTF-8">
     <title>Chat App</title>
+
+    <!-- Set base path based on production flag -->
+    <script>
+        var basePath = "{{ '/agent' if production else '' }}";
+    </script>
+
     <!-- Link to the CSS file -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="{{ basePath + url_for('static', filename='styles.css') }}">
 
     <!-- Socket.IO library -->
     <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
 
-    <!-- Main JavaScript file as a module -->
-
     <script>
         window.config = {
             nameSpace: "{{ name_space }}",
-            foundation_name : "{{ foundation_name }}"
+            foundation_name: "{{ foundation_name }}"
         };
     </script>
-    
-    <script type="module" src="{{ url_for('static', filename='js/utils.js') }}"></script>
-    <script type="module" src="{{ url_for('static', filename='js/socket.js') }}"></script>
-    <script type="module" src="{{ url_for('static', filename='js/roomManagement.js') }}"></script>
-    <script type="module" src="{{ url_for('static', filename='js/domUpdates.js') }}"></script>
-    <script type="module" src="{{ url_for('static', filename='js/sendMessage.js') }}"></script>
-    <script type="module" src="{{ url_for('static', filename='js/eventListeners.js') }}"></script>
-    <script type="module" src="{{ url_for('static', filename='js/tabSwitch.js') }}"></script>
 
-    
+    <!-- Main JavaScript files as modules -->
+    <script type="module" src="{{ basePath + url_for('static', filename='js/utils.js') }}"></script>
+    <script type="module" src="{{ basePath + url_for('static', filename='js/socket.js') }}"></script>
+    <script type="module" src="{{ basePath + url_for('static', filename='js/roomManagement.js') }}"></script>
+    <script type="module" src="{{ basePath + url_for('static', filename='js/domUpdates.js') }}"></script>
+    <script type="module" src="{{ basePath + url_for('static', filename='js/sendMessage.js') }}"></script>
+    <script type="module" src="{{ basePath + url_for('static', filename='js/eventListeners.js') }}"></script>
+    <script type="module" src="{{ basePath + url_for('static', filename='js/tabSwitch.js') }}"></script>
 </head>
 <body data-name-space="{{ name_space }}">
     <div class="sidebar">
@@ -49,7 +52,6 @@
     <div class="chat-window">
         <div class="chat-header">
             <h2 id="room-name">Select a Room</h2>
-            
         </div>
         <div class="chat-body" id="chat-body">
             <!-- Messages will appear here -->
@@ -59,6 +61,7 @@
             <button onclick="sendMessage()">Send</button>
         </div>
     </div>
+
     <script>
         // Display the foundation name directly in the chat header
         document.addEventListener('DOMContentLoaded', () => {
@@ -70,6 +73,5 @@
             }
         });
     </script>
-
 </body>
 </html>
