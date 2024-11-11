@@ -21,7 +21,7 @@ function initSocket(jwtToken, nameSpace) {
     //     auth: { token: jwtToken }
     // });
 
-    const socket = io(`http://www.omnichanneltv.com${nameSpace}`, {
+    const socket = io(`https://www.omnichanneltv.com${nameSpace}`, {
         path: '/agent/socket.io',
         transports: ['websocket', 'polling'],
         withCredentials: true,
