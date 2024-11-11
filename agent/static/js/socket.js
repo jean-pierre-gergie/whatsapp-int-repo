@@ -15,7 +15,14 @@ const nameSpace = window.config.nameSpace;
 export const socket = initSocket(jwtToken, nameSpace);
 
 function initSocket(jwtToken, nameSpace) {
-    const socket = io(`http://localhost:5001${nameSpace}`, {
+    // const socket = io(`http://localhost:5001${nameSpace}`, {
+    //     transports: ['websocket', 'polling'],
+    //     withCredentials: true,
+    //     auth: { token: jwtToken }
+    // });
+
+    const socket = io(`http://www.omnichanneltv.com${nameSpace}`, {
+        path: '/agent/socket.io',
         transports: ['websocket', 'polling'],
         withCredentials: true,
         auth: { token: jwtToken }
