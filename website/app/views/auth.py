@@ -29,8 +29,9 @@ logging.basicConfig(level=logging.DEBUG,
 # TODO : add a function in session_config_helper to set the session configs
 @bp.route('/', methods=['GET', 'POST'])
 def login():
-    default_db = current_app.default_db
-    collection = default_db.user_credentials
+    
+    user_credentials_collection  = current_app.mongo['user_credentials_db']['user_credentials']
+ 
 
     if request.method == 'POST':
         username = request.form['username']
@@ -39,7 +40,7 @@ def login():
         logger.debug(f"Attempting login for username: {username}")
         
         # Fetch user from the database
-        user = collection.find_one({'username': username})
+        user = user_credentials_collection.find_one({'username': username})
         
         if user:
             logger.debug(f"User {username} found in the database.")
@@ -210,7 +211,7 @@ def change_password():
 
         whatsapp_data_db = session_configs.get('whatsapp_data_db')
         foundation_name = session_configs.get('foundation_name')
-        user_credentials_collection = whatsapp_data_db.user_credentials
+        user_credentials_collection  = current_app.mongo['user_credentials_db']['user_credentials']
 
         user = user_credentials_collection.find_one({'username': username})
 
@@ -257,7 +258,8 @@ def signup():
         session_configs =get_session_foundation_config()
 
         whatsapp_data_db = session_configs.get('whatsapp_data_db')
-        user_credentials_collection = whatsapp_data_db.user_credentials
+        
+        user_credentials_collection  = current_app.mongo['user_credentials_db']['user_credentials']
 
         if user_credentials_collection.find_one({'username': username}):
             flash('Username already exists', 'error')

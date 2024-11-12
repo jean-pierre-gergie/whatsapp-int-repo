@@ -25,8 +25,14 @@ def create_collections():
     client = get_mongo_client()
     api_keys = get_360_api_keys()
 
+    user_credentials_db = client['user_credentials_db'] ## newly created 
+    user_credentials_collection = user_credentials_db['user_credentials']
+    populate_collection_from_json(user_credentials_collection, '/app/init_data/users.json', unique_field='user_id')
+
     foundations_db = client['foundations_db']
     foundations_collection = foundations_db['foundations']
+
+
 
     for foundation_name, api_key in api_keys.items():
         document = {
@@ -49,7 +55,7 @@ def create_collections():
         databases = {
             f"whatsapp_data_{prefix}": [
                 'campaign', 'campaign_responses', 'language', 'members',
-                'templates', 'user_credentials', 'webhook_latest_from_user',
+                'templates', 'webhook_latest_from_user',
                 'webhook_latest_to_user', 'webhook_responses'
             ],
             f"agent_data_{prefix}": ["rooms"]
@@ -71,8 +77,7 @@ def create_collections():
         if language_collection.count_documents({}) == 0:
             populate_collection_from_json(language_collection, '/app/init_data/languages.json')
         
-        user_credentials_collection = main_db['user_credentials']
-        populate_collection_from_json(user_credentials_collection, '/app/init_data/users.json', unique_field='user_id')
+        
 
 
 
