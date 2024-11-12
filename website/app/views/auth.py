@@ -206,8 +206,11 @@ def change_password():
         current_user = get_jwt_identity()
         username = current_user['username']
 
-        mongo_db = current_app.mongo
-        user_credentials_collection = mongo_db.user_credentials
+        session_configs =get_session_foundation_config()
+
+        whatsapp_data_db = session_configs.get('whatsapp_data_db')
+        foundation_name = session_configs.get('foundation_name')
+        user_credentials_collection = whatsapp_data_db.user_credentials
 
         user = user_credentials_collection.find_one({'username': username})
 
@@ -229,7 +232,7 @@ def change_password():
         if result.matched_count > 0:
             # Revoke current JWT token
             jti = get_jwt()["jti"]  # Get the JWT ID from the current token
-            mongo_db.revoked_tokens.insert_one({"jti": jti})
+            whatsapp_data_db.revoked_tokens.insert_one({"jti": jti})
             flash('Password updated successfully. Please log in again.', 'success')
 
             # Optionally, you can clear the JWT cookie to force re-login
@@ -251,8 +254,10 @@ def signup():
         password = request.form.get('password')
         role = request.form.get('role')
 
-        mongo_db = current_app.mongo
-        user_credentials_collection = mongo_db.user_credentials
+        session_configs =get_session_foundation_config()
+
+        whatsapp_data_db = session_configs.get('whatsapp_data_db')
+        user_credentials_collection = whatsapp_data_db.user_credentials
 
         if user_credentials_collection.find_one({'username': username}):
             flash('Username already exists', 'error')
