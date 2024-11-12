@@ -28,7 +28,7 @@ def get_mongo_client():
     port = os.getenv('MONGO_PORT')
 
     client = MongoClient(f"mongodb://{username}:{password}@{host}:{port}/")
-    logger.debug(f"Loaded environment variables: MONGO_INITDB_ROOT_USERNAME={username}, MONGO_HOST={host}, MONGO_PORT={port}")
+    logger.debug(f"Loaded environment variables: MONGO_INITDB_ROOT_USERNAME={username} ,MONGO_HOST={host} MONGO_PORT={port}")
     pymongo_logger = logging.getLogger("pymongo")
     pymongo_logger.setLevel(logging.ERROR)
 

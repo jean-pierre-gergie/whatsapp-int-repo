@@ -116,6 +116,8 @@ services:
       - "27017:27017"  # Exposes MongoDB on port 27017
     volumes:
       - mongo_data:/data/db:z  # Mounts the named volume to the MongoDB data directory
+    env_file:
+      - .env
     environment:
       MONGO_INITDB_ROOT_USERNAME: ${MONGO_INITDB_ROOT_USERNAME}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_INITDB_ROOT_PASSWORD} 
