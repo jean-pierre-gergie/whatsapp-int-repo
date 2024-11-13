@@ -21,60 +21,69 @@ logger = logging.getLogger(__name__)
 pymongo_logger = logging.getLogger("pymongo")
 pymongo_logger.setLevel(logging.ERROR) 
 
-api_key_360 =Config.API_KEY
 
-def fetch_and_update_templates():
+def fetch_and_update_templates(api_key_360, whatsapp_data_db):
+
+    logger.debug(f" API Key: {api_key_360}")
+   
+    logger.debug(f"x3nZhZTVLqT2egKf81lfCsW3AK ")
     url = "https://waba-v2.360dialog.io/v1/configs/templates"
-    api_key = api_key_360
-
     headers = {
-        "D360-API-KEY": api_key,
+        "D360-API-KEY": api_key_360,
         "Content-Type": "application/json"
     }
-
     params = {
         "limit": 1000,
         "offset": 0,
         "sort": "id"
     }
 
-    response = requests.get(url, headers=headers, params=params)
-    logger.debug(f"Fetching templates: {response}")
-    if response.status_code == 200:
-        templates = response.json().get('waba_templates', [])
-        api_template_ids = set(template['id'] for template in templates)
+    try:
+        response = requests.get(url, headers=headers, params=params)
+        logger.debug(f"Fetching templates: Status {response.status_code}")
+        
+        if response.status_code == 200:
+            templates = response.json().get('waba_templates', [])
+            api_template_ids = set(template['id'] for template in templates)
+            collection = whatsapp_data_db.templates 
 
-        mongo_db = current_app.mongo
-        collection = mongo_db.templates 
+            for template in templates:
+                created_at = pd.to_datetime(template.get('created_at')).to_pydatetime() if template.get('created_at') else None
+                existing_template = collection.find_one({'template_id': template['id']})
+                
+                template_data = {
+                    'template_name': template.get('name'),
+                    'service_category': template.get('category'),
+                    'status': template.get('status'),
+                    'language': template.get('language'),
+                    'created_day': created_at
+                }
+                
+                if existing_template:
+                    collection.update_one(
+                        {'template_id': template['id']},
+                        {'$set': template_data}
+                    )
+                    logger.info(f"Updated template: {template['id']}")
+                else:
+                    template_data['template_id'] = template['id']
+                    collection.insert_one(template_data)
+                    logger.info(f"Inserted new template: {template['id']}")
 
-        for template in templates:
-            created_at = pd.to_datetime(template['created_at']).to_pydatetime() if template.get('created_at') else None
-            existing_template = collection.find_one({'template_id': template['id']})
-            
-            template_data = {
-                'template_name': template.get('name'),
-                'service_category': template.get('category'),
-                'status': template.get('status'),
-                'language': template.get('language'),
-                'created_day': created_at
-            }
-            
-            if existing_template:
-                collection.update_one(
-                    {'template_id': template['id']},
-                    {'$set': template_data}
-                )
-            else:
-                template_data['template_id'] = template['id']
-                collection.insert_one(template_data)
+            db_templates = collection.find()
+            for db_template in db_templates:
+                if db_template['template_id'] not in api_template_ids:
+                    collection.delete_one({'template_id': db_template['template_id']})
+                    logger.info(f"Deleted outdated template: {db_template['template_id']}")
+                    
+            logger.debug("Template synchronization completed successfully.")
+        else:
+            logger.error(f"Failed to retrieve templates. Status: {response.status_code}, Response: {response.text}")
 
-        db_templates = collection.find()
-        for db_template in db_templates:
-            if db_template['template_id'] not in api_template_ids:
-                collection.delete_one({'template_id': db_template['template_id']})
-    else:
-        print(f"Failed to retrieve templates: {response.status_code}")
-        print(response.text)
+    except requests.RequestException as e:
+        logger.error(f"Request failed: {e}")
+    except Exception as e:
+        logger.exception(f"An error occurred while fetching and updating templates: {e}")
 
 
 # def start_template_updater(app):

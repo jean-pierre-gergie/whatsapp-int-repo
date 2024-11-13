@@ -6,12 +6,13 @@ from datetime import datetime
 
 
 class WhatsAppDataHandler:
-    def __init__(self, raw_collection, user_to_business_collection, business_to_user_collection,chat_rooms_collection,auto_reply_handler,sio):
+    def __init__(self, raw_collection, user_to_business_collection, business_to_user_collection,chat_rooms_collection,auto_reply_handler,name_space,sio):
         self.raw_collection = raw_collection
         self.user_to_business_collection = user_to_business_collection
         self.business_to_user_collection = business_to_user_collection
         self.chat_rooms_collection =chat_rooms_collection
-        self.auto_reply_handler = auto_reply_handler  
+        self.auto_reply_handler = auto_reply_handler 
+        self.names_space = name_space
         self.sio = sio 
         self.logger = logging.getLogger(__name__)
 
@@ -101,7 +102,8 @@ class WhatsAppDataHandler:
                 self.logger.info(f"Created new chat room with room_id: {sender_phone}")
 
                 await self.emit_event(event_name='new_room',
-                                    data={'room': sender_phone})
+                                    data={'room': sender_phone},
+                                    name_space=self.names_space)
             
             else:
                 # Check if the wa_mid already exists in the room's messages
@@ -128,7 +130,8 @@ class WhatsAppDataHandler:
                     self.logger.info(f"Updated chat room with new message for room_id: {sender_phone}")
 
             await self.emit_event(event_name='message_from_user',
-                                data={'room': sender_phone, 'sender': 'user', 'message': message_body, "timestamp": timestamp})
+                                data={'room': sender_phone, 'sender': 'user', 'message': message_body, "timestamp": timestamp},
+                                name_space=self.names_space)
 
     def extract_whatsapp_data(self, response_json):
         try:
@@ -172,10 +175,10 @@ class WhatsAppDataHandler:
             latest_result = self.user_to_business_collection.insert_one(message)
             self.logger.info(f"New user-to-business message inserted with id: {latest_result.inserted_id}")
 
-    async def emit_event(self, event_name, data,room=None):
+    async def emit_event(self, event_name,name_space,data,room=None):
         """Emit an event using the connected Socket.IO client."""
         try:
-            self.sio.emit(event_name, data, namespace='/agent/agent_namespace')
+            self.sio.emit(event_name, data, name_space)
             self.logger.info(f"Emitted event '{event_name}' with data: {data}")
         except Exception as e:
             self.logger.error(f"Failed to emit event '{event_name}': {e}")

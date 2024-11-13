@@ -4,18 +4,34 @@ from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identi
 import bcrypt
 from bson.objectid import ObjectId
 from ..utils.decorators import  role_required
+from ..utils.session_config_helper import get_session_foundation_config,get_all_foundations
 import uuid
 
 bp = Blueprint('auth', __name__)
 
+
 # Initialize logger for this module
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
 
+logging.basicConfig(level=logging.DEBUG, 
+                    format='- %(name)s - %(levelname)s - %(message)s')
+
+
+# @bp.app_context_processor
+# def inject_foundation_data():
+#     session_configs = get_session_foundation_config()
+#     foundation_name = session_configs.get('foundation_name')
+#     all_foundations = get_all_foundations()
+#     return dict(foundation_name=foundation_name, foundations=all_foundations)
+
+
+
+# TODO : add a function in session_config_helper to set the session configs
 @bp.route('/', methods=['GET', 'POST'])
 def login():
-    mongo_db = current_app.mongo
-    collection = mongo_db.user_credentials
+    
+    user_credentials_collection  = current_app.mongo['user_credentials_db']['user_credentials']
+ 
 
     if request.method == 'POST':
         username = request.form['username']
@@ -24,7 +40,7 @@ def login():
         logger.debug(f"Attempting login for username: {username}")
         
         # Fetch user from the database
-        user = collection.find_one({'username': username})
+        user = user_credentials_collection.find_one({'username': username})
         
         if user:
             logger.debug(f"User {username} found in the database.")
@@ -40,7 +56,32 @@ def login():
 
                 # Fetch the role from the user document
                 role = user.get('role', 'user')  # Default to 'user' role if not specified
-                logger.debug(f"User {username} has role: {role}")
+                
+
+                foundation_name = user.get('foundation')
+
+                logger.debug(f"User {username} has role: {role} is in foundation {foundation_name}")
+
+                foundations_collection = current_app.mongo['foundations_db']['foundations']
+                foundations = list(foundations_collection.find({}, {'_id': 0, 'foundation': 1}))
+
+
+                foundations_collection = current_app.mongo['foundations_db']['foundations']
+                foundation_config = foundations_collection.find_one({"foundation": foundation_name})
+
+                if foundation_config:
+                    # Store foundation-specific details in session
+                    session['foundation'] = {
+                        'foundation_name':foundation_name,
+                        'api_key': foundation_config['api_key'],
+                        'whatsapp_data_db': foundation_config['whatsapp_data_db'],
+                        'agent_data_db': foundation_config['agent_data_db']
+                    }
+                    logger.debug(f"Foundation configuration set in session for {foundation_name}")
+
+                else:
+                    logger.debug(f"Foundation configuration  {foundation_name}   not found in db ")
+
 
                 # Create JWT token with username and role
                 access_token = create_access_token(identity={'username': user['username'], 'role': role})
@@ -77,28 +118,76 @@ def index():
     role = current_user.get('role', 'user')  # Default to 'user' role if not specified
     logger.debug(f"User {current_user['username']} has role: {role}")
     
-    mongo_db = current_app.mongo
     
+    session_configs =get_session_foundation_config()
+
+    whatsapp_data_db = session_configs.get('whatsapp_data_db')
+    foundation_name = session_configs.get('foundation_name')
     # Fetch campaigns from the database
-    campaigns_collection = mongo_db.campaign
+    campaigns_collection = whatsapp_data_db.campaign
     campaigns = list(campaigns_collection.find())
     campaigns_data = [{"id": campaign.get('campaign_id'), "name": campaign.get('campaign_name')} for campaign in campaigns]
     logger.debug(f"Retrieved {len(campaigns_data)} campaigns from the database.")
     
     # Fetch templates from the database
-    templates_collection = mongo_db.templates
+    templates_collection = whatsapp_data_db.templates
     templates = list(templates_collection.find())
     templates_data = [{"id": template.get('template_id'), "name": template.get('template_name')} for template in templates]
     logger.debug(f"Retrieved {len(templates_data)} templates from the database.")
+
+
+    # Fetch all available foundations for the sidebar
+    foundations_collection = current_app.mongo['foundations_db']['foundations']
+    all_foundations = list(foundations_collection.find({}, {'_id': 0, 'foundation': 1}))
+    logger.debug(f"Retrieved available foundations: {[f['foundation'] for f in all_foundations]}")
     
     # Render the index page with user, campaigns, and templates data
     if role == 'admin':
         logger.info(f"Rendering index page for admin {current_user['username']}.")
-        return render_template('index.html', current_user=current_user, campaigns=campaigns_data, templates=templates_data, is_admin=True)
+        return render_template('index.html', 
+                                current_user=current_user,
+                                campaigns=campaigns_data,
+                                templates=templates_data,
+                                is_admin=True,
+                                foundation_name=foundation_name,
+                                foundations=all_foundations)
     else:
         logger.info(f"Rendering index page for user {current_user['username']}.")
-        return render_template('index.html', current_user=current_user, campaigns=campaigns_data, templates=templates_data, is_admin=False)
+        return render_template('index.html',
+                               current_user=current_user,
+                               campaigns=campaigns_data,
+                               templates=templates_data,
+                               is_admin=False,
+                               foundation_name=foundation_name,
+                               foundations=all_foundations)
 
+
+
+@bp.route('/switch_foundation/<foundation_name>')
+def switch_foundation(foundation_name):
+    logging.debug(f"Switching foundation to: {foundation_name}")
+    
+    foundations_collection = current_app.mongo['foundations_db']['foundations']
+    foundation_config = foundations_collection.find_one({"foundation": foundation_name})
+    
+    if foundation_config:
+        logging.debug(f"Foundation config found: {foundation_config}")
+        
+        session['foundation'] = {
+            'foundation_name': foundation_name,
+            'api_key': foundation_config['api_key'],
+            'whatsapp_data_db': foundation_config['whatsapp_data_db'],
+            'agent_data_db': foundation_config['agent_data_db']
+        }
+        
+        logging.debug(f"Session updated with foundation: {session['foundation']}")
+    else:
+        logging.warning(f"Foundation {foundation_name} not found in the database.")
+
+    return redirect(url_for('auth.index'))
+
+
+# TODO :
 @bp.route('/change_password', methods=['GET', 'POST'])
 @jwt_required()
 def change_password():
@@ -118,8 +207,11 @@ def change_password():
         current_user = get_jwt_identity()
         username = current_user['username']
 
-        mongo_db = current_app.mongo
-        user_credentials_collection = mongo_db.user_credentials
+        session_configs =get_session_foundation_config()
+
+        whatsapp_data_db = session_configs.get('whatsapp_data_db')
+        foundation_name = session_configs.get('foundation_name')
+        user_credentials_collection  = current_app.mongo['user_credentials_db']['user_credentials']
 
         user = user_credentials_collection.find_one({'username': username})
 
@@ -141,7 +233,7 @@ def change_password():
         if result.matched_count > 0:
             # Revoke current JWT token
             jti = get_jwt()["jti"]  # Get the JWT ID from the current token
-            mongo_db.revoked_tokens.insert_one({"jti": jti})
+            whatsapp_data_db.revoked_tokens.insert_one({"jti": jti})
             flash('Password updated successfully. Please log in again.', 'success')
 
             # Optionally, you can clear the JWT cookie to force re-login
@@ -153,6 +245,9 @@ def change_password():
 
     return render_template('change_password.html')
 
+
+
+# TODO :
 @bp.route('/signup', methods=['GET', 'POST'])
 def signup():
     if request.method == 'POST':
@@ -160,8 +255,11 @@ def signup():
         password = request.form.get('password')
         role = request.form.get('role')
 
-        mongo_db = current_app.mongo
-        user_credentials_collection = mongo_db.user_credentials
+        session_configs =get_session_foundation_config()
+
+        whatsapp_data_db = session_configs.get('whatsapp_data_db')
+        
+        user_credentials_collection  = current_app.mongo['user_credentials_db']['user_credentials']
 
         if user_credentials_collection.find_one({'username': username}):
             flash('Username already exists', 'error')
@@ -183,6 +281,9 @@ def signup():
 
     return render_template('signup.html', message='')
 
+
+
+# TODO :
 @bp.route('/logout')
 def logout():
     session.clear() 
@@ -190,8 +291,3 @@ def logout():
     response.set_cookie('access_token_cookie', '', expires=0)  
     return redirect(url_for('auth.login'))
 
-# @bp.before_request
-# def before_request():
-#     token = request.cookies.get('access_token_cookie')
-#     if token:
-#         request.headers.environ['HTTP_AUTHORIZATION'] = f'Bearer {token}'

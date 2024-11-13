@@ -3,6 +3,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from ..utils.decorators import role_required
 from ..utils.helper_functions import get_template_texts
 from ..utils.template_updater import fetch_and_update_templates
+from ..utils.session_config_helper import get_session_foundation_config,get_all_foundations
 import requests
 import json
 from app.config import Config  
@@ -10,43 +11,58 @@ import logging
 
 
 logging.basicConfig(level=logging.DEBUG, 
-                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-
-
-
+                    format='- %(name)s - %(levelname)s - %(message)s')
 
 
 logger = logging.getLogger(__name__)
 
-
-api_key_360 =Config.API_KEY
-
 bp = Blueprint('templates', __name__)
+
+@bp.app_context_processor
+def inject_foundation_data():
+    session_configs = get_session_foundation_config()
+    if not session_configs:
+        return {}  # Or handle it gracefully if the data is missing
+    foundation_name = session_configs.get('foundation_name')
+    all_foundations = get_all_foundations()
+    return dict(foundation_name=foundation_name, foundations=all_foundations)
 
 @bp.route('/templates')
 @jwt_required()
 @role_required(['admin','user'])
 def templates_list():
-    current_user = get_jwt_identity()
 
-    
-    fetch_and_update_templates()
+    session_configs =get_session_foundation_config()
 
-    mongo_db = current_app.mongo
-    collection = mongo_db.templates 
+    whatsapp_data_db = session_configs.get('whatsapp_data_db')
+    api_key_360 = session_configs.get('api_key')
+    foundation_name = session_configs.get('foundation_name')
+   
+    fetch_and_update_templates(api_key_360,whatsapp_data_db)
+
+    collection = whatsapp_data_db.templates 
     
     templates = list(collection.find())
 
     for template in templates:
         template['_id'] = str(template['_id'])  
+    
 
-    return render_template('templates.html', templates=templates)
+    all_foundations = get_all_foundations()
+
+    return render_template('templates.html',
+                           templates=templates,
+                           foundation_name=foundation_name,
+                           foundations=all_foundations)
 
 @bp.route('/remove_template', methods=['POST'])
 @jwt_required()
 @role_required(['admin', 'user']) 
 def remove_template():
-    current_user = get_jwt_identity()
+    session_configs =get_session_foundation_config()
+
+    api_key_360 = session_configs.get('api_key')
+ 
 
     template_name = request.form.get('template_name')  # Get the template name from the form
 
@@ -81,8 +97,11 @@ def get_template_status():
             "error": "Template name is required."
         }), 400
 
-    mongo_db = current_app.mongo
-    collection = mongo_db.templates
+    session_configs =get_session_foundation_config()
+
+    whatsapp_data_db = session_configs.get('whatsapp_data_db')
+
+    collection = whatsapp_data_db.templates
 
     try:
         # Fetch the template by its name
@@ -110,8 +129,13 @@ def get_template_status():
 @role_required(['admin', 'user']) 
 def create_template_page():
     current_user = get_jwt_identity()
-    mongo_db = current_app.mongo
-    collection = mongo_db.language  
+
+    session_configs =get_session_foundation_config()
+
+    whatsapp_data_db = session_configs.get('whatsapp_data_db')
+
+    collection = whatsapp_data_db.language  
+
     languages = list(collection.find())
     for language in languages:
         language['_id'] = str(language['_id'])
@@ -123,22 +147,33 @@ def create_template_page():
 @jwt_required()
 @role_required(['admin', 'user']) 
 def get_template_text():
-    current_user = get_jwt_identity()
+
     data = request.get_json()
     template_name = data.get('template_name')
 
-    texts = get_template_texts(template_name)
+    session_configs =get_session_foundation_config()
+  
+    api_key_360 = session_configs.get('api_key')
+
+    texts = get_template_texts(template_name,api_key_360=api_key_360)
     if texts:
         return jsonify({'success': True, 'texts': texts['text_fields'], 'variable_count': texts['variable_count'], 'has_image': texts['has_image']})
     else:
         return jsonify({'success': False, 'error': 'Template not found or error retrieving template.'})
 
+
+# FIXME: CHECK ERROR SUBMITTING TEMPLATE NEED TO CHECK WITH OLDER VERSIONS 
 @bp.route('/create_template', methods=['POST'])
 @jwt_required()
 @role_required(['admin', 'user']) 
 def create_template():
     current_user = get_jwt_identity()
     logger.debug(f"Current user: {current_user}")
+
+    session_configs =get_session_foundation_config()
+  
+    api_key_360 = session_configs.get('api_key')
+    
     
     try:
         template_name = request.form['template_name']
@@ -235,6 +270,7 @@ def create_template():
         }
         
         logger.debug(f"Template data: {json.dumps(template_data, indent=4)}")
+        
         
         headers = {
             "Content-Type": "application/json",

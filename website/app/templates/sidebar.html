@@ -14,7 +14,23 @@
                     <a href="#" class="sidebar-hide d-xl-none d-block"><i class="bi bi-x bi-middle"></i></a>
                 </div>
             </div>
+
+            <!-- Available Foundations Dropdown -->
+            <div class="available-foundations mt-3">
+                <h6>Switch Foundation</h6>
+                <div>
+                    <select onchange="redirectToFoundation(this.value);">
+                        {% for foundation in foundations %}
+                            <option value="{{ url_for('auth.switch_foundation', foundation_name=foundation.foundation) }}"
+                                {% if foundation.foundation == foundation_name %}selected{% endif %}>
+                                {{ foundation.foundation }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
         </div>
+        
         <div class="sidebar-menu">
             <ul class="menu">
                 <!-- Dashboard Dropdown -->
@@ -38,19 +54,19 @@
                     </a>
                     <ul class="submenu">
                         <li class="submenu-item">
-                            <a href="{{url_for('campaigns.campaigns')}}">Broadcast</a>
+                            <a href="{{ url_for('campaigns.campaigns') }}">Broadcast</a>
                         </li>
                         <li class="submenu-item">
-                            <a href="{{url_for('templates.templates_list')}}">Templates</a>
+                            <a href="{{ url_for('templates.templates_list') }}">Templates</a>
                         </li>
                         <li class="submenu-item">
-                            <a href="{{url_for('upload_data.upload_file')}}">Add To Database</a>
+                            <a href="{{ url_for('upload_data.upload_file') }}">Add To Database</a>
                         </li>
                         <li class="submenu-item">
-                            <a href="{{url_for('campaigns.show_all_collections_html')}}">Show Collections</a>
+                            <a href="{{ url_for('campaigns.show_all_collections_html') }}">Show Collections</a>
                         </li> 
                         <li class="submenu-item">
-                            <a href="{{url_for('campaigns.audience')}}">Audience</a>
+                            <a href="{{ url_for('campaigns.audience') }}">Audience</a>
                         </li>   
                         <li class="submenu-item">
                             <a href="#" onclick="openDynamicRedirectPage()">Open Agent Page</a>
@@ -73,12 +89,20 @@
                 </li>
             </ul>
         </div>
+        
         <button class="sidebar-toggler btn x"><i data-feather="x"></i></button>
     </div>
 </div>
+
 <script>
     function openDynamicRedirectPage() {
         // Open the route in a new browser tab
         window.open("{{ url_for('campaigns.dynamic_redirect') }}", "_blank");
+    }
+
+    function redirectToFoundation(url) {
+        if (url) {
+            window.location.href = url;
+        }
     }
 </script>

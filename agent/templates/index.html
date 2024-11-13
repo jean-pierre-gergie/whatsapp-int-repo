@@ -3,28 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <title>Chat App</title>
+
     <!-- Link to the CSS file -->
-    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+    <link rel="stylesheet" href="{{ base_path }}{{ url_for('static', filename='styles.css') }}">
 
     <!-- Socket.IO library -->
     <script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
 
-    <!-- Main JavaScript file as a module -->
-    
-    <script type="module" src="{{ url_for('static', filename='js/utils.js') }}"></script>
-    <script type="module" src="{{ url_for('static', filename='js/socket.js') }}"></script>
-    <script type="module" src="{{ url_for('static', filename='js/roomManagement.js') }}"></script>
-    <script type="module" src="{{ url_for('static', filename='js/domUpdates.js') }}"></script>
-    <script type="module" src="{{ url_for('static', filename='js/sendMessage.js') }}"></script>
-    <script type="module" src="{{ url_for('static', filename='js/eventListeners.js') }}"></script>
-    <script type="module" src="{{ url_for('static', filename='js/tabSwitch.js') }}"></script>
+    <script>
+        window.config = {
+            nameSpace: "{{ name_space }}",
+            foundation_name: "{{ foundation_name }}"
+        };
+    </script>
 
-    
+    <!-- Main JavaScript files as modules -->
+    <script type="module" src="{{ base_path }}{{ url_for('static', filename='js/utils.js') }}"></script>
+    <script type="module" src="{{ base_path }}{{ url_for('static', filename='js/socket.js') }}"></script>
+    <script type="module" src="{{ base_path }}{{ url_for('static', filename='js/roomManagement.js') }}"></script>
+    <script type="module" src="{{ base_path }}{{ url_for('static', filename='js/domUpdates.js') }}"></script>
+    <script type="module" src="{{ base_path }}{{ url_for('static', filename='js/sendMessage.js') }}"></script>
+    <script type="module" src="{{ base_path }}{{ url_for('static', filename='js/eventListeners.js') }}"></script>
+    <script type="module" src="{{ base_path }}{{ url_for('static', filename='js/tabSwitch.js') }}"></script>
 </head>
-<body>
+<body data-name-space="{{ name_space }}">
     <div class="sidebar">
         <div class="header">
             <h2>Chat Rooms</h2>
+            <span id="foundation-name"></span>
             <div class="tabs">
                 <button onclick="showOpenRooms()">Open Conv</button>
                 <button onclick="showClosedRooms()">Closed Conv</button>
@@ -50,5 +56,17 @@
             <button onclick="sendMessage()">Send</button>
         </div>
     </div>
+
+    <script>
+        // Display the foundation name directly in the chat header
+        document.addEventListener('DOMContentLoaded', () => {
+            const foundationNameElement = document.getElementById('foundation-name');
+            const foundationName = window.config.foundation_name;
+
+            if (foundationName) {
+                foundationNameElement.textContent = foundationName;
+            }
+        });
+    </script>
 </body>
 </html>

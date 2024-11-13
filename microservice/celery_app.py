@@ -12,6 +12,7 @@ from pymongo import MongoClient
 from celery.utils.log import get_task_logger
 from utils.send_campaigns_helpers import *
 from utils.chat_rooms_helper import WhatsAppChatCampaignHandler
+from utils.manage_founadtion_session import get_dependencies_by_foundation
 from dateutil import parser
 import asyncio
 
@@ -32,7 +33,7 @@ mongo_host = os.getenv('MONGO_HOST')
 mongo_port = os.getenv('MONGO_PORT')
 
 dialog_360_message_url = os.getenv("DIALOG_360_MESSAGE_URL")
-api_key_360 = os.getenv('API_KEY')
+
 
 rabbit_url = f'amqp://{rabbitmq_user}:{rabbitmq_pwd}@rabbitmq:5672//'
 mongo_url = f'mongodb://{mongo_username}:{mongo_password}@{mongo_host}:{mongo_port}'
@@ -48,9 +49,11 @@ celery_app = Celery(
 
 
 @celery_app.task(bind=True)
-def send_message_campaign(self, campaign_timing, scheduled_date,scheduled_date_local, selected_campaign, template_json, variables, campaign_name, media_id=None,campaign_id_db =None):
+def send_message_campaign(self, foundation_name, campaign_timing, scheduled_date,scheduled_date_local, selected_campaign, template_json, variables, campaign_name, media_id=None,campaign_id_db =None):
 
     logger = get_task_logger(__name__)
+
+    logger.debug(f"Foundation: {foundation_name}")
 
     logger.debug(f"Task started with: campaign_timing={campaign_timing}, scheduled_datetime={scheduled_date},scheduled_datetime_local={scheduled_date_local}, "
                  f"selected_campaign={selected_campaign}, template_json={template_json}, variables={variables}, "
@@ -64,16 +67,15 @@ def send_message_campaign(self, campaign_timing, scheduled_date,scheduled_date_l
     failed_rows = []
     start_time = time.time()
 
-    mongo_client = get_mongo_client(mongo_url)
-    mongo_db = mongo_client.whatsapp_data
-    agent_db = mongo_client.agent_data
-    chat_room_collection = agent_db.rooms
+    whatsapp_data_db , agent_data_db , api_key_360 = get_dependencies_by_foundation(foundation_name=foundation_name,mongo_url=mongo_url)
+
+    chat_room_collection = agent_data_db.rooms
 
 
     chat_room_handler = WhatsAppChatCampaignHandler(chat_room_collection,logger=logger)
 
 
-    members = get_member_list(mongo_db, selected_campaign=selected_campaign)
+    members = get_member_list(whatsapp_data_db, selected_campaign=selected_campaign)
     total_members = len(members)
 
     template_dict = get_template_json(template_json)
@@ -86,8 +88,8 @@ def send_message_campaign(self, campaign_timing, scheduled_date,scheduled_date_l
     logger.debug(f"Variables: {variables}")
     logger.debug(f"Media ID: {media_id}, Campaign: {selected_campaign}, Campaign Name: {campaign_name}")
 
-    campaign_responses_collection = mongo_db.campaign_responses
-    final_campaign_response_collection = mongo_db.final_campaign_response
+    campaign_responses_collection = whatsapp_data_db.campaign_responses
+    final_campaign_response_collection = whatsapp_data_db.final_campaign_response
 
 
     self.update_state(state='PENDING', meta={
@@ -120,6 +122,7 @@ def send_message_campaign(self, campaign_timing, scheduled_date,scheduled_date_l
         # Schedule the task to run at the scheduled time, passing campaign_id_db
         self.apply_async(
             kwargs={
+                'foundation_name':foundation_name,
                 'campaign_timing': campaign_timing,
                 'scheduled_date': scheduled_date,
                 'scheduled_date_local': scheduled_date_local,

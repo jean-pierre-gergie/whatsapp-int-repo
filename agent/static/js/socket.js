@@ -1,20 +1,28 @@
 import { getCookie } from './utils.js';
 import { displayAvailableRooms, displayChatHistory, displayMessage } from './domUpdates.js';
+import { showClosedRooms, showOpenRooms } from './tabSwitch.js';
 
-import { showClosedRooms,showOpenRooms } from './tabSwitch.js';
-
+// Get JWT token
 const jwtToken = getCookie('jwt_token');
-// console.log(jwtToken)
 if (!jwtToken) {
     console.error("JWT token is missing, cannot connect to Socket.IO server.");
 }
 
+// Read the nameSpace value from the window.config object
+const nameSpace = window.config.nameSpace;
 
+// Initialize the socket connection with the dynamic namespace
+export const socket = initSocket(jwtToken, nameSpace);
 
-export const socket = initSocket(getCookie('jwt_token'));
+function initSocket(jwtToken, nameSpace) {
+    // const socket = io(`http://localhost:5001${nameSpace}`, {
+    //     transports: ['websocket', 'polling'],
+    //     withCredentials: true,
+    //     auth: { token: jwtToken }
+    // });
 
-function initSocket(jwtToken) {
-    const socket = io('http://localhost:5001/agent/agent_namespace', {
+    const socket = io(`https://www.omnichanneltv.com${nameSpace}`, {
+        path: '/agent/socket.io',
         transports: ['websocket', 'polling'],
         withCredentials: true,
         auth: { token: jwtToken }
@@ -34,7 +42,6 @@ function initSocket(jwtToken) {
         console.log("FE --- Received available rooms data:", roomData);
         displayAvailableRooms(roomData);
         showOpenRooms();
-
     });
     socket.on('chat_history', displayChatHistory);
 
@@ -42,7 +49,6 @@ function initSocket(jwtToken) {
         console.log("FE --- Received message from user:", data);
         displayMessage(data, 'user');
         showOpenRooms();
-        
     });
     socket.on('message_from_business', data => displayMessage(data, 'business'));
 

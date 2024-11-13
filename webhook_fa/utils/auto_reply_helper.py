@@ -7,8 +7,9 @@ import asyncio
 class AutoReplyHandler:
     AUTO_REPLY_MESSAGE = "**Auto Reply**"
 
-    def __init__(self, chat_rooms_collection, logger=None):
+    def __init__(self, chat_rooms_collection,api_key_360, logger=None):
         self.chat_rooms_collection = chat_rooms_collection
+        self.api_key_360= api_key_360
         self.logger = logger or logging.getLogger(__name__)
         load_dotenv()
 
@@ -28,7 +29,7 @@ class AutoReplyHandler:
                     self.logger.debug(f"Auto reply already sent in the last 12 hours for room_id: {room_id}")
                     return
 
-            send_message_to_users_through_360(room_id, self.AUTO_REPLY_MESSAGE)
+            send_message_to_users_through_360(room_id, self.AUTO_REPLY_MESSAGE,self.api_key_360,logger = self.logger)
             # Call `_handle_chat_room` and handle the chat room without updating `last_auto_reply`
             await self._handle_chat_room(room_id, self.AUTO_REPLY_MESSAGE, timestamp=datetime.utcnow())
 

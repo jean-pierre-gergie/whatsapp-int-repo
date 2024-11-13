@@ -9,9 +9,16 @@ ENV PYTHONDONTWRITEBYTECODE=1
 
 # Copy the requirements file into the container
 COPY requirements.txt /app/
-COPY init_mongo.py /app/
-COPY ./init_data/languages.json /app/
-COPY ./init_data/users.json /app/
+
+# Copy initialization scripts and data
+COPY ./init_scripts/init_mongo.py /app/init_scripts/
+COPY ./init_scripts/init_webhook_urls.py /app/init_scripts/
+COPY ./init_data/languages.json /app/init_data/
+COPY ./init_data/users.json /app/init_data/
+
+# Copy utility scripts
+COPY ./utils /app/utils
+COPY ./utils_init/utils_init.py /app/utils_init/
 
 # Install system dependencies and pip
 RUN apt-get update && \

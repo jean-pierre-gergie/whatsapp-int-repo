@@ -9,14 +9,13 @@ logging.basicConfig(
 )
 
 # Create a logger that dynamically takes the module's name
-logger = logging.getLogger(__name__)
 
 load_dotenv()
 
-api_key  = os.getenv("API_KEY")
+
 dialog_360_message_url = os.getenv("DIALOG_360_MESSAGE_URL")
 
-def send_message_to_users_through_360(number,message):
+def send_message_to_users_through_360(number,message,api_key_360,logger):
 
     try:
         # Prepare the 360dialog payload
@@ -37,7 +36,7 @@ def send_message_to_users_through_360(number,message):
             json=dialog_payload,
             headers={
                 "Content-Type": "application/json",
-                "D360-API-KEY": api_key 
+                "D360-API-KEY": api_key_360 
             }
         )
 
@@ -48,3 +47,4 @@ def send_message_to_users_through_360(number,message):
 
     except Exception as e:
         logger.error(f"Error sending message to 360dialog: {e}")
+        raise 

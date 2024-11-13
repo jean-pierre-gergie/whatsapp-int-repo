@@ -1,6 +1,6 @@
 import logging
 from flask_socketio import emit, join_room
-from utils.db_helper import get_rooms_collection, handle_chat_room
+from utils.db_helper import  handle_chat_room
 from utils.dialog_360 import send_message_to_users_through_360
 from utils.chat_room_helper import get_opened_closed_discussions
 from utils.jwt_helper import socket_io_jwt
@@ -8,11 +8,14 @@ from datetime import datetime
 
 
 logger = logging.getLogger('app')
-chat_rooms_collection = get_rooms_collection()
-active_agent_namespace = '/agent/agent_namespace'
 
 
-def register_socketio_events(socketio):
+
+
+def register_socketio_events(socketio,
+                             active_agent_namespace,
+                             chat_rooms_collection,
+                             api_key):
     @socketio.on('connect', namespace=active_agent_namespace)
     @socket_io_jwt
     def connect():
@@ -81,7 +84,9 @@ def register_socketio_events(socketio):
                 logger.error(f"EVENT-message_from_business-Error emitting message to room {room_id}: {e}")
                 return
             try:
-                send_message_to_users_through_360(room_id, message=message_body)
+                send_message_to_users_through_360(room_id,
+                                                  message=message_body,
+                                                  api_key = api_key)
             except Exception as e:
                 logger.error(f"EVENT-message_from_business-Error sending message through 360dialog for room {room_id}: {e}")
             try:
