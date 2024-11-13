@@ -10,14 +10,14 @@ function getBeirutTimeISO() {
 export function sendMessage() {
     const messageInput = document.getElementById("message-input");
     const message = messageInput.value.trim();
-    const timestamp = getBeirutTimeISO(); // Generate Beirut time in ISO format
+    const timestamp = new Date().toISOString(); // Use UTC ISO timestamp
 
     if (getCurrentRoom() && message) {
         socket.emit('message_from_business', {
             room: getCurrentRoom(),
             message,
             sender: 'business',
-            timestamp // Include Beirut timestamp in the emitted data
+            timestamp // Send UTC timestamp
         });
         messageInput.value = '';
     } else {
