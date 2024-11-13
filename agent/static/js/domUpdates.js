@@ -1,7 +1,16 @@
 import { joinRoom, getCurrentRoom } from './roomManagement.js';
-import { showOpenRooms,showClosedRooms } from './tabSwitch.js';
+import { showOpenRooms, showClosedRooms } from './tabSwitch.js';
 import { socket } from './socket.js';
 
+function formatTimestamp(timestamp) {
+    // Ensure the timestamp is in a valid ISO format by removing any microseconds
+    const standardizedTimestamp = timestamp.split(".")[0] + "Z";
+    const date = new Date(standardizedTimestamp); // Convert to Date object in UTC
+    return date.toLocaleTimeString([], {
+        hour: '2-digit',
+        minute: '2-digit'
+    }); // Local time format without specifying timeZone
+}
 
 export function updateRoomName(room) {
     document.getElementById("room-name").textContent = `Room: ${room}`;
@@ -18,81 +27,71 @@ export function displayAvailableRooms(roomData) {
         return console.error("Room lists not found");
     }
 
-    // Clear previous room data
     openRoomList.innerHTML = '';
     closedRoomList.innerHTML = '';
 
-    // Function to create a room button with unread messages count
     function createRoomButton(room) {
         const roomButton = document.createElement("button");
         roomButton.className = "room-button";
         roomButton.textContent = room.room_id;
-    
+
         if (room.unread_count > 0) {
             const unreadBadge = document.createElement("span");
             unreadBadge.className = "unread-badge";
             unreadBadge.textContent = room.unread_count;
             roomButton.appendChild(unreadBadge);
         }
-    
-        // Create the close button as an "x"
+
         const closeButton = document.createElement("span");
         closeButton.className = "close-button";
-        closeButton.textContent = "✕";  // Use a small "x" symbol
+        closeButton.textContent = "✕";
         closeButton.onclick = (event) => {
             event.stopPropagation();
             closeRoom(room.room_id);
         };
-    
-        // Append the close button to the room button
+
         roomButton.appendChild(closeButton);
         roomButton.onclick = () => joinRoom(room.room_id);
-    
+
         return roomButton;
     }
 
-    // Populate open rooms
     roomData.openRooms.forEach(room => {
         const roomButton = createRoomButton(room);
         openRoomList.appendChild(roomButton);
     });
 
-    // Populate closed rooms
     roomData.closedRooms.forEach(room => {
         const roomButton = createRoomButton(room);
         closedRoomList.appendChild(roomButton);
     });
 }
 
-// Function to close the room by calling an API or emitting an event
 function closeRoom(roomId) {
-    // Emit an event to the server (if using Socket.IO)
     socket.emit('close_conversation', { room_id: roomId });
-
-  
 }
-
-// export function displayChatHistory(data) {
-//     if (data.room !== getCurrentRoom()) return;
-//     const chatBody = document.getElementById("chat-body");
-//     data.messages.forEach(message => addMessageToChatBody(message.body ?? message.message, message.sender));
-// }
-//  TODO  : CHECK VALIDITY 
-function formatTimestamp(timestamp) {
-    const date = new Date(timestamp); // Convert timestamp to Date object
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); // Local time
-}
-
 
 export function displayChatHistory(data) {
-    if (data.room !== getCurrentRoom()) return;
+    console.log("Displaying chat history...");
+    if (data.room !== getCurrentRoom()) {
+        console.warn("Data room does not match current room:", data.room, "vs", getCurrentRoom());
+        return;
+    }
+
     const chatBody = document.getElementById("chat-body");
+    chatBody.innerHTML = ''; // Clear chat body to ensure fresh render
+
     data.messages.forEach(message => {
-        const formattedTime = formatTimestamp(message.timestamp);
-        addMessageToChatBody(message.body, message.sender, formattedTime);
+        // console.log("Original UTC timestamp:", message.timestamp); // Log original UTC timestamp
+        const formattedTime = formatTimestamp(message.timestamp); // Convert UTC to local time
+        // console.log("Formatted local time:", formattedTime); // Log formatted local time
+
+        addMessageToChatBody(message.body ?? message.message, message.sender, formattedTime);
     });
+
+    console.log("Chat history displayed.");
 }
-// TODO CHECK VALIDITY 
+
 export function displayMessage(data, sender) {
     if (data.room !== getCurrentRoom()) return console.warn("Message for different room:", data.room);
     const formattedTime = formatTimestamp(data.timestamp); // Convert UTC to local time
@@ -102,21 +101,17 @@ export function displayMessage(data, sender) {
 function addMessageToChatBody(message, sender, timestamp) {
     const chatBody = document.getElementById("chat-body");
 
-    // Create the main message container
     const messageElement = document.createElement("div");
     messageElement.className = `message ${sender}`;
 
-    // Create the message body element
     const messageBody = document.createElement("p");
     messageBody.className = "message-body";
     messageBody.textContent = message;
 
-    // Create the timestamp element
     const timestampElement = document.createElement("span");
     timestampElement.className = "timestamp";
-    timestampElement.textContent = timestamp;
+    timestampElement.textContent = timestamp; // Display formatted timestamp
 
-    // Append message body and timestamp to the main message element
     messageElement.appendChild(messageBody);
     messageElement.appendChild(timestampElement);
     chatBody.appendChild(messageElement);
