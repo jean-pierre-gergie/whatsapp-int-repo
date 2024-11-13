@@ -77,12 +77,12 @@ function closeRoom(roomId) {
 //     const chatBody = document.getElementById("chat-body");
 //     data.messages.forEach(message => addMessageToChatBody(message.body ?? message.message, message.sender));
 // }
+//  TODO  : CHECK VALIDITY 
 function formatTimestamp(timestamp) {
-    const date = new Date(timestamp);
-    const hours = date.getHours().toString().padStart(2, '0');
-    const minutes = date.getMinutes().toString().padStart(2, '0');
-    return `${hours}:${minutes}`;
+    const date = new Date(timestamp); // Convert timestamp to Date object
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }); // Local time
 }
+
 
 export function displayChatHistory(data) {
     if (data.room !== getCurrentRoom()) return;
@@ -92,11 +92,10 @@ export function displayChatHistory(data) {
         addMessageToChatBody(message.body, message.sender, formattedTime);
     });
 }
-
+// TODO CHECK VALIDITY 
 export function displayMessage(data, sender) {
-    console.log("Updating message coming from:", sender);
     if (data.room !== getCurrentRoom()) return console.warn("Message for different room:", data.room);
-    const formattedTime = formatTimestamp(data.timestamp);
+    const formattedTime = formatTimestamp(data.timestamp); // Convert UTC to local time
     addMessageToChatBody(data.message, sender, formattedTime);
 }
 

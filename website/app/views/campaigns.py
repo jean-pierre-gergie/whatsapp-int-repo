@@ -178,7 +178,7 @@ def send_single_message():
 
 
 
-# FIXME
+
 @bp.route('/campaigns')
 @jwt_required()
 @role_required(['admin', 'user'])
@@ -190,7 +190,7 @@ def campaigns():
     foundation_name = session_configs.get('foundation_name')
     final_campaign_response_collection = whatsapp_data_db.final_campaign_response
 
-    # Fetch campaigns from the collection
+    # TODO  MAKE THE INDEXING FOR THIS 
     campaigns = list(final_campaign_response_collection.find().sort('campaign_submitted_at', -1))
 
     # Define the date fields that need formatting
@@ -207,16 +207,14 @@ def campaigns():
 
         for field in date_fields:
             if field in campaign:
-                # Check if the field is a datetime object or a string in ISO format
+                # Convert all datetime fields to ISO format for consistency
                 if isinstance(campaign[field], datetime):
-                    # Convert datetime objects to a readable format
-                    campaign[field] = campaign[field].strftime('%Y-%m-%d %I:%M %p')
+                    campaign[field] = campaign[field].isoformat() + "Z"  # Ensure UTC
                 elif isinstance(campaign[field], str):
                     try:
-                        # Convert the ISO 8601 string to a datetime object
-                        campaign[field] = parser.parse(campaign[field]).strftime('%Y-%m-%d %I:%M %p')
+                        # Convert string to datetime and format as ISO UTC
+                        campaign[field] = parser.parse(campaign[field]).isoformat() + "Z"
                     except Exception as e:
-                        # Handle parsing errors if necessary
                         current_app.logger.error(f"Error parsing date field {field}: {e}")
 
     # Render the template with the formatted campaigns
@@ -689,44 +687,13 @@ def view_collection_content():
 
 
 # TODO for deployment
-@bp.route('/dynamic_redirect', methods=['GET'])
-@jwt_required()
-@role_required(['admin', 'user'])
-def dynamic_redirect():
-#     # Create a new token or get the existing one
-    current_identity = get_jwt_identity()  # Get the current user's identity
-    token = create_access_token(identity=current_identity,expires_delta=timedelta(hours=1))    # Create a new token with the same identity
-    agent_server_url = os.getenv('CHAT_AGENT_SERVER_URL')
-
-    session_configs = get_session_foundation_config()
-    foundation_name = session_configs.get('foundation_name')
-
-    agent_server_url = os.getenv('CHAT_AGENT_SERVER_URL')
-    redirect_url = f"{agent_server_url}?foundation_name={foundation_name}"
-    logger.info(f"redirecting to {redirect_url}")
-
-
-#     logger.info(f"redirecting to {agent_server_url}")
-    response = make_response(redirect(redirect_url))
-    response.set_cookie(
-        'jwt_token', 
-        token, 
-        httponly=False, 
-        secure=True, 
-        samesite='None', 
-        domain='.omnichanneltv.com'
-    )
-    return response
-
-
 # @bp.route('/dynamic_redirect', methods=['GET'])
 # @jwt_required()
 # @role_required(['admin', 'user'])
 # def dynamic_redirect():
-#     # Create a new token or get the existing one
-#     current_identity = get_jwt_identity()  
-#     token = create_access_token(identity=current_identity,expires_delta=timedelta(hours=1))  
-
+# #     # Create a new token or get the existing one
+#     current_identity = get_jwt_identity()  # Get the current user's identity
+#     token = create_access_token(identity=current_identity,expires_delta=timedelta(hours=1))    # Create a new token with the same identity
 #     agent_server_url = os.getenv('CHAT_AGENT_SERVER_URL')
 
 #     session_configs = get_session_foundation_config()
@@ -737,8 +704,39 @@ def dynamic_redirect():
 #     logger.info(f"redirecting to {redirect_url}")
 
 
+# #     logger.info(f"redirecting to {agent_server_url}")
 #     response = make_response(redirect(redirect_url))
-#     response.set_cookie('jwt_token',token, httponly=False, secure=True, samesite='Strict')
+#     response.set_cookie(
+#         'jwt_token', 
+#         token, 
+#         httponly=False, 
+#         secure=True, 
+#         samesite='None', 
+#         domain='.omnichanneltv.com'
+#     )
+#     return response
+
+
+@bp.route('/dynamic_redirect', methods=['GET'])
+@jwt_required()
+@role_required(['admin', 'user'])
+def dynamic_redirect():
+    # Create a new token or get the existing one
+    current_identity = get_jwt_identity()  
+    token = create_access_token(identity=current_identity,expires_delta=timedelta(hours=1))  
+
+    agent_server_url = os.getenv('CHAT_AGENT_SERVER_URL')
+
+    session_configs = get_session_foundation_config()
+    foundation_name = session_configs.get('foundation_name')
+
+    agent_server_url = os.getenv('CHAT_AGENT_SERVER_URL')
+    redirect_url = f"{agent_server_url}?foundation_name={foundation_name}"
+    logger.info(f"redirecting to {redirect_url}")
+
+
+    response = make_response(redirect(redirect_url))
+    response.set_cookie('jwt_token',token, httponly=False, secure=True, samesite='Strict')
 
     
-#     return response
+    return response

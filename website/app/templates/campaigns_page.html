@@ -93,68 +93,67 @@
          </div>       
     </div>
     <script>
+
+        
+
         function convertToLocal(utcTime) {
-            console.log('UTC Time before conversion:', utcTime);  // Log the UTC time before conversion
-            
-            // Parse the date string in "YYYY-MM-DD HH:MM AM/PM" format
-            let dateTimeParts = utcTime.split(' ');  // Split date and time
-            let date = dateTimeParts[0];  // Extract the date part
-            let time = dateTimeParts[1];  // Extract the time part
-            let period = dateTimeParts[2];  // Extract AM/PM
-    
-            // Convert 12-hour time to 24-hour time
-            let timeParts = time.split(':');
-            let hours = parseInt(timeParts[0]);
-            let minutes = timeParts[1];
-    
-            if (period === 'PM' && hours < 12) {
-                hours += 12;  // Convert PM to 24-hour format
-            } else if (period === 'AM' && hours === 12) {
-                hours = 0;  // Midnight case
+            if (!utcTime) {
+                console.log("UTC Time:", utcTime, "=> Conversion Result: N/A"); // Log empty date handling
+                return 'N/A';
             }
-    
-            // Construct a valid ISO date string
-            let isoDateString = `${date}T${hours.toString().padStart(2, '0')}:${minutes}:00Z`;
-            console.log('ISO Date String:', isoDateString);  // Log the ISO date string
-    
-            let utcDate = new Date(isoDateString);  // Now create the Date object
-            console.log('UTC Date Object:', utcDate);  // Log the date object to check if it's valid
-    
+
+            // Parse the UTC time string directly as an ISO string
+            let utcDate = new Date(utcTime);
+
+            // Check if the date is valid
             if (isNaN(utcDate.getTime())) {
-                console.error('Invalid date encountered:', utcTime);  // Log if the date is invalid
-                return 'Invalid Date';  // Return a placeholder for invalid dates
+                console.error("Invalid date encountered:", utcTime);
+                return 'Invalid Date';
             }
-            return utcDate.toLocaleString();  // Convert to local time
+
+            // Convert to local time string with explicit time zone options
+            const localTime = utcDate.toLocaleString("en-US", { 
+                timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone  // Automatically uses browser's local timezone
+            });
+
+            // Log the conversion
+            console.log("UTC Time:", utcTime, "=> Local Time:", localTime);
+
+            return localTime;
         }
-    
+
         document.addEventListener('DOMContentLoaded', (event) => {
             let campaignSubmittedElements = document.querySelectorAll('.campaign-submitted-at');
             let campaignScheduledElements = document.querySelectorAll('.campaign-scheduled-at');
             let campaignStartedElements = document.querySelectorAll('.campaign-started-at');
             let campaignFinishedElements = document.querySelectorAll('.campaign-finished-at');
-    
+
             campaignSubmittedElements.forEach(element => {
-                let utcTime = element.textContent;
-                console.log('Converting campaign submitted time:', utcTime);  // Log the original time
-                element.textContent = convertToLocal(utcTime);
+                let utcTime = element.textContent.trim();  // Ensure no leading/trailing whitespace
+                const localTime = convertToLocal(utcTime);
+                console.log('Campaign Submitted At - Original UTC:', utcTime, "=> Converted Local:", localTime);
+                element.textContent = localTime;
             });
-    
+
             campaignScheduledElements.forEach(element => {
-                let utcTime = element.textContent;
-                console.log('Converting campaign scheduled time:', utcTime);  // Log the original time
-                element.textContent = convertToLocal(utcTime);
+                let utcTime = element.textContent.trim();
+                const localTime = convertToLocal(utcTime);
+                console.log('Campaign Scheduled At - Original UTC:', utcTime, "=> Converted Local:", localTime);
+                element.textContent = localTime;
             });
-    
+
             campaignStartedElements.forEach(element => {
-                let utcTime = element.textContent;
-                console.log('Converting campaign started time:', utcTime);  // Log the original time
-                element.textContent = convertToLocal(utcTime);
+                let utcTime = element.textContent.trim();
+                const localTime = convertToLocal(utcTime);
+                console.log('Campaign Started At - Original UTC:', utcTime, "=> Converted Local:", localTime);
+                element.textContent = localTime;
             });
-    
+
             campaignFinishedElements.forEach(element => {
-                let utcTime = element.textContent;
-                console.log('Converting campaign finished time:', utcTime);  // Log the original time
-                element.textContent = convertToLocal(utcTime);
+                let utcTime = element.textContent.trim();
+                const localTime = convertToLocal(utcTime);
+                console.log('Campaign Finished At - Original UTC:', utcTime, "=> Converted Local:", localTime);
+                element.textContent = localTime;
             });
         });
     </script>
