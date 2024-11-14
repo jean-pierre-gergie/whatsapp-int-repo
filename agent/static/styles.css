@@ -201,3 +201,13 @@ body {
     background-color: #2980B9;
     font-weight: bold;
 }
+
+.date-card {
+    text-align: center;
+    margin: 10px 0;
+    font-weight: bold;
+    color: #555;
+    background-color: #f0f0f0;
+    padding: 5px;
+    border-radius: 5px;
+}
