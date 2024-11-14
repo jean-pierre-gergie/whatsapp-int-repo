@@ -6,13 +6,15 @@ from datetime import datetime
 
 
 class WhatsAppDataHandler:
-    def __init__(self, raw_collection, user_to_business_collection, business_to_user_collection,chat_rooms_collection,auto_reply_handler,name_space,sio):
+    def __init__(self, raw_collection, user_to_business_collection, business_to_user_collection,chat_rooms_collection,auto_reply_handler,dialogflow_handler,name_space,sio):
         self.raw_collection = raw_collection
         self.user_to_business_collection = user_to_business_collection
         self.business_to_user_collection = business_to_user_collection
         self.chat_rooms_collection =chat_rooms_collection
         self.auto_reply_handler = auto_reply_handler 
+        self.dialogflow_handler=dialogflow_handler
         self.names_space = name_space
+        self.bot = False
         self.sio = sio 
         self.logger = logging.getLogger(__name__)
 
@@ -71,8 +73,22 @@ class WhatsAppDataHandler:
                                    timestamp=datetime.utcnow())
             
             await self.auto_reply_handler.auto_reply(sender_phone)
-            
 
+            if message_body =="exit_bot":
+                self.bot = False
+                self.logger.debug("BOT DEACTIVATED")
+
+            if self.bot:
+                self.logger.debug("BOT CALLING-BOT")
+                await self.handle_message_bot(message=message_body,
+                                              room_id = sender_phone)
+                
+
+            if message_body =="bot":
+                self.bot = True
+                self.logger.debug("BOT ACTIVATED")
+
+    
     async def _handle_chat_room(self, sender_phone, wa_mid, message_body, timestamp, sender_type="user"):
         if sender_phone:
             existing_room = self.chat_rooms_collection.find_one({'room_id': sender_phone})
@@ -183,8 +199,27 @@ class WhatsAppDataHandler:
         except Exception as e:
             self.logger.error(f"Failed to emit event '{event_name}': {e}")
 
+    async def handle_message_bot(self, message, room_id):
+        try:
+            self.logger.debug("="*17)
+            self.logger.debug(f"BOT RECEIVED room_id: {room_id}")
+            self.logger.debug(f"BOT RECEIVED message: {message}")
+            
+            # Detect intent using Dialogflow
+            response = self.dialogflow_handler.detect_intent_texts(message)
+            self.logger.debug(f"BOT Dialogflow response: {response}")
 
+            # Send bot's auto-reply
+            await self.auto_reply_handler.send_bot_message(response, room_id)
+            self.logger.info(f"BOT Sent bot message to room_id: {room_id}")
 
+            self.logger.debug("="*17)
+            
+        except Exception as e:
+            self.logger.error(f"Error handling message for room_id {room_id}: {e}", exc_info=True)
+            self.logger.debug("="*17)
+
+        return
 
 
 

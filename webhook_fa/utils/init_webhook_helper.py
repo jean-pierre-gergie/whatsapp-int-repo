@@ -9,6 +9,7 @@ import socketio
 from tenacity import retry, wait_exponential, stop_after_attempt, RetryError
 from utils.helper_functions import WhatsAppDataHandler
 from utils.auto_reply_helper import AutoReplyHandler
+from dialogflow_cx_handler.dialogflowHandler import dialogflowHandler
 
 logging.basicConfig(
     level=logging.DEBUG,
@@ -33,6 +34,40 @@ def get_mongo_client():
     pymongo_logger.setLevel(logging.ERROR)
 
     return client
+
+def get_dialogflow_credentials():
+    logger.info("Loading environment variables for Dialogflow credentials")
+    load_dotenv()
+
+    project_id = os.getenv('PROJECT_ID')
+    location_id = os.getenv('LOCATION_ID')
+    agent_id = os.getenv('AGENT_ID')
+
+    # Log the retrieval status of each credential
+    if project_id:
+        logger.debug("Successfully loaded PROJECT_ID")
+    else:
+        logger.warning("PROJECT_ID not found in environment variables")
+
+    if location_id:
+        logger.debug("Successfully loaded LOCATION_ID")
+    else:
+        logger.warning("LOCATION_ID not found in environment variables")
+
+    if agent_id:
+        logger.debug("Successfully loaded AGENT_ID")
+    else:
+        logger.warning("AGENT_ID not found in environment variables")
+
+    credentials = {
+        'project_id': project_id,
+        'location_id': location_id,
+        'agent_id': agent_id
+    }
+    
+    logger.info("Dialogflow credentials successfully retrieved")
+    return credentials
+
 
 
 def get_foundation_dependencies(foundation_name):
@@ -131,12 +166,22 @@ def create_handlers_for_all_foundations():
                 auto_reply_handler = AutoReplyHandler(chat_rooms_collection=dependencies['chat_rooms_collection'],
                                                       api_key_360=dependencies['api_key_360'],
                                                       logger=logger)
+                
+                dialogflow_cred = get_dialogflow_credentials()
+
+                dialogflow_handler = dialogflowHandler(project_id=dialogflow_cred.get('project_id'),
+                                                       location_id=dialogflow_cred.get('location_id'),
+                                                       agent_id=dialogflow_cred.get('agent_id'))
+                
+
+
                 handler = WhatsAppDataHandler(
                     dependencies['raw_collection'],
                     dependencies['user_to_business_collection'],
                     dependencies['business_to_user_collection'],
                     dependencies['chat_rooms_collection'],
                     auto_reply_handler=auto_reply_handler,
+                    dialogflow_handler=dialogflow_handler,
                     name_space=f"/agent/agent_namespace/{foundation_name}",
                     sio=sio
                 )

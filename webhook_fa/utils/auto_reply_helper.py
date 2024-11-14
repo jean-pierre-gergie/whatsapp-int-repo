@@ -61,7 +61,7 @@ class AutoReplyHandler:
                 "sender": "business",
                 "timestamp": timestamp,
                 "campaign": True,
-                "body": f"**Auto Reply** {auto_reply_message}"
+                "body": f" {auto_reply_message}"
             }
             self.logger.debug(f"Prepared message data: {message_data}")
 
@@ -95,3 +95,24 @@ class AutoReplyHandler:
 
         except Exception as e:
             self.logger.error(f"Error handling chat room for user: {user_phone_number}. Exception: {e}")
+
+    async def send_bot_message(self, message,room_id):
+        message = "**BOT_RESPONSE**: " + str(message)
+        try:
+            existing_room = self.chat_rooms_collection.find_one({'room_id': room_id})
+            if not existing_room:
+                self.logger.debug(f"No existing room found for room_id: {room_id}")
+                return
+
+            
+
+            send_message_to_users_through_360(room_id, message ,self.api_key_360,logger = self.logger)
+            # Call `_handle_chat_room` and handle the chat room without updating `last_auto_reply`
+            await self._handle_chat_room(room_id, message ,timestamp=datetime.utcnow())
+
+            # Now, update `last_auto_reply` once in the room's document
+            
+            self.logger.info(f"Auto reply sent to room_id: {room_id}")
+
+        except Exception as e:
+            self.logger.error(f"Error in auto_reply for room_id: {room_id}. Exception: {e}")

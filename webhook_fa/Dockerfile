@@ -20,6 +20,12 @@ COPY ./init_data/users.json /app/init_data/
 COPY ./utils /app/utils
 COPY ./utils_init/utils_init.py /app/utils_init/
 
+# Copy credentials dile
+COPY ./service_account_credentials/dialogflow-int-796518c92a4c.json /app/service_account_credentials
+# Copy Dialogflow handler 
+COPY ./dialogflow_cx_handler/dialogflowHandler.py /app/dialogflow_cx_handler
+
+
 # Install system dependencies and pip
 RUN apt-get update && \
     apt-get install -y --no-install-recommends gcc libmariadb-dev pkg-config && \
