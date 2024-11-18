@@ -85,7 +85,7 @@ class AutoReplyHandler:
                     {
                         '$push': {'messages': message_data},
                         '$set': {
-                            'open_discussion': user_phone_number,
+                            'open_discussion': True,
                             'last_message_time': timestamp  # Update last_message_time
                         }
                     }
