@@ -81,10 +81,23 @@ export function displayChatHistory(data) {
     const chatBody = document.getElementById("chat-body");
     chatBody.innerHTML = ''; // Clear chat body to ensure fresh render
 
+    let lastDate = null;
+
     data.messages.forEach(message => {
         // console.log("Original UTC timestamp:", message.timestamp); // Log original UTC timestamp
         const formattedTime = formatTimestamp(message.timestamp); // Convert UTC to local time
         // console.log("Formatted local time:", formattedTime); // Log formatted local time
+        const messageDate = new Date(message.timestamp).toLocaleDateString(); // Get date part only
+
+        // Check if this message's date is different from the last message's date
+        if (messageDate !== lastDate) {
+            // Create and insert a date card
+            const dateCard = document.createElement("div");
+            dateCard.classList.add("date-card"); // Style this in CSS
+            dateCard.innerText = messageDate;
+            chatBody.appendChild(dateCard);
+            lastDate = messageDate; // Update the last date to current message's date
+        }
 
         addMessageToChatBody(message.body ?? message.message, message.sender, formattedTime);
     });

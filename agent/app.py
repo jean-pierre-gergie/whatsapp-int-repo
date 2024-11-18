@@ -34,20 +34,38 @@ create_dynamic_namespaces(socketio=socketio,
 @app.route('/agent_server')
 @verify_jwt
 def index():
-
+    # Get the foundation name from the query parameters
     foundation_name = request.args.get('foundation_name')
+    logger.info(f"Received request with foundation_name: {foundation_name}")
+
+    # Construct the namespace dynamically
     name_space = f"/agent/agent_namespace/{foundation_name}"
-    base_path = '/agent' if app.config['PRODUCTION'] else ''
+    logger.info(f"Constructed namespace: {name_space}")
 
-    return render_template('index.html',
-                           socket_url='https://www.omnichanneltv.com/agent/socket.io/',
-                           name_space = name_space,
-                           foundation_name=foundation_name,
-                           base_path=base_path
-                           )
+    # Dynamically set the base path
+    base_path = '/agent' if app.config.get('PRODUCTION', False) else ''
+    logger.info(f"Determined base path: {base_path}")
 
+    # Determine the environment
+    flask_env = os.getenv('FLASK_ENV', 'development')  # Default to 'development' if not set
+    logger.info(f"Environment detected: {flask_env}")
 
+    # Dynamically select the socket URL based on the environment
+    if flask_env == 'production':
+        socket_url = os.getenv('SOCKET_URL_PRODUCTION', 'https://www.omnichanneltv.com/agent/socket.io/')
+    else:
+        socket_url = os.getenv('SOCKET_URL_DEVELOPMENT', 'http://localhost:5001/socket.io/')
+    logger.info(f"Selected socket URL: {socket_url}")
 
+    # Render the template and log the final configuration
+    logger.info(f"Rendering template with base_path: {base_path}, socket_url: {socket_url}, name_space: {name_space}")
+    return render_template(
+        'index.html',
+        socket_url=socket_url,
+        name_space=name_space,
+        foundation_name=foundation_name,
+        base_path=base_path
+    )
 
 if __name__ == '__main__':  
     logger.info("Starting Flask-SocketIO server")

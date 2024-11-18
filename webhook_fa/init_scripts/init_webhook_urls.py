@@ -2,6 +2,8 @@ import os
 import requests
 import logging
 from dotenv import load_dotenv
+from urllib.parse import urlparse
+
 
 # Initialize logging
 logger = logging.getLogger(__name__)
@@ -63,19 +65,43 @@ def set_webhook_config(foundation_name, api_key, webhook_base_url, max_attempts=
 
 
 def load_environment_variables():
+    """
+    Load environment variables based on FLASK_ENV and validate them.
+    """
+    # Configure the logger
+    logger = logging.getLogger("LOAD_ENV_VAR")
+    logger.setLevel(logging.DEBUG)
+    handler = logging.StreamHandler()  # Logs to the console
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    handler.setFormatter(formatter)
+    if not logger.hasHandlers():
+        logger.addHandler(handler)
+
     try:
-        # Load and log webhook setting
+        # Determine the environment
+        flask_env = os.getenv('FLASK_ENV', 'development').lower()
+        logger.debug(f"FLASK_ENV: {flask_env}")
+
+        # Load and log the webhook setting
         set_webhook = os.getenv('SET_WEBHOOK_URL') == 'TRUE'
         logger.debug(f"SET_WEBHOOK_URL: {set_webhook}")
-        
-        # Load and log base URL
-        webhook_base_url = os.getenv('WEBHOOK_BASE_URL')
-        if not webhook_base_url:
-            raise ValueError("WEBHOOK_BASE_URL is not set or empty.")
-        
-        logger.debug(f"WEBHOOK_BASE_URL: {webhook_base_url}")
 
-        # Extract foundation names and log each found API key
+        # Load the appropriate base URL based on FLASK_ENV
+        if flask_env == 'production':
+            webhook_base_url = os.getenv('WEBHOOK_BASE_URL', '')
+        else:  # Development or other environments
+            webhook_base_url = os.getenv('NGROK_BASE_URL', '')
+
+        if not webhook_base_url:
+            raise ValueError(f"{'WEBHOOK_BASE_URL' if flask_env == 'production' else 'NGROK_BASE_URL'} is not set or empty.")
+
+        # Validate URL format
+        parsed_url = urlparse(webhook_base_url)
+        if not parsed_url.scheme or not parsed_url.netloc:
+            raise ValueError(f"Invalid URL: {webhook_base_url}")
+        logger.debug(f"Validated webhook_base_url: {webhook_base_url}")
+
+        # Extract foundation names and log API keys
         foundations_dep = []
         for key, value in os.environ.items():
             if key.endswith('_360_API_KEY'):
@@ -92,6 +118,7 @@ def load_environment_variables():
 
         # Return the gathered information in a dictionary
         result = {
+            'flask_env': flask_env,
             'set_webhook': set_webhook,
             'webhook_base_url': webhook_base_url,
             'foundations_dep': foundations_dep

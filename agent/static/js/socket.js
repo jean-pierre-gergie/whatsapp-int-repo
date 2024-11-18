@@ -10,23 +10,32 @@ if (!jwtToken) {
 
 // Read the nameSpace value from the window.config object
 const nameSpace = window.config.nameSpace;
+const socketUrl = window.config.socketUrl;
 
 // Initialize the socket connection with the dynamic namespace
-export const socket = initSocket(jwtToken, nameSpace);
+export const socket = initSocket(jwtToken, socketUrl, nameSpace);
 
-function initSocket(jwtToken, nameSpace) {
-    // const socket = io(`http://localhost:5001${nameSpace}`, {
-    //     transports: ['websocket', 'polling'],
-    //     withCredentials: true,
-    //     auth: { token: jwtToken }
-    // });
+function initSocket(jwtToken, socketUrl, nameSpace) {
+    // Determine if the path is needed (e.g., for production)
+    const isProduction = socketUrl.startsWith('https://') || socketUrl.includes('www.omnichanneltv.com');
 
-    const socket = io(`https://www.omnichanneltv.com${nameSpace}`, {
-        path: '/agent/socket.io',
-        transports: ['websocket', 'polling'],
-        withCredentials: true,
-        auth: { token: jwtToken }
-    });
+    let socket;
+    
+    if (isProduction) {
+        socket = io(`https://www.omnichanneltv.com${nameSpace}`, {
+            path: '/agent/socket.io',
+            transports: ['websocket', 'polling'],
+            withCredentials: true,
+            auth: { token: jwtToken }
+        });
+    } else {
+        socket = io(`http://localhost:5001${nameSpace}`, {
+            transports: ['websocket', 'polling'],
+            withCredentials: true,
+            auth: { token: jwtToken }
+        });
+    }
+    
 
     socket.on('connect', () => console.log("Successfully connected"));
     socket.on('connect_ack', (data) => {
