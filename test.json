@@ -1,0 +1,344 @@
+{
+    "count": 7,
+    "filters": {},
+    "limit": 1000,
+    "offset": 0,
+    "sort": [
+        "id"
+    ],
+    "total": 7,
+    "waba_templates": [
+        {
+            "category": "MARKETING",
+            "components": [
+                {
+                    "format": "TEXT",
+                    "text": "HELLO YES OR NO ?",
+                    "type": "HEADER"
+                },
+                {
+                    "text": "SAY YES OR NO ....",
+                    "type": "BODY"
+                },
+                {
+                    "text": "THANK YOU",
+                    "type": "FOOTER"
+                },
+                {
+                    "buttons": [
+                        {
+                            "text": "YES",
+                            "type": "QUICK_REPLY"
+                        },
+                        {
+                            "text": "NO",
+                            "type": "QUICK_REPLY"
+                        }
+                    ],
+                    "type": "BUTTONS"
+                }
+            ],
+            "created_at": "2024-07-25T12:19:45Z",
+            "created_by": {
+                "user_id": "FXCxctU",
+                "user_name": "Maronite foundation"
+            },
+            "external_id": "345120395306798",
+            "id": "gcPPsK9E4cdGQIKFPL9PWT",
+            "language": "en",
+            "modified_at": "2024-11-17T13:28:42Z",
+            "modified_by": {
+                "user_id": "system",
+                "user_name": "system"
+            },
+            "name": "yes_no",
+            "namespace": "72fdaa57_335e_46f2_86fe_ce7983bffc8d",
+            "partner_id": "l2Wjy9PA",
+            "quality_score": {
+                "reasons": null,
+                "score": "UNKNOWN"
+            },
+            "rejected_reason": "NONE",
+            "status": "approved",
+            "updated_external": true,
+            "waba_account_id": "oh0CyFWA"
+        },
+        {
+            "category": "UTILITY",
+            "components": [
+                {
+                    "text": "Hello! 🌟 Welcome to the Maronite Foundation's new WhatsApp number.",
+                    "type": "BODY"
+                }
+            ],
+            "created_at": "2023-12-28T12:44:58Z",
+            "created_by": {
+                "user_id": "FXCxctU",
+                "user_name": "Maronite foundation"
+            },
+            "external_id": "1078618929802893",
+            "id": "lFOaIX8K3Yd4vATwYWA5WT",
+            "language": "en",
+            "modified_at": "2024-11-17T13:28:42Z",
+            "modified_by": {
+                "user_id": "system",
+                "user_name": "system"
+            },
+            "name": "welcome_message",
+            "namespace": "72fdaa57_335e_46f2_86fe_ce7983bffc8d",
+            "partner_id": "l2Wjy9PA",
+            "quality_score": {
+                "reasons": null,
+                "score": "UNKNOWN"
+            },
+            "rejected_reason": "NONE",
+            "status": "approved",
+            "updated_external": true,
+            "waba_account_id": "oh0CyFWA"
+        },
+        {
+            "category": "MARKETING",
+            "components": [
+                {
+                    "format": "TEXT",
+                    "text": "Hello Test",
+                    "type": "HEADER"
+                },
+                {
+                    "text": "Hello from JPG",
+                    "type": "BODY"
+                }
+            ],
+            "created_at": "2024-11-10T14:21:25Z",
+            "created_by": {
+                "user_id": "system",
+                "user_name": "System account"
+            },
+            "external_id": "1238386250704477",
+            "id": "mNv6Z7qmZJynnBFKBJTwWT",
+            "language": "en_GB",
+            "modified_at": "2024-11-17T13:28:42Z",
+            "modified_by": {
+                "user_id": "system",
+                "user_name": "system"
+            },
+            "name": "test_hello_jpg",
+            "namespace": "72fdaa57_335e_46f2_86fe_ce7983bffc8d",
+            "partner_id": "l2Wjy9PA",
+            "quality_score": {
+                "reasons": null,
+                "score": "UNKNOWN"
+            },
+            "rejected_reason": "NONE",
+            "status": "approved",
+            "updated_external": true,
+            "waba_account_id": "oh0CyFWA"
+        },
+        {
+            "category": "UTILITY",
+            "components": [
+                {
+                    "text": "Hello! 🌟 Welcome to the Maronite Foundation's new WhatsApp number.",
+                    "type": "BODY"
+                },
+                {
+                    "buttons": [
+                        {
+                            "text": "Stop Receiving Updates",
+                            "type": "QUICK_REPLY"
+                        }
+                    ],
+                    "type": "BUTTONS"
+                }
+            ],
+            "created_at": "2024-01-04T14:11:23Z",
+            "created_by": {
+                "user_id": "FXCxctU",
+                "user_name": "Maronite foundation"
+            },
+            "external_id": "248984201550294",
+            "id": "nI0wOodQepZ5vV18yUc9WT",
+            "language": "en",
+            "modified_at": "2024-11-17T13:28:42Z",
+            "modified_by": {
+                "user_id": "system",
+                "user_name": "system"
+            },
+            "name": "welcome_message_with_opt_out",
+            "namespace": "72fdaa57_335e_46f2_86fe_ce7983bffc8d",
+            "partner_id": "l2Wjy9PA",
+            "quality_score": {
+                "reasons": null,
+                "score": "UNKNOWN"
+            },
+            "rejected_reason": "NONE",
+            "status": "approved",
+            "updated_external": true,
+            "waba_account_id": "oh0CyFWA"
+        },
+        {
+            "category": "MARKETING",
+            "components": [
+                {
+                    "example": {
+                        "header_handle": [
+                            "https://scontent.whatsapp.net/v/t61.29466-34/417739669_1537613946823204_7919729617079386196_n.png?ccb=1-7&_nc_sid=8b1bef&_nc_ohc=JORdG6-__TwQ7kNvgFaZLlp&_nc_zt=3&_nc_ht=scontent.whatsapp.net&edm=AH51TzQEAAAA&_nc_gid=AH66JuC8QoSgazvX9aWfGgl&oh=01_Q5AaIBynhRyi-QcYQ9VvtTUs_S3qSmt5xrVo_6MKkF146xDY&oe=6761459D"
+                        ]
+                    },
+                    "format": "IMAGE",
+                    "type": "HEADER"
+                },
+                {
+                    "text": "Your Lebanese heritage is a part of who you are! Reconnect with your roots and reclaim your Lebanese citizenship today.\nApply now through the link below\nhttps://maronitefoundation.org/LebaneseCitizenship/en/apply/Step1",
+                    "type": "BODY"
+                },
+                {
+                    "buttons": [
+                        {
+                            "text": "Apply now",
+                            "type": "URL",
+                            "url": "https://maronitefoundation.org/LebaneseCitizenship/en/apply/Step1"
+                        }
+                    ],
+                    "type": "BUTTONS"
+                }
+            ],
+            "created_at": "2024-06-07T12:28:15Z",
+            "created_by": {
+                "user_id": "FXCxctU",
+                "user_name": "Maronite foundation"
+            },
+            "external_id": "1537613943489871",
+            "id": "UpoUZGRwb4lJsXeILv6rWT",
+            "language": "en",
+            "modified_at": "2024-11-17T13:28:42Z",
+            "modified_by": {
+                "user_id": "system",
+                "user_name": "system"
+            },
+            "name": "test_image",
+            "namespace": "72fdaa57_335e_46f2_86fe_ce7983bffc8d",
+            "partner_id": "l2Wjy9PA",
+            "quality_score": {
+                "reasons": null,
+                "score": "UNKNOWN"
+            },
+            "rejected_reason": "NONE",
+            "status": "approved",
+            "updated_external": true,
+            "waba_account_id": "oh0CyFWA"
+        },
+        {
+            "category": "MARKETING",
+            "components": [
+                {
+                    "example": {
+                        "header_handle": [
+                            "https://scontent.whatsapp.net/v/t61.29466-34/442444360_2757804404394547_5759067298810132196_n.png?ccb=1-7&_nc_sid=8b1bef&_nc_ohc=fftgW1gmZDEQ7kNvgEzFdUJ&_nc_zt=3&_nc_ht=scontent.whatsapp.net&edm=AH51TzQEAAAA&_nc_gid=AH66JuC8QoSgazvX9aWfGgl&oh=01_Q5AaIMSJE1gIfUXypjA2ebsxeXJhCph5IrMZ5HF9froEhy2N&oe=676171F1"
+                        ]
+                    },
+                    "format": "IMAGE",
+                    "type": "HEADER"
+                },
+                {
+                    "text": "إعلان تطويب البطريرك إسطفان الدّويهي الإهدني \" منارة علم و قداسة\"\nتدعوكم المؤسسة المارونية للإنتشار للمشاركة في حدث تطويب البطريرك اسطفان الدويهي في بكركي يوم الجمعة ٢ آب الساعة ٨،٣٠ مساء , و في قدّاس الشكر يوم السبت ٣ آب الساعة ٦،٣٠ مساء في مسقط رأسه في إهدن.\nللمشاركة الرجاء الحجز قبل ٢٥ تموز بالدخول على موقع\nwww.patriarchdouaihy.com\nأو عبر مسح المربّع الموجود في الدعوة من أجل إمكانية الدخول إلى مكان الاحتفال.",
+                    "type": "BODY"
+                },
+                {
+                    "buttons": [
+                        {
+                            "text": "للحجز",
+                            "type": "URL",
+                            "url": "http://www.patriarchdouaihy.com/"
+                        },
+                        {
+                            "text": "إلغاء الاشتراك",
+                            "type": "QUICK_REPLY"
+                        }
+                    ],
+                    "type": "BUTTONS"
+                }
+            ],
+            "created_at": "2024-07-25T06:15:52Z",
+            "created_by": {
+                "user_id": "FXCxctU",
+                "user_name": "Maronite foundation"
+            },
+            "external_id": "2757804401061214",
+            "id": "vR9oHANxXxonZtUkRoomWT",
+            "language": "ar",
+            "modified_at": "2024-11-17T13:28:42Z",
+            "modified_by": {
+                "user_id": "system",
+                "user_name": "system"
+            },
+            "name": "marestephan",
+            "namespace": "72fdaa57_335e_46f2_86fe_ce7983bffc8d",
+            "partner_id": "l2Wjy9PA",
+            "quality_score": {
+                "reasons": null,
+                "score": "UNKNOWN"
+            },
+            "rejected_reason": "NONE",
+            "status": "approved",
+            "updated_external": true,
+            "waba_account_id": "oh0CyFWA"
+        },
+        {
+            "category": "MARKETING",
+            "components": [
+                {
+                    "example": {
+                        "header_handle": [
+                            "https://scontent.whatsapp.net/v/t61.29466-34/441275833_990476642822877_3152553397321361113_n.jpg?ccb=1-7&_nc_sid=8b1bef&_nc_ohc=arDucmpkn-AQ7kNvgFqy1qI&_nc_zt=3&_nc_ht=scontent.whatsapp.net&edm=AH51TzQEAAAA&_nc_gid=AH66JuC8QoSgazvX9aWfGgl&oh=01_Q5AaIAJcTa6G3JSl0tk089tVFb3lOfTGUpbq5UYoD0sXtFLI&oe=6761661E"
+                        ]
+                    },
+                    "format": "IMAGE",
+                    "type": "HEADER"
+                },
+                {
+                    "text": "إعلان تطويب البطريرك إسطفان الدّويهي الإهدني \" منارة علم و قداسة\"\nتدعوكم المؤسسة المارونية للإنتشار للمشاركة في حدث تطويب البطريرك اسطفان الدويهي في بكركي يوم الجمعة ٢ آب الساعة ٨،٣٠ مساء , و في قدّاس الشكر يوم السبت ٣ آب الساعة ٦،٣٠ مساء في مسقط رأسه في إهدن.\nللمشاركة الرجاء الحجز عبر مسح المربّع الموجود في الدعوة أو بالدخول على موقع\nwww.patriarchdouaihy.com",
+                    "type": "BODY"
+                },
+                {
+                    "buttons": [
+                        {
+                            "text": "للحجز",
+                            "type": "URL",
+                            "url": "http://www.patriarchdouaihy.com/"
+                        },
+                        {
+                            "text": "إلغاء الاشتراك",
+                            "type": "QUICK_REPLY"
+                        }
+                    ],
+                    "type": "BUTTONS"
+                }
+            ],
+            "created_at": "2024-07-29T08:54:45Z",
+            "created_by": {
+                "user_id": "FXCxctU",
+                "user_name": "Maronite foundation"
+            },
+            "external_id": "990476639489544",
+            "id": "ZqBGxfOm8A3HVfzOjlVeWT",
+            "language": "ar",
+            "modified_at": "2024-11-17T13:28:42Z",
+            "modified_by": {
+                "user_id": "system",
+                "user_name": "system"
+            },
+            "name": "marestephan_v2",
+            "namespace": "72fdaa57_335e_46f2_86fe_ce7983bffc8d",
+            "partner_id": "l2Wjy9PA",
+            "quality_score": {
+                "reasons": null,
+                "score": "UNKNOWN"
+            },
+            "rejected_reason": "NONE",
+            "status": "approved",
+            "updated_external": true,
+            "waba_account_id": "oh0CyFWA"
+        }
+    ]
+}

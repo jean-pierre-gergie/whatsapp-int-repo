@@ -59,6 +59,7 @@ def index():
 
     # Render the template and log the final configuration
     logger.info(f"Rendering template with base_path: {base_path}, socket_url: {socket_url}, name_space: {name_space}")
+    logger.info(f"Foundation Name {foundation_name}")
     return render_template(
         'index.html',
         socket_url=socket_url,

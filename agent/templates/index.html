@@ -62,8 +62,9 @@
         // Display the foundation name directly in the chat header
         document.addEventListener('DOMContentLoaded', () => {
             const foundationNameElement = document.getElementById('foundation-name');
-            const foundationName = window.config.foundation_name;
-
+            
+            const foundationName = window.config.foundationName;
+            console.log(foundationName)
             if (foundationName) {
                 foundationNameElement.textContent = foundationName;
             }
