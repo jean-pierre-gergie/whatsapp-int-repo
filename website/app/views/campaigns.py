@@ -324,7 +324,7 @@ def send_campaign_messages():
 
     selected_campaign = request.form['campaign']
     selected_template = request.form['campaign_template']
-    campaign_name = request.form['campaign_name']
+    campaign_name = request.form['campaign_name'].strip()
     campaign_timing = request.form['campaign_timing']  
     scheduled_date_local = request.form['scheduled_date_local']
     scheduled_date = request.form['scheduled_date_utc']
@@ -581,11 +581,22 @@ def generate_report():
 @role_required(['admin', 'user']) 
 def download_csv(status):
     campaign_name = request.args.get('campaign_name')
+    
+    if not campaign_name:
+        current_app.logger.error("Campaign name is missing in request args.")
+        return jsonify({'success': False, 'message': 'Missing campaign name parameter'}), 400
 
     session_configs =get_session_foundation_config()
     whatsapp_data_db = session_configs.get('whatsapp_data_db')
 
+    logger.debug(f"Session configs: {session_configs}")
+    logger.debug(f"Using database: {whatsapp_data_db}")
+
     report_data = get_report(campaign_name,whatsapp_data_db=whatsapp_data_db)
+
+    if not report_data:
+        current_app.logger.error(f"No report data found for campaign {campaign_name}.")
+        return jsonify({'success': False, 'message': f'No report data found for campaign {campaign_name}'}), 404
     
     if status == 'all':
         # Combine all message statuses into a single list

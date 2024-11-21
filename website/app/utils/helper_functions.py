@@ -347,10 +347,15 @@ def get_report(campaign_name,whatsapp_data_db):
     campaign_responses_collection = whatsapp_data_db.campaign_responses
 
     # Fetch campaign responses from the database
-    logger.info(f"Fetching campaign responses from the database for campaign: {campaign_name}")
-    campaign_responses = list(campaign_responses_collection.find({
-        'campaign_name': campaign_name
-    }))
+    logger.info(f"Querying campaign_responses_collection with campaign_name: {campaign_name}")
+    try:
+        campaign_responses = list(campaign_responses_collection.find({
+            'campaign_name': campaign_name
+        }))
+    except Exception as e:
+        logger.error(f"Error querying campaign_responses_collection: {e}")
+        return None
+    logger.info(f"Campaign responses fetched: {campaign_responses}")
 
     if not campaign_responses:
         logger.warning(f"No campaign responses found for campaign: {campaign_name}")
