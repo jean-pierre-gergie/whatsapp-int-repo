@@ -745,12 +745,11 @@ def dynamic_redirect():
 #     # Create a new token or get the existing one
     current_identity = get_jwt_identity()  # Get the current user's identity
     token = create_access_token(identity=current_identity,expires_delta=timedelta(hours=1))    # Create a new token with the same identity
-    agent_server_url = os.getenv('CHAT_AGENT_SERVER_URL')
+    agent_server_url = os.getenv('CHAT_AGENT_SERVER_URL_PRODUCTION')
 
     session_configs = get_session_foundation_config()
     foundation_name = session_configs.get('foundation_name')
 
-    agent_server_url = os.getenv('CHAT_AGENT_SERVER_URL')
     redirect_url = f"{agent_server_url}?foundation_name={foundation_name}"
     logger.info(f"redirecting to {redirect_url}")
 
