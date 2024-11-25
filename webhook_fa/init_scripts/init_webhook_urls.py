@@ -3,7 +3,8 @@ import requests
 import logging
 from dotenv import load_dotenv
 from urllib.parse import urlparse
-
+import datetime
+import jwt
 
 # Initialize logging
 logger = logging.getLogger(__name__)
@@ -25,16 +26,38 @@ logger.addHandler(console_handler)
 # Load environment variables
 load_dotenv()
 
+def generate_jwt_token(secret_key, expiration_minutes=30):
+    """
+    Generate a JWT token with an expiration time.
+    """
+    payload = {
+        'iat': datetime.datetime.utcnow(),
+        'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=expiration_minutes),
+        'sub': 'webhook-auth'  # Subject can be customized as needed
+    }
+    return jwt.encode(payload, secret_key, algorithm='HS256')
+
+
 def set_webhook_config(foundation_name, api_key, webhook_base_url, max_attempts=2):
     try:
+
         url = 'http://waba.360dialog.io/v1/configs/webhook'
+        secret_key = os.getenv('JWT_SECRET_KEY')
+        
+
+        jwt_token = generate_jwt_token(secret_key)
+
+
         headers = {
             'Content-Type': 'application/json',
             'D360-API-KEY': api_key
         }
         expected_url = f"{webhook_base_url}/webhook/{foundation_name}"
         data = {
-            "url": expected_url
+            "url": expected_url,
+                "headers": {
+                "Authorization": f"Bearer {jwt_token}"
+                }
         }
 
         for attempt in range(1, max_attempts + 1):
