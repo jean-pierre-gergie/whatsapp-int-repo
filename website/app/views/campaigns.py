@@ -700,70 +700,72 @@ def view_collection_content():
 # TODO for deployment
 
 
-@bp.route('/dynamic_redirect', methods=['GET'])
-@jwt_required()
-@role_required(['admin', 'user'])
-def dynamic_redirect():
-    # Get the current user's identity
-    current_identity = get_jwt_identity()
-
-    # Create a new JWT token
-    token = create_access_token(identity=current_identity, expires_delta=timedelta(hours=1))
-
-    # Check the environment and select the appropriate URL
-    flask_env = os.getenv('FLASK_ENV', 'development')  # Default to 'development' if not set
-    if flask_env == 'production':
-        agent_server_url = os.getenv('CHAT_AGENT_SERVER_URL_PRODUCTION')  # Production URL
-    else:
-        agent_server_url = os.getenv('CHAT_AGENT_SERVER_URL_DEVELOPMENT')  # Development URL
-
-    # Get foundation-specific session configs
-    session_configs = get_session_foundation_config()
-    foundation_name = session_configs.get('foundation_name', 'default')
-
-    # Construct the redirect URL
-    redirect_url = f"{agent_server_url}?foundation_name={foundation_name}"
-    logger.info(f"Redirecting to {redirect_url}")
-
-    # Prepare the response
-    response = make_response(redirect(redirect_url))
-    response.set_cookie(
-        'jwt_token',
-        token,
-        httponly=False,
-        secure=(flask_env == 'production'),  # Use secure cookies only in production
-        samesite='None' if flask_env == 'production' else 'Strict',  # Adjust SameSite attribute based on environment
-        domain='.omnichanneltv.com' if flask_env == 'production' else None  # Domain only for production
-    )
-    return response
 # @bp.route('/dynamic_redirect', methods=['GET'])
 # @jwt_required()
 # @role_required(['admin', 'user'])
 # def dynamic_redirect():
-# #     # Create a new token or get the existing one
-#     current_identity = get_jwt_identity()  # Get the current user's identity
-#     token = create_access_token(identity=current_identity,expires_delta=timedelta(hours=1))    # Create a new token with the same identity
-#     agent_server_url = os.getenv('CHAT_AGENT_SERVER_URL')
+#     # Get the current user's identity
+#     current_identity = get_jwt_identity()
 
+#     # Create a new JWT token
+#     token = create_access_token(identity=current_identity, expires_delta=timedelta(hours=1))
+
+#     # Check the environment and select the appropriate URL
+#     flask_env = os.getenv('FLASK_ENV', 'development')  # Default to 'development' if not set
+#     if flask_env == 'production':
+#         agent_server_url = os.getenv('CHAT_AGENT_SERVER_URL_PRODUCTION')  # Production URL
+#     else:
+#         agent_server_url = os.getenv('CHAT_AGENT_SERVER_URL_DEVELOPMENT')  # Development URL
+
+#     # Get foundation-specific session configs
 #     session_configs = get_session_foundation_config()
-#     foundation_name = session_configs.get('foundation_name')
+#     foundation_name = session_configs.get('foundation_name', 'default')
 
-#     agent_server_url = os.getenv('CHAT_AGENT_SERVER_URL')
+#     # Construct the redirect URL
 #     redirect_url = f"{agent_server_url}?foundation_name={foundation_name}"
-#     logger.info(f"redirecting to {redirect_url}")
+#     logger.info(f"Redirecting to {redirect_url}")
 
-
-# #     logger.info(f"redirecting to {agent_server_url}")
+#     # Prepare the response
 #     response = make_response(redirect(redirect_url))
 #     response.set_cookie(
-#         'jwt_token', 
-#         token, 
-#         httponly=False, 
-#         secure=True, 
-#         samesite='None', 
-#         domain='.omnichanneltv.com'
+#         'jwt_token',
+#         token,
+#         httponly=False,
+#         secure=(flask_env == 'production'),  # Use secure cookies only in production
+#         samesite='None' if flask_env == 'production' else 'Strict',  # Adjust SameSite attribute based on environment
+#         domain='.omnichanneltv.com' if flask_env == 'production' else None  # Domain only for production
 #     )
 #     return response
+
+
+@bp.route('/dynamic_redirect', methods=['GET'])
+@jwt_required()
+@role_required(['admin', 'user'])
+def dynamic_redirect():
+#     # Create a new token or get the existing one
+    current_identity = get_jwt_identity()  # Get the current user's identity
+    token = create_access_token(identity=current_identity,expires_delta=timedelta(hours=1))    # Create a new token with the same identity
+    agent_server_url = os.getenv('CHAT_AGENT_SERVER_URL')
+
+    session_configs = get_session_foundation_config()
+    foundation_name = session_configs.get('foundation_name')
+
+    agent_server_url = os.getenv('CHAT_AGENT_SERVER_URL')
+    redirect_url = f"{agent_server_url}?foundation_name={foundation_name}"
+    logger.info(f"redirecting to {redirect_url}")
+
+
+#     logger.info(f"redirecting to {agent_server_url}")
+    response = make_response(redirect(redirect_url))
+    response.set_cookie(
+        'jwt_token', 
+        token, 
+        httponly=False, 
+        secure=True, 
+        samesite='None', 
+        domain='.omnichanneltv.com'
+    )
+    return response
 
 
 # @bp.route('/dynamic_redirect', methods=['GET'])
