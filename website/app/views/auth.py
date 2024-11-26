@@ -63,6 +63,7 @@ def login():
                     foundations_collection = current_app.mongo['foundations_db']['foundations']
                     foundation_config = foundations_collection.find_one({"foundation": foundation_name})
 
+                    
                     if foundation_config:
                         logger.debug(f"Foundation configuration found for {foundation_name}: {foundation_config}")
 
