@@ -4,7 +4,7 @@
         "username": "jpgergie",
         "user_password": "$2b$12$JJjrt4RGbMkiXlwVTj4qh.69K1HZAH3pE0kRmkqF.4DG4kJJLL/K6",
         "role": "admin",
-        "foundation":"maronite"
+        "foundation":"maronite_76188413"
     }
     ,
     {
@@ -12,7 +12,7 @@
         "username": "rtenn",
         "user_password": "$2b$12$JJjrt4RGbMkiXlwVTj4qh.69K1HZAH3pE0kRmkqF.4DG4kJJLL/K6",
         "role": "admin",
-        "foundation":"maronite"
+        "foundation":"maronite_76188413"
     }
     ,
     {
@@ -20,7 +20,7 @@
         "username": "dfahed",
         "user_password": "$2b$12$JJjrt4RGbMkiXlwVTj4qh.69K1HZAH3pE0kRmkqF.4DG4kJJLL/K6",
         "role": "user",
-        "foundation":"maronite"
+        "foundation":"maronite_76188413"
     }
     
 ]
