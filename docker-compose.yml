@@ -95,6 +95,25 @@ services:
     networks:
     - network_internal  
 
+  celery_beat:
+    build:
+      context: ./microservice  # Uses the same codebase for FastAPI and Celery
+    container_name: celery_beat
+    restart: unless-stopped
+    
+    volumes:
+      - ./microservice:/app
+
+    depends_on:
+      - rabbitmq
+      - mongodb
+    env_file:
+      - .env 
+    command: celery -A celery_app beat --loglevel=info  # Start Celery beat
+
+    networks:
+    - network_internal 
+
 
   rabbitmq:
     image: "rabbitmq:3-management"  # RabbitMQ image with management plugin

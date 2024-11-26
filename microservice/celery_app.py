@@ -1,5 +1,5 @@
 from celery import Celery
-from celery import states
+from celery.schedules import crontab
 import time
 from dotenv import load_dotenv
 import os
@@ -13,8 +13,11 @@ from celery.utils.log import get_task_logger
 from utils.send_campaigns_helpers import *
 from utils.chat_rooms_helper import WhatsAppChatCampaignHandler
 from utils.manage_founadtion_session import get_dependencies_by_foundation
+from utils.webhook_jwt_refresh_helper import refresh_jwt
 from dateutil import parser
 import asyncio
+
+
 
 logger = get_task_logger(__name__)
 
@@ -45,7 +48,13 @@ celery_app = Celery(
     broker= rabbit_url ,# RabbitMQ as broker
     backend= f"{mongo_url}/celery_backend"  # MongoDB as result backend
 )
-# run the stask with status 
+
+celery_app.conf.beat_schedule = {
+    'refresh-webhook-jwt-token': {
+        'task': 'tasks.refresh_webhook_jwt_token',
+        'schedule':crontab(minute='*/10') ,  # Every 5 seconds
+    },
+}
 
 
 @celery_app.task(bind=True)
@@ -268,3 +277,18 @@ def send_message_campaign(self, foundation_name, campaign_timing, scheduled_date
             'failed_percentage': f'{(len(failed_rows) / total_members) * 100:.2f}%' if total_members > 0 else '0.00%'
         }
     }
+
+
+
+
+@celery_app.task(name='tasks.refresh_webhook_jwt_token' ,bind = True)
+def refresh_webhook_jwt_token(self):
+    logger = get_task_logger(__name__)
+    logger.setLevel(logging.DEBUG)
+    logger.info(f"BEAT --- Refreshing JWT Token")
+    refresh_jwt(logger)
+    logger.info(f"BEAT --- Done updating JWT Token")
+    
+
+
+

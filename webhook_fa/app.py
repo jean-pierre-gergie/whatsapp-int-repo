@@ -32,7 +32,10 @@ pymongo_logger.setLevel(logging.ERROR)
 app = FastAPI()
 
 create_collections()
-init_webhook_urls()
+
+# TODO this function is deprecated and the urls are being set by celery beat 
+# init_webhook_urls()
+
 foundation_handlers = create_handlers_for_all_foundations()
 
 @app.on_event("startup")
