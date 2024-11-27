@@ -1,5 +1,6 @@
 from celery import Celery
 from celery.schedules import crontab
+from celery.signals import worker_ready 
 import time
 from dotenv import load_dotenv
 import os
@@ -289,6 +290,9 @@ def refresh_webhook_jwt_token(self):
     refresh_jwt(logger)
     logger.info(f"BEAT --- Done updating JWT Token")
     
-
+@worker_ready.connect
+def call_refresh_token_on_startup(sender, **kwargs):
+    logger.info("Worker started, calling refresh_webhook_jwt_token immediately...")
+    celery_app.send_task('tasks.refresh_webhook_jwt_token')
 
 
