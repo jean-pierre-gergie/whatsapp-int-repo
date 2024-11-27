@@ -67,13 +67,16 @@ def get_foundation_dependencies(foundation_name):
 
         api_key_360 = foundation_doc.get("api_key", "api_key")
 
+        auto_reply_message = foundation_doc.get("auto_reply_message",f"auto_reply_message")
+
         logger.debug(f"Successfully retrieved dependencies for foundation: {foundation_name}")
         return {
             "raw_collection": raw_collection,
             "business_to_user_collection": business_to_user_collection,
             "user_to_business_collection": user_to_business_collection,
             "chat_rooms_collection": chat_rooms_collection,
-            "api_key_360":api_key_360
+            "api_key_360":api_key_360,
+            "auto_reply_message":auto_reply_message
         }
     except ValueError as ve:
         logger.error(f"ValueError: {ve}")
@@ -128,7 +131,8 @@ def create_handlers_for_all_foundations():
 
                 
 
-                auto_reply_handler = AutoReplyHandler(chat_rooms_collection=dependencies['chat_rooms_collection'],
+                auto_reply_handler = AutoReplyHandler(auto_reply_message =dependencies['auto_reply_message'],
+                                                      chat_rooms_collection=dependencies['chat_rooms_collection'],
                                                       api_key_360=dependencies['api_key_360'],
                                                       logger=logger)
                 handler = WhatsAppDataHandler(
