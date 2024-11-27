@@ -85,6 +85,7 @@ services:
     volumes:
       - ./microservice:/app
 
+
     depends_on:
       - rabbitmq
       - mongodb
@@ -103,6 +104,7 @@ services:
     
     volumes:
       - ./microservice:/app
+      # - ./beat_schedule_data/celerybeat-schedule:/app/celerybeat-schedule # Persist the beat schedule
 
     depends_on:
       - rabbitmq
@@ -147,6 +149,8 @@ services:
 volumes:
   mongo_data:
     driver: local
+  # beat_schedule_data:
+    # driver: local
 networks:
   network_internal:
     driver: bridge

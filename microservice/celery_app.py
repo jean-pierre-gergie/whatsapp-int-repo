@@ -52,7 +52,7 @@ celery_app = Celery(
 celery_app.conf.beat_schedule = {
     'refresh-webhook-jwt-token': {
         'task': 'tasks.refresh_webhook_jwt_token',
-        'schedule':crontab(minute='*/10') ,  # Every 5 seconds
+        'schedule':crontab(minute='*/59') ,  
     },
 }
 
