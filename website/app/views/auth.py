@@ -29,80 +29,89 @@ logging.basicConfig(level=logging.DEBUG,
 # TODO : add a function in session_config_helper to set the session configs
 @bp.route('/', methods=['GET', 'POST'])
 def login():
-    
-    user_credentials_collection  = current_app.mongo['user_credentials_db']['user_credentials']
- 
+    user_credentials_collection = current_app.mongo['user_credentials_db']['user_credentials']
 
     if request.method == 'POST':
         username = request.form['username']
         password = request.form['password'].encode('utf-8')
 
         logger.debug(f"Attempting login for username: {username}")
-        
-        # Fetch user from the database
-        user = user_credentials_collection.find_one({'username': username})
-        
-        if user:
-            logger.debug(f"User {username} found in the database.")
-            stored_password = user.get('user_password')
 
-            # Convert the stored password to bytes if it's a string
-            if isinstance(stored_password, str):
-                stored_password = stored_password.encode('utf-8')
-            
-            # Verify the password
-            if bcrypt.checkpw(password, stored_password):
-                logger.debug(f"Password for user {username} is correct.")
+        try:
+            # Fetch user from the database
+            user = user_credentials_collection.find_one({'username': username})
 
-                # Fetch the role from the user document
-                role = user.get('role', 'user')  # Default to 'user' role if not specified
-                
+            if user:
+                logger.debug(f"User {username} found in the database.")
+                stored_password = user.get('user_password')
 
-                foundation_name = user.get('foundation')
+                # Convert the stored password to bytes if it's a string
+                if isinstance(stored_password, str):
+                    stored_password = stored_password.encode('utf-8')
 
-                logger.debug(f"User {username} has role: {role} is in foundation {foundation_name}")
+                # Verify the password
+                if bcrypt.checkpw(password, stored_password):
+                    logger.debug(f"Password for user {username} is correct.")
 
-                foundations_collection = current_app.mongo['foundations_db']['foundations']
-                foundations = list(foundations_collection.find({}, {'_id': 0, 'foundation': 1}))
+                    # Fetch the role and foundation from the user document
+                    role = user.get('role', 'user')  # Default to 'user' role if not specified
+                    foundation_name = user.get('foundation')
 
+                    logger.debug(f"User {username} has role: {role}, foundation: {foundation_name}")
 
-                foundations_collection = current_app.mongo['foundations_db']['foundations']
-                foundation_config = foundations_collection.find_one({"foundation": foundation_name})
+                    # Fetch foundation-specific details from the database
+                    foundations_collection = current_app.mongo['foundations_db']['foundations']
+                    foundation_config = foundations_collection.find_one({"foundation": foundation_name})
 
-                if foundation_config:
-                    # Store foundation-specific details in session
-                    session['foundation'] = {
-                        'foundation_name':foundation_name,
-                        'api_key': foundation_config['api_key'],
-                        'whatsapp_data_db': foundation_config['whatsapp_data_db'],
-                        'agent_data_db': foundation_config['agent_data_db']
-                    }
-                    logger.debug(f"Foundation configuration set in session for {foundation_name}")
+                    
+                    if foundation_config:
+                        logger.debug(f"Foundation configuration found for {foundation_name}: {foundation_config}")
 
+                        # Clear existing session and set new foundation-specific details
+                        session.clear()
+                        session['foundation'] = {
+                            'foundation_name': foundation_name,
+                            'api_key': foundation_config['api_key'],
+                            'whatsapp_data_db': foundation_config['whatsapp_data_db'],
+                            'agent_data_db': foundation_config['agent_data_db']
+                        }
+                        logger.debug(f"Session updated for foundation {foundation_name}.")
+                    else:
+                        logger.error(f"Foundation configuration not found for {foundation_name}.")
+                        flash("Foundation configuration not found. Please contact support.", "error")
+                        return render_template('login.html')
+
+                    # Create JWT token with username and role
+                    access_token = create_access_token(identity={'username': user['username'], 'role': role})
+                    logger.debug(f"JWT created for user {username} with role {role}.")
+
+                    # Set the JWT in the cookie
+                    response = make_response(redirect(url_for('auth.index')))
+                    response.set_cookie(
+                        'access_token_cookie', 
+                        access_token, 
+                        httponly=True, 
+                        secure=True, 
+                        samesite='None'
+                    )
+
+                    logger.info(f"Login successful for user {username}. Redirecting to /index.")
+                    return response
                 else:
-                    logger.debug(f"Foundation configuration  {foundation_name}   not found in db ")
-
-
-                # Create JWT token with username and role
-                access_token = create_access_token(identity={'username': user['username'], 'role': role})
-                logger.debug(f"JWT created for user {username} with role {role}.")
-
-                # Set the JWT in the cookie
-                response = make_response(redirect(url_for('auth.index')))
-                response.set_cookie('access_token_cookie', access_token, httponly=True, secure=True , samesite='None')
-                
-                logger.info(f"Login successful for user {username} with role {role}. Redirecting to /index.")
-                return response
+                    logger.warning(f"Incorrect password attempt for user {username}.")
             else:
-                logger.warning(f"Incorrect password attempt for user {username}.")
-        else:
-            logger.warning(f"Login attempt for non-existent user: {username}.")
-        
+                logger.warning(f"Login attempt for non-existent user: {username}.")
+
+        except Exception as e:
+            logger.error(f"Error during login process: {str(e)}")
+            flash("An error occurred during login. Please try again.", "error")
+            return render_template('login.html')
+
         # If login fails
         flash("Invalid username or password", "error")
         logger.debug(f"Rendering login page due to invalid login for user {username}.")
         return render_template('login.html')
-    
+
     # GET request, render the login page
     logger.debug("Rendering login page (GET request).")
     return render_template('login.html')
