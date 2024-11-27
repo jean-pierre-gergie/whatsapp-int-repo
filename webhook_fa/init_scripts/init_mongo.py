@@ -29,17 +29,29 @@ def create_collections():
     user_credentials_collection = user_credentials_db['user_credentials']
     populate_collection_from_json(user_credentials_collection, '/app/init_data/users.json', unique_field='user_id')
 
+    
+
     foundations_db = client['foundations_db']
     foundations_collection = foundations_db['foundations']
 
 
+    with open("/app/init_data/foundation_default_auto_reply.json", "r", encoding="utf-8") as f:
+        auto_reply_messages = json.load(f)
 
     for foundation_name, api_key in api_keys.items():
+
+        auto_reply_message = auto_reply_messages.get(
+                foundation_name, 
+                f"Default auto-reply message for {foundation_name}"
+            )
+        
+
         document = {
             "foundation": foundation_name,
             "api_key": api_key,
             "whatsapp_data_db": f"whatsapp_data_{foundation_name}",
-            "agent_data_db": f"agent_data_{foundation_name}"
+            "agent_data_db": f"agent_data_{foundation_name}",
+            "auto_reply_message": auto_reply_message
         }
         
         # Insert document if not already present
@@ -47,7 +59,12 @@ def create_collections():
             foundations_collection.insert_one(document)
             logger.info(f"Inserted document for foundation '{foundation_name}' with API key.")
         else:
-            logger.info(f"Document for foundation '{foundation_name}' already exists in 'foundations' collection.")
+
+            foundations_collection.update_one(
+                    {"foundation": foundation_name},
+                    {"$set": {"auto_reply_message": auto_reply_message}}
+                )
+            logger.info(f"Updated document for foundation '{foundation_name}' with auto-reply message.")
 
     
     for prefix in api_keys:
