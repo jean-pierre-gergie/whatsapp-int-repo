@@ -227,48 +227,52 @@ def campaigns():
 @role_required(['admin', 'user'])
 def campaign_details(campaign_name):
     # Get the MongoDB collection
-
     if not campaign_name:
         return jsonify({'success': False, 'message': 'Missing campaign name parameter'}), 400
-    
-    session_configs =get_session_foundation_config()
+
+    session_configs = get_session_foundation_config()
 
     whatsapp_data_db = session_configs.get('whatsapp_data_db')
     foundation_name = session_configs.get('foundation_name')
     final_campaign_response_collection = whatsapp_data_db.final_campaign_response
 
-
+    # Fetch campaign details
     campaign = final_campaign_response_collection.find_one({'campaign_name': campaign_name})
 
-    report_data = get_report(campaign_name,whatsapp_data_db)
-
-    data = []
-    for stat in ['sent', 'delivered', 'read', 'failed']:
-        data.extend(report_data['data_by_status'].get(stat, []))
-
+    # Initialize table_data and handle report_data safely
     table_data = []
-    for item in data:
-        # Extract message ID safely, with a fallback in case it's missing
-        message_id = item.get('wamid', 'N/A')  # Using 'wamid' from the combined data
+    try:
+        report_data = get_report(campaign_name, whatsapp_data_db)
 
-        # Extract error details from the item (assumed structure from webhook)
-        errors = item.get('errors', [])
-        error_code = errors[0]['code'] if errors else 'N/A'
-        error_message = errors[0]['message'] if errors else 'N/A'
+        if report_data and 'data_by_status' in report_data:
+            data = []
+            for stat in ['sent', 'delivered', 'read', 'failed']:
+                data.extend(report_data['data_by_status'].get(stat, []))
 
-        # Extract billable status from 'pricing'
-        billable = 'Yes' if item.get('billable', False) else 'No'
+            for item in data:
+                # Extract message ID safely, with a fallback in case it's missing
+                message_id = item.get('wamid', 'N/A')  # Using 'wamid' from the combined data
 
-        table_data.append({
-            'campaign_name': item['campaign_name'],
-            'number': item['number'],
-            'message_id': message_id,
-            'status': item.get('status', 'unknown'),  # Extracting status from the combined data
-            'error_code': error_code,
-            'error_message': error_message,
-            'billable': billable
-        })
+                # Extract error details from the item (assumed structure from webhook)
+                errors = item.get('errors', [])
+                error_code = errors[0]['code'] if errors else 'N/A'
+                error_message = errors[0]['message'] if errors else 'N/A'
 
+                # Extract billable status from 'pricing'
+                billable = 'Yes' if item.get('billable', False) else 'No'
+
+                table_data.append({
+                    'campaign_name': item['campaign_name'],
+                    'number': item['number'],
+                    'message_id': message_id,
+                    'status': item.get('status', 'unknown'),  # Extracting status from the combined data
+                    'error_code': error_code,
+                    'error_message': error_message,
+                    'billable': billable
+                })
+    except Exception as e:
+        # Log the error and continue rendering the page
+        print(f"Error processing report data: {e}")
 
     # Check if the campaign exists
     if not campaign:
@@ -276,12 +280,10 @@ def campaign_details(campaign_name):
         return f"No campaign found with the name '{campaign_name}'", 404
 
     # Convert the MongoDB ObjectId to a string for easier handling
-    
     campaign['_id'] = str(campaign['_id'])
 
-
-    # Return the campaign details (for now, just a basic response)
-    return render_template('campaigns_details_page.html', campaign=campaign,table_data =  table_data,foundation_name=foundation_name)
+    # Render the campaign details page
+    return render_template('campaigns_details_page.html', campaign=campaign, table_data=table_data, foundation_name=foundation_name)
 
 
 # FIXME
@@ -456,6 +458,8 @@ def get_campaign_status(campaign_name):
             return jsonify({"error": "Could not fetch campaign status"}), 500
 
         microservice_data = response.json()
+
+        logger.info (f"MICROSERVICE_DATA--- \n  {microservice_data}")
 
         if microservice_data.get('status') == 'Task in progress...':
             total_members = microservice_data.get('total_members', 0)
