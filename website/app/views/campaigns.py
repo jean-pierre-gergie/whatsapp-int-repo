@@ -461,7 +461,8 @@ def get_campaign_status(campaign_name):
 
         logger.info (f"MICROSERVICE_DATA--- \n  {microservice_data}")
 
-        if microservice_data.get('status') == 'Task in progress...':
+        if microservice_data.get('status') == 'PENDING':
+
             total_members = microservice_data.get('total_members', 0)
             processed = microservice_data.get('processed', 0)
             curr_succ = microservice_data.get('success_count', 0)
@@ -472,14 +473,33 @@ def get_campaign_status(campaign_name):
             
             return jsonify({
                 "task_id": task_id,
-                "status": "Task in progress...",
+                "status": "PENDING",
                 "total_members": total_members,
                 "processed": processed,
                 "current_success": curr_succ,
                 "current_failed": curr_failed
             })
 
-        elif microservice_data.get('status') == 'Task completed!':
+
+        elif microservice_data.get('status') == 'PROGRESS':
+            total_members = microservice_data.get('total_members', 0)
+            processed = microservice_data.get('processed', 0)
+            curr_succ = microservice_data.get('success_count', 0)
+            curr_failed = microservice_data.get('failed_count', 0)
+
+            logger.debug(f"Task {task_id} is in progress: {processed}/{total_members} processed, "
+                         f"{curr_succ} successes, {curr_failed} failures.")
+            
+            return jsonify({
+                "task_id": task_id,
+                "status": "PROGRESS",
+                "total_members": total_members,
+                "processed": processed,
+                "current_success": curr_succ,
+                "current_failed": curr_failed
+            })
+
+        elif microservice_data.get('status') == 'SUCCESS':
             # Fetch the final results from the campaign_responses collection
             final_campaign_response_collection = whatsapp_data_db.final_campaign_response
             response_data = final_campaign_response_collection.find_one({"campaign_name": campaign_name})
@@ -497,12 +517,28 @@ def get_campaign_status(campaign_name):
 
             return jsonify({
                 "task_id": task_id,
-                "status": "Task completed!",
+                "status": "SUCCESS",
                 "total_members": total_members,
                 "processed": total_members,  
                 "current_success": success_count,
                 "current_failed": failed_count
             })
+        
+        elif microservice_data.get('status') == 'FAILURE':
+            # Fetch the final results from the campaign_responses collection
+            
+
+            # Retrieve total members, successes, and failures from the response data
+            
+            error = response_data.get('error', "error")
+
+            logger.debug(f"Task {task_id} completed successfully with {success_count} successes and {failed_count} failures.")
+
+            return jsonify({
+            "status": "FAILURE",
+            "error": error,
+            "task_id": task_id
+        })
 
         else:
             logger.warning(f"Task {task_id} status returned from microservice: {microservice_data.get('status')}")

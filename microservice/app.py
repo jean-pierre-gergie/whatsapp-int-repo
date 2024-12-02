@@ -63,7 +63,7 @@ async def send_campaign_status(task_id: str):
 
     if task_result.state == 'PENDING':
         logger.debug(f"Task {task_id} is still pending...")
-        return {"status": "Task is still pending...", "task_id": task_id}
+        return {"status": "PENDING", "task_id": task_id}
     
     elif task_result.state == 'PROGRESS':
         total_members = task_result.info.get('Total_members', 0)
@@ -75,7 +75,7 @@ async def send_campaign_status(task_id: str):
                      f"{success_count} successes, {failed_count} failures.")
         
         return {
-            "status": "Task in progress...",
+            "status": "PROGRESS",
             "total_members": total_members,  # Total members
             "processed": processed,  # Processed members so far
             "success_count": success_count,  # Number of successful sends
@@ -96,7 +96,7 @@ async def send_campaign_status(task_id: str):
                      f"{final_success_count} successes, {final_failed_count} failures.")
         
         return {
-            "status": "Task completed!",
+            "status": "SUCCESS",
             "total_members": total_members,  # Total members
             "processed": total_members,  # All members have been processed
             "success_count": final_success_count,  # Final number of successful sends
@@ -107,7 +107,7 @@ async def send_campaign_status(task_id: str):
     elif task_result.state == 'FAILURE':
         logger.debug(f"Task {task_id} failed with error: {str(task_result.result)}")
         return {
-            "status": "Task failed.",
+            "status": "FAILURE",
             "error": str(task_result.result),
             "task_id": task_id
         }
