@@ -1,5 +1,5 @@
 from fastapi import FastAPI ,Request
-from celery_app import celery_app ,send_message_campaign
+from celery_app import celery_app , submit_task
 import time 
 import logging
 
@@ -21,10 +21,7 @@ async def start_campaign_task(request: Request):
     payload = await request.json()
 
     logger.debug(f"Received payload: {payload}")
-
-    # logger.debug(f"Final kwargs /for task: {kwargs}")
-    task = send_message_campaign.apply_async(
-            kwargs={
+    kwargs={
                 'foundation_name':payload['foundation_name'],
                 'campaign_timing': payload['campaign_timing'],
                 'scheduled_date': payload['scheduled_date'],
@@ -36,9 +33,22 @@ async def start_campaign_task(request: Request):
                 'media_id': payload.get('media_id', 0),
                 'campaign_id_db': None
             }
+    
+    if payload['campaign_timing'] =="scheduled":
+        task = submit_task(
+            task_args=kwargs,
+            start_immediately=False,
+            scheduled_time=payload['scheduled_date']
+        )
+
+    else:
+        task =submit_task(
+            task_args=kwargs,
+            start_immediately=True,
+            scheduled_time=None
         )
    
-    return {"task_id":task.id, "message": "Campaign processing started"}
+    return {"task_id":task, "message": "Campaign processing started"}
 
 
 
