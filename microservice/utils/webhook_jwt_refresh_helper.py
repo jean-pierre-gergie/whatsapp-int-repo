@@ -45,8 +45,11 @@ def get_webhook_url():
         # Load the appropriate base URL based on FLASK_ENV
         if flask_env == 'production':
             webhook_base_url = os.getenv('WEBHOOK_BASE_URL', '')
+
         else:  # Development or other environments
             webhook_base_url = os.getenv('NGROK_BASE_URL', '')
+        
+        logger.debug(f"webhook_base_url: {webhook_base_url}")
 
         return webhook_base_url
     except Exception as e:
