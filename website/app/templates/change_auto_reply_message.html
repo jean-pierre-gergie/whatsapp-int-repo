@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./static/css/bootstrap.css">
+
+    <link rel="stylesheet" href="./static/vendors/iconly/bold.css">
+    <link rel="stylesheet" href="./static/vendors/perfect-scrollbar/perfect-scrollbar.css">
+    <link rel="stylesheet" href="./static/vendors/bootstrap-icons/bootstrap-icons.css">
+    <link rel="stylesheet" href="./static/css/app.css">
+    <link rel="stylesheet" href="./static/css/sidebar.css">
+    <link rel="shortcut icon" href="./static/images/favicon.svg" type="image/x-icon">
+</head>
+
+<body>
+    <div id="app">
+        {% include 'sidebar.html' %}
+        <div id="main">
+            <div class="container mt-4">
+                <h2>Change Auto Reply Message</h2>
+                <form id="autoReplyForm">
+                    <div class="mb-3">
+                        <label for="autoReplyMessage" class="form-label">Current Auto Reply Message:</label>
+                        <textarea 
+                            class="form-control" 
+                            id="autoReplyMessage" 
+                            rows="4" 
+                            placeholder="Loading current message..." 
+                            disabled></textarea>
+                    </div>
+                    <div class="mb-3">
+                        <label for="newAutoReplyMessage" class="form-label">New Auto Reply Message:</label>
+                        <textarea 
+                            class="form-control" 
+                            id="newAutoReplyMessage" 
+                            rows="4" 
+                            placeholder="Enter the new auto reply message here..." 
+                            required></textarea>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Update Message</button>
+                </form>
+                <div id="responseMessage" class="mt-3"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            try {
+                // Fetch the current auto reply message
+                const autoReplyMessage = "{{ auto_reply_message | safe }}";
+                console.log("Fetched auto reply message from backend:", autoReplyMessage);
+
+                // Populate the textarea with the current message
+                const autoReplyTextArea = document.getElementById("autoReplyMessage");
+                if (autoReplyTextArea) {
+                    autoReplyTextArea.value = autoReplyMessage;
+                } else {
+                    console.error("Textarea for current auto reply message not found.");
+                }
+            } catch (error) {
+                console.error("Error initializing auto reply message:", error);
+            }
+
+            // Handle form submission
+            const form = document.getElementById("autoReplyForm");
+            form.addEventListener("submit", async (e) => {
+                e.preventDefault();
+
+                const newMessage = document.getElementById("newAutoReplyMessage").value.trim();
+                const responseMessageDiv = document.getElementById("responseMessage");
+
+                if (!newMessage) {
+                    responseMessageDiv.innerHTML = '<div class="alert alert-danger">New auto-reply message cannot be empty.</div>';
+                    return;
+                }
+
+                try {
+                    console.log("Submitting new auto-reply message:", newMessage);
+
+                    // Send a POST request to the backend
+                    const response = await fetch('/change_auto_reply_message', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${localStorage.getItem('token')}` // Replace with your token management
+                        },
+                        body: JSON.stringify({ auto_reply_message: newMessage })
+                    });
+
+                    const data = await response.json();
+
+                    if (response.ok) {
+                        console.log("Auto-reply message updated successfully:", data);
+                        responseMessageDiv.innerHTML = `<div class="alert alert-success">${data.message}</div>`;
+
+                        // Update the current message display
+                        document.getElementById("autoReplyMessage").value = newMessage;
+                    } else {
+                        console.error("Error updating auto-reply message:", data);
+                        responseMessageDiv.innerHTML = `<div class="alert alert-danger">${data.message}</div>`;
+                    }
+                } catch (error) {
+                    console.error("An error occurred while updating the auto-reply message:", error);
+                    responseMessageDiv.innerHTML = '<div class="alert alert-danger">An unexpected error occurred.</div>';
+                }
+            });
+        });
+    </script>
+
+    <script src="./static/vendors/perfect-scrollbar/perfect-scrollbar.min.js"></script>
+    <script src="./static/js/bootstrap.bundle.min.js"></script>
+
+    <script src="./static/vendors/apexcharts/apexcharts.js"></script>
+    <script src="./static/js/pages/dashboard.js"></script>
+
+    <script src="./static/js/main.js"></script>
+</body>
+</html>

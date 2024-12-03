@@ -7,8 +7,9 @@ import asyncio
 class AutoReplyHandler:
     AUTO_REPLY_MESSAGE = "**Auto Reply**"
 
-    def __init__(self, auto_reply_message,chat_rooms_collection,api_key_360, logger=None):
-        self.auto_reply_message = auto_reply_message
+    def __init__(self, foundations_collection ,foundation_name ,chat_rooms_collection,api_key_360, logger=None):
+        self.foundations_collection = foundations_collection
+        self.foundation_name = foundation_name
         self.chat_rooms_collection = chat_rooms_collection
         self.api_key_360= api_key_360
         self.logger = logger or logging.getLogger(__name__)
@@ -29,10 +30,12 @@ class AutoReplyHandler:
                 if datetime.utcnow() - last_auto_reply < timedelta(hours=25):
                     self.logger.debug(f"Auto reply already sent in the last 12 hours for room_id: {room_id}")
                     return
+                
+            auto_reply_message = self.get_auto_reply_message()
 
-            send_message_to_users_through_360(room_id, self.auto_reply_message,self.api_key_360,logger = self.logger)
+            send_message_to_users_through_360(room_id, auto_reply_message,self.api_key_360,logger = self.logger)
             # Call `_handle_chat_room` and handle the chat room without updating `last_auto_reply`
-            await self._handle_chat_room(room_id, self.auto_reply_message, timestamp=datetime.utcnow())
+            await self._handle_chat_room(room_id, auto_reply_message ,timestamp=datetime.utcnow())
 
             # Now, update `last_auto_reply` once in the room's document
             self.chat_rooms_collection.update_one(
@@ -96,3 +99,21 @@ class AutoReplyHandler:
 
         except Exception as e:
             self.logger.error(f"Error handling chat room for user: {user_phone_number}. Exception: {e}")
+
+    def get_auto_reply_message(self):
+        try:
+            self.logger.debug(f"Fetching auto-reply message for foundation: {self.foundation_name}")
+            foundation_doc = self.foundations_collection.find_one({"foundation": self.foundation_name})
+            
+            if foundation_doc:
+                self.logger.debug(f"Document retrieved successfully for foundation: {self.foundation_name}")
+            else:
+                self.logger.warning(f"No document found for foundation: {self.foundation_name}")
+            
+            auto_reply_message = foundation_doc.get("auto_reply_message", "default auto reply")
+            self.logger.info(f"Auto-reply message for {self.foundation_name}: {auto_reply_message}")
+            
+            return auto_reply_message
+        except Exception as e:
+            self.logger.error(f"Error fetching auto-reply message for {self.foundation_name}: {e}", exc_info=True)
+            raise

@@ -737,6 +737,90 @@ def view_collection_content():
         return jsonify({"success": False, "message": str(e)}), 500
 
 
+
+
+
+
+@bp.route('/change_auto_reply_message', methods=['GET'])
+@jwt_required()
+@role_required(['admin', 'user'])
+def change_auto_reply_message():
+    try:
+        logger.info("Entering change_auto_reply_message route")
+
+        # Fetch session configurations
+        session_configs = get_session_foundation_config()
+        foundation_name = session_configs.get("foundation_name", "")
+        logger.info(f"Session configuration retrieved: {foundation_name}")
+
+        # Access the database
+        foundation_collection = current_app.mongo['foundations_db']['foundations']
+        foundation_doc = foundation_collection.find_one({"foundation": foundation_name})
+        # logger.info(f"Database query executed for foundation: {foundation_name}")
+        logger.info(foundation_doc)
+        # Check if foundation exists and retrieve auto-reply message
+        auto_reply_message = foundation_doc.get("auto_reply_message", "") 
+        logger.info(f"Auto-reply message to render: {auto_reply_message}")
+
+        # Render the HTML template and pass the auto-reply message to the frontend
+        return render_template(
+            'change_auto_reply_message.html',
+            auto_reply_message=auto_reply_message
+        )
+    except Exception as e:
+        # Log the exception and return an error response
+        logger.error(f"An error occurred in change_auto_reply_message: {e}", exc_info=True)
+        return jsonify({"success": False, "message": "An error occurred while processing the request"}), 500
+
+
+@bp.route('/change_auto_reply_message', methods=['POST'])
+@jwt_required()
+@role_required(['admin'])
+def update_auto_reply_message():
+    try:
+        logger.info("Entering update_auto_reply_message route")
+
+        # Parse the JSON payload
+        data = request.json
+        new_message = data.get("auto_reply_message", "").strip()
+
+        if not new_message:
+            logger.warning("Invalid auto-reply message provided")
+            return jsonify({"success": False, "message": "Invalid auto-reply message"}), 400
+
+        # Fetch session configurations
+        session_configs = get_session_foundation_config()
+        foundation_name = session_configs.get("foundation_name", "")
+        logger.info(f"Session foundation: {foundation_name}")
+
+        # Access the database collection
+        foundation_collection = current_app.mongo['foundations_db']['foundations']
+
+        # Update the auto_reply_message for the specific foundation
+        result = foundation_collection.update_one(
+            {"foundation": foundation_name},
+            {"$set": {"auto_reply_message": new_message}}
+        )
+
+        # Check if the update was successful
+        if result.matched_count == 0:
+            logger.error(f"No document found for foundation: {foundation_name}")
+            return jsonify({"success": False, "message": "Foundation not found"}), 404
+
+        if result.modified_count == 0:
+            logger.info("Auto-reply message was already set to the same value")
+            return jsonify({"success": True, "message": "Message already up to date"}), 200
+
+        logger.info(f"Auto-reply message updated for foundation: {foundation_name}")
+        return jsonify({"success": True, "message": "Auto-reply message updated successfully"}), 200
+    except Exception as e:
+        logger.error(f"An error occurred in update_auto_reply_message: {e}", exc_info=True)
+        return jsonify({"success": False, "message": "An error occurred while updating the auto-reply message"}), 500
+
+
+
+
+
 # TODO for deployment
 
 
