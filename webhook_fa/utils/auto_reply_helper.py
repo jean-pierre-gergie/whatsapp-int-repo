@@ -26,7 +26,7 @@ class AutoReplyHandler:
                 if isinstance(last_auto_reply, str):
                     last_auto_reply = datetime.fromisoformat(last_auto_reply)
                 
-                if datetime.utcnow() - last_auto_reply < timedelta(hours=23):
+                if datetime.utcnow() - last_auto_reply < timedelta(hours=25):
                     self.logger.debug(f"Auto reply already sent in the last 12 hours for room_id: {room_id}")
                     return
 
