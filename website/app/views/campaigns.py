@@ -775,7 +775,7 @@ def change_auto_reply_message():
 
 @bp.route('/change_auto_reply_message', methods=['POST'])
 @jwt_required()
-@role_required(['admin'])
+@role_required(['admin','user'])
 def update_auto_reply_message():
     try:
         logger.info("Entering update_auto_reply_message route")
