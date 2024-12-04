@@ -158,6 +158,7 @@ def refresh_jwt(logger):
     try:
         secret_key = os.getenv("JWT_SECRET_KEY")
         webhook_url = get_webhook_url()
+        logger.info(f"webhook url : {webhook_url}")
 
         if not secret_key:
             logger.error("JWT_SECRET_KEY is not set in environment variables.")

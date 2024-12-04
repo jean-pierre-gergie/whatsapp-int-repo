@@ -160,6 +160,7 @@ def send_message_campaign(self, foundation_name, campaign_timing, scheduled_date
                 'time_taken': response_time
             }
 
+            logger.debug("Inserts an individual message response into MongoDB.")
             insert_message_response(campaign_responses_collection=campaign_responses_collection, data_to_insert=data_to_insert)
 
             
@@ -264,7 +265,7 @@ def submit_task(task_args=None, start_immediately=True, scheduled_time=None):
     if start_immediately:
         logger.info("Starting job immediately...")
         initial_campaign_data = {
-                'status': "Starting Now",
+                'status': "Pending Start Time",
                 'campaign': task_args['selected_campaign'],
                 'campaign_name': task_args['campaign_name'],
                 'campaign_submitted_at': datetime.now(),
