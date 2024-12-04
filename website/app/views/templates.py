@@ -283,13 +283,17 @@ def create_template():
         logger.debug(f"API Response: {response_data}")
         
         # **Highlighted Changes Start Here**
-        if response_data.get('status') == 'submitted':
-            logger.info("Template created and submitted successfully")
-            return jsonify(template_data=template_data, message="Template created and submitted successfully"), 200
+        if response_data.get('status') in ['submitted', 'pending']:
+            logger.info("Template created and is pending approval")
+            return jsonify(
+                template_data=template_data,
+                message="Template created and is pending approval",
+                api_response=response_data
+            ), 200
         else:
             logger.error(f"Error submitting template: {response_data}")
             
-            # Extracting error message and sending it back to the front end
+            # Extract error details if available
             error_message = response_data.get('meta', {}).get('developer_message', 'An error occurred while submitting the template.')
             user_friendly_message = response_data.get('meta', {}).get('error', {}).get('error_user_msg', 'An unexpected error occurred.')
             

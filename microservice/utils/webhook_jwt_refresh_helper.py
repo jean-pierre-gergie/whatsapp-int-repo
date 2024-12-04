@@ -45,8 +45,11 @@ def get_webhook_url():
         # Load the appropriate base URL based on FLASK_ENV
         if flask_env == 'production':
             webhook_base_url = os.getenv('WEBHOOK_BASE_URL', '')
+
         else:  # Development or other environments
             webhook_base_url = os.getenv('NGROK_BASE_URL', '')
+        
+        logger.debug(f"webhook_base_url: {webhook_base_url}")
 
         return webhook_base_url
     except Exception as e:
@@ -155,6 +158,7 @@ def refresh_jwt(logger):
     try:
         secret_key = os.getenv("JWT_SECRET_KEY")
         webhook_url = get_webhook_url()
+        logger.info(f"webhook url : {webhook_url}")
 
         if not secret_key:
             logger.error("JWT_SECRET_KEY is not set in environment variables.")

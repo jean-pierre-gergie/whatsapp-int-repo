@@ -3,6 +3,7 @@ from celery.schedules import crontab
 from celery.signals import worker_ready 
 import time
 from dotenv import load_dotenv
+from datetime import datetime
 import os
 import logging
 import json
@@ -53,7 +54,7 @@ celery_app = Celery(
 celery_app.conf.beat_schedule = {
     'refresh-webhook-jwt-token': {
         'task': 'tasks.refresh_webhook_jwt_token',
-        'schedule':crontab(minute='*/59') ,  
+        'schedule':crontab(hour='*/6'),
     },
 }
 
@@ -109,154 +110,103 @@ def send_message_campaign(self, foundation_name, campaign_timing, scheduled_date
         'curr_failed': 0
     })
   
-    if campaign_timing == "scheduled"and scheduled_date is not None:
-        scheduled_date_compare = parser.parse(scheduled_date)
-    if campaign_timing == "scheduled" and datetime.now(timezone.utc) < scheduled_date_compare:
-        campaign_scheduled = True
-        if not campaign_id_db:  # Ensure the document isn't inserted twice
-            initial_campaign_data = {
-                'status': "Pending Start Time",
-                'campaign': selected_campaign,
-                'campaign_name': campaign_name,
-                'campaign_submitted_at': datetime.now(),
-                'campaign_scheduled': campaign_scheduled,
-                'campaign_scheduled_at': scheduled_date,
-                'total_members': total_members
-            }
+    
 
-            # Insert document and capture the campaign_id_db for future updates
-            campaign_id_db = manage_campaign_data(
-                initial_campaign_data, final_campaign_response_collection, campaign_id=None, action='insert'
-            )
+    logger.debug(f"immediate or Second run campaign_id_db: {campaign_id_db}")
 
-        # Schedule the task to run at the scheduled time, passing campaign_id_db
-        self.apply_async(
-            kwargs={
-                'foundation_name':foundation_name,
-                'campaign_timing': campaign_timing,
-                'scheduled_date': scheduled_date,
-                'scheduled_date_local': scheduled_date_local,
-                'selected_campaign': selected_campaign,
-                'template_json': template_json,
-                'variables': variables,
-                'campaign_name': campaign_name,
-                'media_id': media_id if media_id else 0,
-                'campaign_id_db': str(campaign_id_db)  # Pass the campaign_id_db for the second run
-            },
-            eta=scheduled_date  # Set task to run at the scheduled date
-        )
-        return
 
-    else:
 
-        logger.debug(f"immediate or Second run campaign_id_db: {campaign_id_db}")
+    for prog_idx, member in enumerate(members, start=1):
 
-        if not campaign_id_db:  # If it's not passed, insert a new document
-            logger.debug(f"going for immedate campaign_id_db: {campaign_id_db}")
-            initial_campaign_data = {
-                'status': "Starting Now",
-                'campaign': selected_campaign,
-                'campaign_name': campaign_name,
-                'campaign_submitted_at': datetime.now(),
-                'campaign_scheduled': False,  # Immediate campaign, so not scheduled
-                'total_members': total_members
-            }
-
-            # Insert document for immediate campaigns
-            campaign_id_db = manage_campaign_data(
-                initial_campaign_data, final_campaign_response_collection, campaign_id=None, action='insert'
-            )
-
-        for prog_idx, member in enumerate(members, start=1):
-
-            
-
-            # time.sleep(5)
-
-            progress_update = {
-                'status': "Sending Messages",
-                'campaign_started_at': datetime.now()
-            }
-
-            logger.debug(f"updating record campaign_id_db: {campaign_id_db}")
-
-            logger.debug(f"progress updating : {progress_update}")
         
-            manage_campaign_data(progress_update, final_campaign_response_collection, campaign_id=campaign_id_db, action="update")
 
-            number = member['mobile']
-            template_dict['to'] = number
-            logger.debug(f"Processing member with number: {number}")
+        time.sleep(10)
 
-            member_data = get_member_data(member, variables)
-            template_dict = update_template_components(template_dict, member_data=member_data, variables=variables, media_id=media_id)
-
-            response, response_time = send_post_request(
-                dialog_360_message_url=dialog_360_message_url,
-                api_key_360=api_key_360,
-                template_dict=template_dict,
-                number=number,
-                failed_rows=failed_rows,
-                start_time=start_time)
-            
-            if response:
-                data_to_insert = {
-                    'campaign': selected_campaign,
-                    'campaign_name': campaign_name,
-                    'campaign_date': datetime.now(),
-                    'number': number,
-                    'template': template_dict,
-                    'response': response.json() if response.status_code == 200 else response.text,
-                    'status_code': response.status_code,
-                    'time_taken': response_time
-                }
-
-                insert_message_response(campaign_responses_collection=campaign_responses_collection, data_to_insert=data_to_insert)
-
-                
-
-
-                process_response(response=response, number=number, response_time=response_time, success_rows=success_rows, failed_rows=failed_rows)
-
-
-                logger.info (f"handeling chat data for {member}")
-                asyncio.run(chat_room_handler._handle_chat_room(
-                    user_phone_number=number,
-                    wa_mid=None,  # or actual wa_mid value if available
-                    campaign_name=campaign_name,
-                    timestamp=datetime.utcnow()
-                ))
-
-
-            else:
-                logger.error(f"No response received for member {number}. Skipping this member.")
-                failed_rows.append({
-                    'Number': number,
-                    'Title': 'No Response',
-                    'Details': 'No response received from API',
-                    'Code': 'N/A',
-                    'TimeTaken': time.time() - start_time
-                })        
-
-            self.update_state(state='PROGRESS', meta={
-                'Total_members': total_members,
-                'processed': prog_idx,
-                'curr_succ': len(success_rows),
-                'curr_failed': len(failed_rows)
-            })
-
-         # Final update after processing all members
-        final_update = {
-            'status': "Finished",
-            'campaign_finished_at': datetime.now(),
-            'total_success': len(success_rows),
-            'total_failed': len(failed_rows),
-            'success_percentage': f'{(len(success_rows) / total_members) * 100:.2f}%' if total_members > 0 else '0.00%',
-            'failed_percentage': f'{(len(failed_rows) / total_members) * 100:.2f}%' if total_members > 0 else '0.00%'
+        progress_update = {
+            'status': "Sending Messages",
+            'campaign_started_at': datetime.now()
         }
 
-        # Update the final campaign data using the same campaign_id_db
-        update_final_campaign_data(
+        logger.debug(f"updating record campaign_id_db: {campaign_id_db}")
+
+        logger.debug(f"progress updating : {progress_update}")
+    
+        manage_campaign_data(progress_update, final_campaign_response_collection, campaign_id=campaign_id_db, action="update")
+
+        number = member['mobile']
+        template_dict['to'] = number
+        logger.debug(f"Processing member with number: {number}")
+
+        member_data = get_member_data(member, variables)
+        template_dict = update_template_components(template_dict, member_data=member_data, variables=variables, media_id=media_id)
+
+        response, response_time = send_post_request(
+            dialog_360_message_url=dialog_360_message_url,
+            api_key_360=api_key_360,
+            template_dict=template_dict,
+            number=number,
+            failed_rows=failed_rows,
+            start_time=start_time)
+        
+        if response:
+            data_to_insert = {
+                'campaign': selected_campaign,
+                'campaign_name': campaign_name,
+                'campaign_date': datetime.now(),
+                'number': number,
+                'template': template_dict,
+                'response': response.json() if response.status_code == 200 else response.text,
+                'status_code': response.status_code,
+                'time_taken': response_time
+            }
+
+            logger.debug("Inserts an individual message response into MongoDB.")
+            insert_message_response(campaign_responses_collection=campaign_responses_collection, data_to_insert=data_to_insert)
+
+            
+
+
+            process_response(response=response, number=number, response_time=response_time, success_rows=success_rows, failed_rows=failed_rows)
+
+
+            logger.info (f"handeling chat data for {member}")
+            asyncio.run(chat_room_handler._handle_chat_room(
+                user_phone_number=number,
+                wa_mid=None,  # or actual wa_mid value if available
+                campaign_name=campaign_name,
+                timestamp=datetime.utcnow()
+            ))
+
+
+        else:
+            logger.error(f"No response received for member {number}. Skipping this member.")
+            failed_rows.append({
+                'Number': number,
+                'Title': 'No Response',
+                'Details': 'No response received from API',
+                'Code': 'N/A',
+                'TimeTaken': time.time() - start_time
+            })        
+
+        self.update_state(state='PROGRESS', meta={
+            'Total_members': total_members,
+            'processed': prog_idx,
+            'curr_succ': len(success_rows),
+            'curr_failed': len(failed_rows)
+        })
+
+        # Final update after processing all members
+    final_update = {
+        'status': "Finished",
+        'campaign_finished_at': datetime.now(),
+        'total_success': len(success_rows),
+        'total_failed': len(failed_rows),
+        'success_percentage': f'{(len(success_rows) / total_members) * 100:.2f}%' if total_members > 0 else '0.00%',
+        'failed_percentage': f'{(len(failed_rows) / total_members) * 100:.2f}%' if total_members > 0 else '0.00%'
+    }
+
+    # Update the final campaign data using the same campaign_id_db
+    update_final_campaign_data(
             campaign_id=campaign_id_db,
             final_campaign_response_collection=final_campaign_response_collection,
             final_update=final_update,
@@ -294,5 +244,74 @@ def refresh_webhook_jwt_token(self):
 def call_refresh_token_on_startup(sender, **kwargs):
     logger.info("Worker started, calling refresh_webhook_jwt_token immediately...")
     celery_app.send_task('tasks.refresh_webhook_jwt_token')
+
+
+
+
+
+def submit_task(task_args=None, start_immediately=True, scheduled_time=None):
+    logger = get_task_logger(__name__)
+    logger.info("Submitting task...")
+
+    whatsapp_data_db , _ , _ = get_dependencies_by_foundation(foundation_name=task_args['foundation_name'],mongo_url=mongo_url)
+    members = get_member_list(whatsapp_data_db, selected_campaign=task_args['selected_campaign'])
+    total_members = len(members)
+    final_campaign_response_collection = whatsapp_data_db.final_campaign_response
+
+    
+    if not task_args:
+        raise ValueError("task_args must be provided and contain the required arguments.")
+
+    if start_immediately:
+        logger.info("Starting job immediately...")
+        initial_campaign_data = {
+                'status': "Pending Start Time",
+                'campaign': task_args['selected_campaign'],
+                'campaign_name': task_args['campaign_name'],
+                'campaign_submitted_at': datetime.now(),
+                'campaign_scheduled': False,  # Immediate campaign, so not scheduled
+                'total_members': total_members
+            }
+        campaign_id_db = manage_campaign_data(
+                initial_campaign_data, final_campaign_response_collection, campaign_id=None, action='insert'
+            )
+        task_args['campaign_id_db'] = str(campaign_id_db) 
+        result = send_message_campaign.apply_async(kwargs=task_args)
+        
+
+    elif scheduled_time:
+        logger.info(f"Scheduling job for: {scheduled_time}")
+        # Handle 'Z' suffix in ISO 8601 string
+        if scheduled_time.endswith('Z'):
+            scheduled_time = scheduled_time.replace('Z', '+00:00')  # Replace 'Z' with UTC offset
+        eta = datetime.fromisoformat(scheduled_time)
+        initial_campaign_data = {
+                'status': "Pending Start Time",
+                'campaign': task_args['selected_campaign'],
+                'campaign_name': task_args['campaign_name'],
+                'campaign_submitted_at': datetime.now(),
+                'campaign_scheduled': True,
+                'campaign_scheduled_at': task_args['scheduled_date'],
+                'total_members': total_members
+            }
+
+        
+
+        campaign_id_db = manage_campaign_data(
+                initial_campaign_data, final_campaign_response_collection, campaign_id=None, action='insert'
+            )
+        
+        task_args['campaign_id_db'] = str(campaign_id_db)
+
+        result = send_message_campaign.apply_async(kwargs=task_args, eta=eta)
+        
+        
+    else:
+        raise ValueError("Either 'start_immediately' must be True or 'scheduled_time' must be provided.")
+
+    logger.info(f"Task submitted with ID: {result.id}")
+    return result.id
+
+
 
 

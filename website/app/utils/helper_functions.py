@@ -350,7 +350,7 @@ def get_report(campaign_name,whatsapp_data_db):
     logger.info(f"Querying campaign_responses_collection with campaign_name: {campaign_name}")
     try:
         campaign_responses = list(campaign_responses_collection.find({
-            'campaign_name': campaign_name
+            'campaign_name': campaign_name.strip()
         }))
     except Exception as e:
         logger.error(f"Error querying campaign_responses_collection: {e}")
@@ -370,6 +370,7 @@ def get_report(campaign_name,whatsapp_data_db):
     ]
 
     logger.info(f"Collected {len(message_ids)} message IDs from campaign responses")
+    logger.info (message_ids)
 
     # Fetch webhook data for the collected message IDs
     logger.info(f"Fetching webhook data for message IDs from the database")

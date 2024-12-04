@@ -227,48 +227,52 @@ def campaigns():
 @role_required(['admin', 'user'])
 def campaign_details(campaign_name):
     # Get the MongoDB collection
-
     if not campaign_name:
         return jsonify({'success': False, 'message': 'Missing campaign name parameter'}), 400
-    
-    session_configs =get_session_foundation_config()
+
+    session_configs = get_session_foundation_config()
 
     whatsapp_data_db = session_configs.get('whatsapp_data_db')
     foundation_name = session_configs.get('foundation_name')
     final_campaign_response_collection = whatsapp_data_db.final_campaign_response
 
-
+    # Fetch campaign details
     campaign = final_campaign_response_collection.find_one({'campaign_name': campaign_name})
 
-    report_data = get_report(campaign_name,whatsapp_data_db)
-
-    data = []
-    for stat in ['sent', 'delivered', 'read', 'failed']:
-        data.extend(report_data['data_by_status'].get(stat, []))
-
+    # Initialize table_data and handle report_data safely
     table_data = []
-    for item in data:
-        # Extract message ID safely, with a fallback in case it's missing
-        message_id = item.get('wamid', 'N/A')  # Using 'wamid' from the combined data
+    try:
+        report_data = get_report(campaign_name, whatsapp_data_db)
 
-        # Extract error details from the item (assumed structure from webhook)
-        errors = item.get('errors', [])
-        error_code = errors[0]['code'] if errors else 'N/A'
-        error_message = errors[0]['message'] if errors else 'N/A'
+        if report_data and 'data_by_status' in report_data:
+            data = []
+            for stat in ['sent', 'delivered', 'read', 'failed']:
+                data.extend(report_data['data_by_status'].get(stat, []))
 
-        # Extract billable status from 'pricing'
-        billable = 'Yes' if item.get('billable', False) else 'No'
+            for item in data:
+                # Extract message ID safely, with a fallback in case it's missing
+                message_id = item.get('wamid', 'N/A')  # Using 'wamid' from the combined data
 
-        table_data.append({
-            'campaign_name': item['campaign_name'],
-            'number': item['number'],
-            'message_id': message_id,
-            'status': item.get('status', 'unknown'),  # Extracting status from the combined data
-            'error_code': error_code,
-            'error_message': error_message,
-            'billable': billable
-        })
+                # Extract error details from the item (assumed structure from webhook)
+                errors = item.get('errors', [])
+                error_code = errors[0]['code'] if errors else 'N/A'
+                error_message = errors[0]['message'] if errors else 'N/A'
 
+                # Extract billable status from 'pricing'
+                billable = 'Yes' if item.get('billable', False) else 'No'
+
+                table_data.append({
+                    'campaign_name': item['campaign_name'],
+                    'number': item['number'],
+                    'message_id': message_id,
+                    'status': item.get('status', 'unknown'),  # Extracting status from the combined data
+                    'error_code': error_code,
+                    'error_message': error_message,
+                    'billable': billable
+                })
+    except Exception as e:
+        # Log the error and continue rendering the page
+        print(f"Error processing report data: {e}")
 
     # Check if the campaign exists
     if not campaign:
@@ -276,12 +280,10 @@ def campaign_details(campaign_name):
         return f"No campaign found with the name '{campaign_name}'", 404
 
     # Convert the MongoDB ObjectId to a string for easier handling
-    
     campaign['_id'] = str(campaign['_id'])
 
-
-    # Return the campaign details (for now, just a basic response)
-    return render_template('campaigns_details_page.html', campaign=campaign,table_data =  table_data,foundation_name=foundation_name)
+    # Render the campaign details page
+    return render_template('campaigns_details_page.html', campaign=campaign, table_data=table_data, foundation_name=foundation_name)
 
 
 # FIXME
@@ -457,7 +459,10 @@ def get_campaign_status(campaign_name):
 
         microservice_data = response.json()
 
-        if microservice_data.get('status') == 'Task in progress...':
+        logger.info (f"MICROSERVICE_DATA--- \n  {microservice_data}")
+
+        if microservice_data.get('status') == 'PENDING':
+
             total_members = microservice_data.get('total_members', 0)
             processed = microservice_data.get('processed', 0)
             curr_succ = microservice_data.get('success_count', 0)
@@ -468,14 +473,33 @@ def get_campaign_status(campaign_name):
             
             return jsonify({
                 "task_id": task_id,
-                "status": "Task in progress...",
+                "status": "PENDING",
                 "total_members": total_members,
                 "processed": processed,
                 "current_success": curr_succ,
                 "current_failed": curr_failed
             })
 
-        elif microservice_data.get('status') == 'Task completed!':
+
+        elif microservice_data.get('status') == 'PROGRESS':
+            total_members = microservice_data.get('total_members', 0)
+            processed = microservice_data.get('processed', 0)
+            curr_succ = microservice_data.get('success_count', 0)
+            curr_failed = microservice_data.get('failed_count', 0)
+
+            logger.debug(f"Task {task_id} is in progress: {processed}/{total_members} processed, "
+                         f"{curr_succ} successes, {curr_failed} failures.")
+            
+            return jsonify({
+                "task_id": task_id,
+                "status": "PROGRESS",
+                "total_members": total_members,
+                "processed": processed,
+                "current_success": curr_succ,
+                "current_failed": curr_failed
+            })
+
+        elif microservice_data.get('status') == 'SUCCESS':
             # Fetch the final results from the campaign_responses collection
             final_campaign_response_collection = whatsapp_data_db.final_campaign_response
             response_data = final_campaign_response_collection.find_one({"campaign_name": campaign_name})
@@ -493,12 +517,28 @@ def get_campaign_status(campaign_name):
 
             return jsonify({
                 "task_id": task_id,
-                "status": "Task completed!",
+                "status": "SUCCESS",
                 "total_members": total_members,
                 "processed": total_members,  
                 "current_success": success_count,
                 "current_failed": failed_count
             })
+        
+        elif microservice_data.get('status') == 'FAILURE':
+            # Fetch the final results from the campaign_responses collection
+            
+
+            # Retrieve total members, successes, and failures from the response data
+            
+            error = response_data.get('error', "error")
+
+            logger.debug(f"Task {task_id} completed successfully with {success_count} successes and {failed_count} failures.")
+
+            return jsonify({
+            "status": "FAILURE",
+            "error": error,
+            "task_id": task_id
+        })
 
         else:
             logger.warning(f"Task {task_id} status returned from microservice: {microservice_data.get('status')}")
@@ -697,6 +737,90 @@ def view_collection_content():
         return jsonify({"success": False, "message": str(e)}), 500
 
 
+
+
+
+
+@bp.route('/change_auto_reply_message', methods=['GET'])
+@jwt_required()
+@role_required(['admin', 'user'])
+def change_auto_reply_message():
+    try:
+        logger.info("Entering change_auto_reply_message route")
+
+        # Fetch session configurations
+        session_configs = get_session_foundation_config()
+        foundation_name = session_configs.get("foundation_name", "")
+        logger.info(f"Session configuration retrieved: {foundation_name}")
+
+        # Access the database
+        foundation_collection = current_app.mongo['foundations_db']['foundations']
+        foundation_doc = foundation_collection.find_one({"foundation": foundation_name})
+        # logger.info(f"Database query executed for foundation: {foundation_name}")
+        logger.info(foundation_doc)
+        # Check if foundation exists and retrieve auto-reply message
+        auto_reply_message = foundation_doc.get("auto_reply_message", "") 
+        logger.info(f"Auto-reply message to render: {auto_reply_message}")
+
+        # Render the HTML template and pass the auto-reply message to the frontend
+        return render_template(
+            'change_auto_reply_message.html',
+            auto_reply_message=auto_reply_message
+        )
+    except Exception as e:
+        # Log the exception and return an error response
+        logger.error(f"An error occurred in change_auto_reply_message: {e}", exc_info=True)
+        return jsonify({"success": False, "message": "An error occurred while processing the request"}), 500
+
+
+@bp.route('/change_auto_reply_message', methods=['POST'])
+@jwt_required()
+@role_required(['admin','user'])
+def update_auto_reply_message():
+    try:
+        logger.info("Entering update_auto_reply_message route")
+
+        # Parse the JSON payload
+        data = request.json
+        new_message = data.get("auto_reply_message", "").strip()
+
+        if not new_message:
+            logger.warning("Invalid auto-reply message provided")
+            return jsonify({"success": False, "message": "Invalid auto-reply message"}), 400
+
+        # Fetch session configurations
+        session_configs = get_session_foundation_config()
+        foundation_name = session_configs.get("foundation_name", "")
+        logger.info(f"Session foundation: {foundation_name}")
+
+        # Access the database collection
+        foundation_collection = current_app.mongo['foundations_db']['foundations']
+
+        # Update the auto_reply_message for the specific foundation
+        result = foundation_collection.update_one(
+            {"foundation": foundation_name},
+            {"$set": {"auto_reply_message": new_message}}
+        )
+
+        # Check if the update was successful
+        if result.matched_count == 0:
+            logger.error(f"No document found for foundation: {foundation_name}")
+            return jsonify({"success": False, "message": "Foundation not found"}), 404
+
+        if result.modified_count == 0:
+            logger.info("Auto-reply message was already set to the same value")
+            return jsonify({"success": True, "message": "Message already up to date"}), 200
+
+        logger.info(f"Auto-reply message updated for foundation: {foundation_name}")
+        return jsonify({"success": True, "message": "Auto-reply message updated successfully"}), 200
+    except Exception as e:
+        logger.error(f"An error occurred in update_auto_reply_message: {e}", exc_info=True)
+        return jsonify({"success": False, "message": "An error occurred while updating the auto-reply message"}), 500
+
+
+
+
+
 # TODO for deployment
 
 
@@ -738,60 +862,60 @@ def view_collection_content():
 #     return response
 
 
-@bp.route('/dynamic_redirect', methods=['GET'])
-@jwt_required()
-@role_required(['admin', 'user'])
-def dynamic_redirect():
-#     # Create a new token or get the existing one
-    current_identity = get_jwt_identity()  # Get the current user's identity
-    token = create_access_token(identity=current_identity,expires_delta=timedelta(hours=1))    # Create a new token with the same identity
-    agent_server_url = os.getenv('CHAT_AGENT_SERVER_URL_PRODUCTION')
-
-    session_configs = get_session_foundation_config()
-    foundation_name = session_configs.get('foundation_name')
-
-    redirect_url = f"{agent_server_url}?foundation_name={foundation_name}"
-    logger.info(f"redirecting to {redirect_url}")
-
-
-#     logger.info(f"redirecting to {agent_server_url}")
-    response = make_response(redirect(redirect_url))
-    response.set_cookie(
-        'jwt_token', 
-        token, 
-        httponly=False, 
-        secure=True, 
-        samesite='None', 
-        domain='.omnichanneltv.com'
-    )
-    return response
-
-
 # @bp.route('/dynamic_redirect', methods=['GET'])
 # @jwt_required()
 # @role_required(['admin', 'user'])
 # def dynamic_redirect():
-#     # Create a new token or get the existing one
-#     current_identity = get_jwt_identity()  
-#     token = create_access_token(identity=current_identity,expires_delta=timedelta(hours=1))  
-
-
-#     agent_server_url = os.getenv('CHAT_AGENT_SERVER_URL_DEVELOPMENT')
-
+# #     # Create a new token or get the existing one
+#     current_identity = get_jwt_identity()  # Get the current user's identity
+#     token = create_access_token(identity=current_identity,expires_delta=timedelta(hours=1))    # Create a new token with the same identity
+#     agent_server_url = os.getenv('CHAT_AGENT_SERVER_URL_PRODUCTION')
 
 #     session_configs = get_session_foundation_config()
 #     foundation_name = session_configs.get('foundation_name')
-
-
-#     agent_server_url = os.getenv('CHAT_AGENT_SERVER_URL_DEVELOPMENT')
-
 
 #     redirect_url = f"{agent_server_url}?foundation_name={foundation_name}"
 #     logger.info(f"redirecting to {redirect_url}")
 
 
+# #     logger.info(f"redirecting to {agent_server_url}")
 #     response = make_response(redirect(redirect_url))
-#     response.set_cookie('jwt_token',token, httponly=False, secure=True, samesite='Strict')
+#     response.set_cookie(
+#         'jwt_token', 
+#         token, 
+#         httponly=False, 
+#         secure=True, 
+#         samesite='None', 
+#         domain='.omnichanneltv.com'
+#     )
+#     return response
+
+
+@bp.route('/dynamic_redirect', methods=['GET'])
+@jwt_required()
+@role_required(['admin', 'user'])
+def dynamic_redirect():
+    # Create a new token or get the existing one
+    current_identity = get_jwt_identity()  
+    token = create_access_token(identity=current_identity,expires_delta=timedelta(hours=1))  
+
+
+    agent_server_url = os.getenv('CHAT_AGENT_SERVER_URL_DEVELOPMENT')
+
+
+    session_configs = get_session_foundation_config()
+    foundation_name = session_configs.get('foundation_name')
+
+
+    agent_server_url = os.getenv('CHAT_AGENT_SERVER_URL_DEVELOPMENT')
+
+
+    redirect_url = f"{agent_server_url}?foundation_name={foundation_name}"
+    logger.info(f"redirecting to {redirect_url}")
+
+
+    response = make_response(redirect(redirect_url))
+    response.set_cookie('jwt_token',token, httponly=False, secure=True, samesite='Strict')
 
     
-#     return response
+    return response

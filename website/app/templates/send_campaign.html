@@ -296,7 +296,7 @@
                 console.log('Polling response:', data);
 
                 if (data.error) {
-                    if (data.error === "Task is still pending...") {
+                    if (data.error === "PENDING") {
                         document.getElementById('send-status').textContent = "Task is pending. Please wait...";
                         return;
                     } else {
@@ -316,12 +316,12 @@
                         document.getElementById('send-status').textContent = "Task is pending. Please wait...";
                         break;
                     
-                    case "Task in progress...":
+                    case "PROGRESS":
                         document.getElementById('send-status').textContent = 
                             `Processing campaign: ${processed}/${totalMembers} processed, ${currentSuccess} successful, ${currentFailed} failed.`;
                         break;
                     
-                    case "Task completed!":
+                    case "SUCCESS":
                         const finalSuccessCount = data.current_success || 0;
                         const finalFailedCount = data.current_failed || 0;
                         document.getElementById('send-status').textContent = 
@@ -329,7 +329,7 @@
                         clearInterval(pollInterval);
                         break;
 
-                    case "Task failed.":
+                    case "FAILURE":
                         document.getElementById('send-status').textContent = "The campaign task failed. Please try again.";
                         clearInterval(pollInterval);
                         break;

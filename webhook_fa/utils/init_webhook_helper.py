@@ -76,7 +76,8 @@ def get_foundation_dependencies(foundation_name):
             "user_to_business_collection": user_to_business_collection,
             "chat_rooms_collection": chat_rooms_collection,
             "api_key_360":api_key_360,
-            "auto_reply_message":auto_reply_message
+            "foundation_collection":foundations_collection,
+            "foundation_name":foundation_name
         }
     except ValueError as ve:
         logger.error(f"ValueError: {ve}")
@@ -131,7 +132,8 @@ def create_handlers_for_all_foundations():
 
                 
 
-                auto_reply_handler = AutoReplyHandler(auto_reply_message =dependencies['auto_reply_message'],
+                auto_reply_handler = AutoReplyHandler(foundations_collection =dependencies['foundation_collection'],
+                                                      foundation_name = dependencies['foundation_name'],
                                                       chat_rooms_collection=dependencies['chat_rooms_collection'],
                                                       api_key_360=dependencies['api_key_360'],
                                                       logger=logger)

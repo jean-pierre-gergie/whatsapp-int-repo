@@ -3,9 +3,7 @@ version: '3.8'
 services:
 
   website:
-    build: 
-      context: ./website  # This specifies the directory containing your Dockerfile
-      dockerfile: Dockerfile  # This specifies the Dockerfile to use (optional if named 'Dockerfile')
+    image: lichaajpg/website:latest
     container_name: website_container
     restart: unless-stopped
     ports:
@@ -23,9 +21,7 @@ services:
       - network_internal
 
   webhook_fa:
-    build: 
-      context: ./webhook_fa  # Specifies the directory containing your Dockerfile
-      dockerfile: Dockerfile  # Optional, specifies the Dockerfile to use
+    image: lichaajpg/webhook_fa:latest
     container_name: webhook_fa_container
     restart: unless-stopped
     ports:
@@ -42,9 +38,7 @@ services:
       - network_internal
 
   agent:
-    build: 
-      context: ./agent  # Specifies the directory containing your Dockerfile
-      dockerfile: Dockerfile  # Optional, specifies the Dockerfile to use
+    image: lichaajpg/agent:latest
     container_name: agent
     restart: unless-stopped
     ports:

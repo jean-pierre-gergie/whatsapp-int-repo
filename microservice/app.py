@@ -1,5 +1,5 @@
 from fastapi import FastAPI ,Request
-from celery_app import celery_app ,send_message_campaign
+from celery_app import celery_app , submit_task
 import time 
 import logging
 
@@ -21,10 +21,7 @@ async def start_campaign_task(request: Request):
     payload = await request.json()
 
     logger.debug(f"Received payload: {payload}")
-
-    # logger.debug(f"Final kwargs /for task: {kwargs}")
-    task = send_message_campaign.apply_async(
-            kwargs={
+    kwargs={
                 'foundation_name':payload['foundation_name'],
                 'campaign_timing': payload['campaign_timing'],
                 'scheduled_date': payload['scheduled_date'],
@@ -36,9 +33,22 @@ async def start_campaign_task(request: Request):
                 'media_id': payload.get('media_id', 0),
                 'campaign_id_db': None
             }
+    
+    if payload['campaign_timing'] =="scheduled":
+        task = submit_task(
+            task_args=kwargs,
+            start_immediately=False,
+            scheduled_time=payload['scheduled_date']
+        )
+
+    else:
+        task =submit_task(
+            task_args=kwargs,
+            start_immediately=True,
+            scheduled_time=None
         )
    
-    return {"task_id":task.id, "message": "Campaign processing started"}
+    return {"task_id":task, "message": "Campaign processing started"}
 
 
 
@@ -53,7 +63,7 @@ async def send_campaign_status(task_id: str):
 
     if task_result.state == 'PENDING':
         logger.debug(f"Task {task_id} is still pending...")
-        return {"status": "Task is still pending...", "task_id": task_id}
+        return {"status": "PENDING", "task_id": task_id}
     
     elif task_result.state == 'PROGRESS':
         total_members = task_result.info.get('Total_members', 0)
@@ -65,7 +75,7 @@ async def send_campaign_status(task_id: str):
                      f"{success_count} successes, {failed_count} failures.")
         
         return {
-            "status": "Task in progress...",
+            "status": "PROGRESS",
             "total_members": total_members,  # Total members
             "processed": processed,  # Processed members so far
             "success_count": success_count,  # Number of successful sends
@@ -86,7 +96,7 @@ async def send_campaign_status(task_id: str):
                      f"{final_success_count} successes, {final_failed_count} failures.")
         
         return {
-            "status": "Task completed!",
+            "status": "SUCCESS",
             "total_members": total_members,  # Total members
             "processed": total_members,  # All members have been processed
             "success_count": final_success_count,  # Final number of successful sends
@@ -97,7 +107,7 @@ async def send_campaign_status(task_id: str):
     elif task_result.state == 'FAILURE':
         logger.debug(f"Task {task_id} failed with error: {str(task_result.result)}")
         return {
-            "status": "Task failed.",
+            "status": "FAILURE",
             "error": str(task_result.result),
             "task_id": task_id
         }

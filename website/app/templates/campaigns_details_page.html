@@ -78,25 +78,108 @@
                     </div>
                 </div>
 
-                <!-- Pie Chart and Timeline -->
-                <div class="row mt-4">
-                    <div class="col-md-6">
-                        <h3>Campaign Success vs Failure</h3>
-                        <div class="chart-container" style="position: relative; width: 100%; max-width: 500px; height: 400px;">
-                            <canvas id="campaignPieChart"></canvas>
-                        </div>
-                    </div>
-                
-                    <div class="col-md-6">
-                        <h3>Campaign Timeline</h3>
-                        <div class="chart-container" style="position: relative; width: 100%; max-width: 500px; height: 400px;">
-                            <div id="campaignTimeline" style="width: 100%; height: 100%;"></div>
-                        </div>
-                    </div>
+                <div class="progress my-4">
+                    <div id="task-progress" class="progress-bar" role="progressbar" style="width: 0%;" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
                 </div>
+                <div id="progress-status" class="text-center">0 / 0 </div>
             </section>
         </div>
     </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const campaign_name = "{{ campaign.campaign_name }}"; // Render campaign_name directly from Flask
+            checkInitialStatus(campaign_name);
+        });
+
+        function checkInitialStatus(campaignName) {
+            const progressBar = document.getElementById('task-progress');
+            const progressStatus = document.getElementById('progress-status');
+
+            // Make an initial call to check the task status
+            fetch(`/campaign_task_status_polling/${campaignName}`)
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Initial status response:', data);
+
+                    if (data.error) {
+                        progressStatus.textContent = data.error;
+                        return; // Stop further execution on error
+                    }
+
+                    const totalTasks = data.total_members || 1; // Avoid division by zero
+                    const processedTasks = data.processed || 0;
+
+                    const progressPercentage = Math.min((processedTasks / totalTasks) * 100, 100).toFixed(2);
+
+                    progressBar.style.width = `${progressPercentage}%`;
+                    progressBar.setAttribute('aria-valuenow', progressPercentage);
+                    progressBar.textContent = `${progressPercentage}%`;
+
+                    progressStatus.textContent = `${processedTasks} / ${totalTasks} tasks completed`;
+
+                    if (data.status === "PENDING") {
+                        progressStatus.textContent = "Task is pending. Polling will not start.";
+                        return; // Do not start polling if the task is pending
+                    }
+
+                    if (data.status === "SUCCESS") {
+                        progressStatus.textContent = `Task completed: ${data.current_success} successful, ${data.current_failed} failed.`;
+                    } else if (data.status === "FAILURE") {
+                        progressStatus.textContent = "The task failed. Please try again.";
+                    } else {
+                        // Start polling if status is neither SUCCESS nor FAILURE
+                        pollProgress(campaignName);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching initial task status:', error);
+                    progressStatus.textContent = 'An error occurred while checking the initial task status.';
+                });
+        }
+
+        function pollProgress(campaignName) {
+            const progressBar = document.getElementById('task-progress');
+            const progressStatus = document.getElementById('progress-status');
+
+            let pollInterval = setInterval(() => {
+                fetch(`/campaign_task_status_polling/${campaignName}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('Polling response:', data);
+
+                        if (data.error) {
+                            progressStatus.textContent = data.error;
+                            clearInterval(pollInterval); // Stop polling if there’s an error
+                            return;
+                        }
+
+                        const totalTasks = data.total_members || 1; // Avoid division by zero
+                        const processedTasks = data.processed || 0;
+
+                        const progressPercentage = Math.min((processedTasks / totalTasks) * 100, 100).toFixed(2);
+
+                        progressBar.style.width = `${progressPercentage}%`;
+                        progressBar.setAttribute('aria-valuenow', progressPercentage);
+                        progressBar.textContent = `${progressPercentage}%`;
+
+                        progressStatus.textContent = `${processedTasks} / ${totalTasks} tasks completed`;
+
+                        if (data.status === "SUCCESS") {
+                            progressStatus.textContent = `Task completed: ${data.current_success} successful, ${data.current_failed} failed.`;
+                            clearInterval(pollInterval); // Stop polling when status is success
+                        } else if (data.status === "FAILURE") {
+                            progressStatus.textContent = "The task failed. Please try again.";
+                            clearInterval(pollInterval); // Stop polling on failure
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching task status:', error);
+                        progressStatus.textContent = 'An error occurred while polling the task status.';
+                        clearInterval(pollInterval); // Stop polling on fetch error
+                    });
+            }, 1000);
+        }
+    </script>
 
      <!-- Dynamic static links for JS files -->
      <script src="{{ url_for('static', filename='vendors/perfect-scrollbar/perfect-scrollbar.min.js') }}"></script>
@@ -106,52 +189,6 @@
      <script src="{{ url_for('static', filename='js/main.js') }}"></script>
      <script src="{{ url_for('static', filename='js/bootstrap.bundle.min.js') }}"></script>
 
-    <!-- JS for rendering Pie Chart -->
-    <script>
-        var ctx = document.getElementById('campaignPieChart').getContext('2d');
-        var campaignPieChart = new Chart(ctx, {
-            type: 'pie',
-            data: {
-                labels: ['Success', 'Failure'],
-                datasets: [{
-                    data: [4, 0], // Replace with dynamic values
-                    backgroundColor: ['#4CAF50', '#FF5733'],
-                    hoverOffset: 4
-                }]
-            },
-            options: {
-                responsive: true,
-                title: {
-                    display: true,
-                    text: 'Campaign Success vs Failure'
-                }
-            }
-        });
-    </script>
-
-    <!-- JS for rendering Timeline -->
-    <script>
-        var timelineData = [
-            {
-                x: ['Submitted', 'Started', 'Finished'],
-                y: ['2024-10-18T07:19:33.792Z', '2024-10-18T07:19:36.210Z', '2024-10-18T07:19:37.170Z'], // Replace with dynamic values
-                mode: 'lines+markers',
-                type: 'scatter'
-            }
-        ];
-
-        var layout = {
-            title: 'Campaign Timeline',
-            xaxis: {
-                title: 'Event'
-            },
-            yaxis: {
-                title: 'Timestamp',
-                type: 'date'
-            }
-        };
-
-        Plotly.newPlot('campaignTimeline', timelineData, layout);
-    </script>
+    
 </body>
 </html>
