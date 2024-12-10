@@ -16,6 +16,8 @@ from utils.send_campaigns_helpers import *
 from utils.chat_rooms_helper import WhatsAppChatCampaignHandler
 from utils.manage_founadtion_session import get_dependencies_by_foundation
 from utils.webhook_jwt_refresh_helper import refresh_jwt
+from utils.init_system import init_system
+from utils.webhook_api_key_refresh_helper import refresh_api_key
 from dateutil import parser
 import asyncio
 
@@ -54,10 +56,13 @@ celery_app = Celery(
 celery_app.conf.beat_schedule = {
     'refresh-webhook-jwt-token': {
         'task': 'tasks.refresh_webhook_jwt_token',
-        'schedule':crontab(hour='*/6'),
+        'schedule': crontab(hour='*/10'),  # Every 6 hours
+    },
+    'refresh-api-key-weekly': {
+        'task': 'tasks.refresh_api_key',
+        'schedule': crontab(hour='*/20'),  # Every Sunday at 12:00 AM
     },
 }
-
 
 @celery_app.task(bind=True)
 def send_message_campaign(self, foundation_name, campaign_timing, scheduled_date,scheduled_date_local, selected_campaign, template_json, variables, campaign_name, media_id=None,campaign_id_db =None):
@@ -240,10 +245,42 @@ def refresh_webhook_jwt_token(self):
     refresh_jwt(logger)
     logger.info(f"BEAT --- Done updating JWT Token")
     
+
+
+@celery_app.task(name="task.refresh_api_key",bind = True)
+def refresh_api_key(self):
+    logger = get_task_logger(__name__)
+    logger.setLevel(logging.DEBUG)
+    logger.info(f"BEAT --- Refreshing API KEY")
+    refresh_api_key(logger)
+    logger.info(f"BEAT --- Done  updating API KEY")
+
+
+
+
+
+
+@celery_app.task(name='tasks.init_system_task',bind = True)
+def init_system_task(self):
+    logger = get_task_logger(__name__)
+    logger.setLevel(logging.DEBUG)
+    logger.info(f"INIT_SYSTEM --- initializing the system")
+    init_system(logger)
+    logger.info(f"INIT_SYSTEM --- init Done")
+                
+
+            
+
+
+
+
+
+
+
 @worker_ready.connect
 def call_refresh_token_on_startup(sender, **kwargs):
     logger.info("Worker started, calling refresh_webhook_jwt_token immediately...")
-    celery_app.send_task('tasks.refresh_webhook_jwt_token')
+    celery_app.send_task('tasks.init_system_task')
 
 
 
