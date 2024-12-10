@@ -31,7 +31,7 @@ pymongo_logger.setLevel(logging.ERROR)
 
 app = FastAPI()
 
-create_collections()
+
 
 # TODO this function is deprecated and the urls are being set by celery beat 
 # init_webhook_urls()
@@ -41,11 +41,7 @@ foundation_handlers = create_handlers_for_all_foundations()
 @app.on_event("startup")
 async def startup_event():
     logger.info("Starting the needed stuff")
-    try:
-       
-        logger.info("Collections created successfully on startup.")
-    except Exception as e:
-        logger.error(f"Error creating collections on startup: {e}")
+    
 
     logger.info("Starting up FastAPI server and initializing collections.")
     try:
@@ -73,7 +69,7 @@ async def webhook(request: Request, foundation_name: str, authorization: Optiona
         payload = await request.json()
         logger.info(f"Received webhook payload for foundation '{foundation_name}'.")
 
-        # You can use `decoded_token` if needed for additional validation or logging
+       
         logger.debug(f"Decoded JWT token: {decoded_token}")
 
         # Process webhook payload using the specific handler
