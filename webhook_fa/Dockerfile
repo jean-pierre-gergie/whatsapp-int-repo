@@ -16,6 +16,7 @@ COPY ./init_scripts/init_webhook_urls.py /app/init_scripts/
 COPY ./init_data/languages.json /app/init_data/
 COPY ./init_data/users.json /app/init_data/
 COPY ./init_data/foundation_default_auto_reply.json /app/init_data/
+
 # Copy utility scripts
 COPY ./utils /app/utils
 COPY ./utils_init/utils_init.py /app/utils_init/
