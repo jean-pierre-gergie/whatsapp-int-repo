@@ -123,20 +123,6 @@ services:
     networks:
     - network_internal
 
-  init_system:
-    build:
-      context: ./init_system  # Replace with the path where the init script and Dockerfile are located
-    container_name: init_system_container
-    restart: "no"  # Ensure this service does not restart automatically
-    depends_on:
-      - mongodb  # Ensure MongoDB is up before running the script
-    networks:
-      - network_internal
-    command: python init_system.py
-    volumes:
-      - ./init_system:/app  # Mounts the init system folder
-    env_file:
-      - .env
 
   mongodb:
     image: mongodb/mongodb-community-server:latest
