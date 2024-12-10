@@ -70,6 +70,7 @@
                                     <div class="form-group">
                                         <label for="campaign_template">Template</label>
                                         <select name="campaign_template" id="campaign_template" class="form-control" required onchange="updateTemplatePreview('campaign_template', 'campaign-template-preview')">
+                                            <option value="" disabled selected>Select Campaign</option>
                                             {% for template in templates %}
                                                 {% if template.status == 'approved' %}
                                                     <option value="{{ template.template_name }}">{{ template.template_name }}</option>
