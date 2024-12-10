@@ -39,7 +39,7 @@ def populate_collection_from_json(collection, json_path, unique_field=None):
                     logger.info(f"Document with '{unique_field}'={document.get(unique_field)} already exists. Skipping insertion.")
                 else:
                     collection.insert_one(document)
-                    logger.info(f"Inserted document into '{collection.name}' collection.")
+                    # logger.info(f"Inserted document into '{collection.name}' collection.")
     except FileNotFoundError:
         logger.error(f"The file '{json_path}' was not found.")
     except json.JSONDecodeError:
@@ -55,11 +55,13 @@ def create_collection_if_not_exists(db, collection_name):
     if collection_name not in db.list_collection_names():
         try:
             db.create_collection(collection_name)
-            logger.info(f"Collection '{collection_name}' created successfully.")
+            # logger.info(f"Collection '{collection_name}' created successfully.")
         except errors.CollectionInvalid:
+            
             logger.warning(f"Collection '{collection_name}' could not be created.")
     else:
-        logger.info(f"Collection '{collection_name}' already exists.")
+        pass
+        # logger.info(f"Collection '{collection_name}' already exists.")
 
 def create_index(collection, field_name, index_name, order=DESCENDING):
     """Create an index on a specified field in the collection."""

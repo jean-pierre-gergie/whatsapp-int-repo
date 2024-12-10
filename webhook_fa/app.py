@@ -16,8 +16,8 @@ from utils.generate_long_lived_token import generate_forever_token
 from utils.auto_reply_helper import AutoReplyHandler
 from utils.init_webhook_helper import create_handlers_for_all_foundations
 from utils_init.webhook_jwt_wrapper import verify_jwt
-from tenacity import retry, wait_exponential, stop_after_attempt, RetryError
-
+from utils_init.utils_init import get_mongo_client
+from tenacity import retry, wait_exponential, stop_after_attempt, RetryError,wait_fixed
 
 # Set up logging
 logging.basicConfig(
@@ -32,24 +32,59 @@ pymongo_logger.setLevel(logging.ERROR)
 app = FastAPI()
 
 
+mongo_client = get_mongo_client()
+foundations_collection = mongo_client['foundations_db']['foundations']
 
-# TODO this function is deprecated and the urls are being set by celery beat 
-# init_webhook_urls()
+EXPECTED_DOCUMENT_COUNT = int(os.getenv('EXPECTED_DOCUMENT_COUNT',1))
 
-foundation_handlers = create_handlers_for_all_foundations()
+
+foundation_handlers = {}
+
+
+@retry(wait=wait_fixed(3), stop=stop_after_attempt(100))
+def check_mongo_collection_ready():
+    """Check if the MongoDB collection has the required number of documents."""
+    attempt_number = check_mongo_collection_ready.retry.statistics.get('attempt_number', 0) + 1
+    logger.info(f"Attempt {attempt_number}: Checking MongoDB collection...")
+    document_count = foundations_collection.count_documents({})
+    if document_count < EXPECTED_DOCUMENT_COUNT:
+        raise Exception(f"Collection foundations has {document_count} documents. Waiting for {EXPECTED_DOCUMENT_COUNT}.")
+    logger.info(f"Collection foundations is ready with {document_count} documents.")
+
+
+
+
+
+# foundation_handlers = create_handlers_for_all_foundations()
 
 @app.on_event("startup")
 async def startup_event():
-    logger.info("Starting the needed stuff")
-    
+    logger.info("Starting up FastAPI server and initializing collections.")
 
     logger.info("Starting up FastAPI server and initializing collections.")
     try:
         
+        # Wait for MongoDB collection to be ready
+        logger.info("Checking MongoDB collection readiness...")
+        check_mongo_collection_ready()
+
+
+        global foundation_handlers
+        foundation_handlers = create_handlers_for_all_foundations()
+
+
+        
         for foundation_name in foundation_handlers:
             logger.info(f"Handlers initialized for foundation: {foundation_name}")
+
+
+    except RetryError:
+        logger.error("MongoDB collection did not reach the required number of documents in time. Exiting...")
+        raise HTTPException(status_code=500, detail="MongoDB initialization failed")
+
     except Exception as e:
-        logger.error(f"Error initializing handlers on startup: {e}")
+        logger.error(f"Error during startup: {e}")
+        raise HTTPException(status_code=500, detail="Startup initialization error")
 
 class WebhookPayload(BaseModel):
     entry: Optional[list[Dict[str, Any]]]

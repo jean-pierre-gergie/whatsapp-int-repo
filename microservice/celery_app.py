@@ -56,11 +56,11 @@ celery_app = Celery(
 celery_app.conf.beat_schedule = {
     'refresh-webhook-jwt-token': {
         'task': 'tasks.refresh_webhook_jwt_token',
-        'schedule': crontab(hour='*/10'),  # Every 6 hours
+        'schedule': crontab(hour='1'),  
     },
     'refresh-api-key-weekly': {
         'task': 'tasks.refresh_api_key',
-        'schedule': crontab(hour='*/20'),  # Every Sunday at 12:00 AM
+        'schedule': crontab(hour='1'),  
     },
 }
 
@@ -258,7 +258,7 @@ def refresh_webhook_jwt_token(self):
     
 
 
-@celery_app.task(name="task.refresh_api_key",bind = True)
+@celery_app.task(name="tasks.refresh_api_key",bind = True)
 def refresh_api_key(self):
     logger = get_task_logger(__name__)
     logger.setLevel(logging.DEBUG)
