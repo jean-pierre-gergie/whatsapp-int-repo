@@ -221,6 +221,57 @@ def campaigns():
     return render_template('campaigns_page.html', campaigns=campaigns,foundation_name=foundation_name)
 
 
+@bp.route('/delete_campaign/<campaign_name>', methods=['DELETE'])
+@jwt_required()
+@role_required(['admin'])  # Restrict deletion to admins
+def delete_campaign_by_name(campaign_name):
+    """
+    Deletes a campaign by its name.
+    """
+    try:
+        # Retrieve session configs for the current foundation
+        session_configs = get_session_foundation_config()
+
+        # Get the appropriate database and collection
+        whatsapp_data_db = session_configs.get('whatsapp_data_db')
+        foundation_name = session_configs.get('foundation_name')
+        final_campaign_response_collection = whatsapp_data_db.final_campaign_response
+        campaign_document_collection  = whatsapp_data_db.campaign_name
+        campaign_responses_collection = whatsapp_data_db.campaign_responses
+
+
+        # Attempt to delete the campaign by its name
+        campaign_result = final_campaign_response_collection.delete_one({"campaign_name": campaign_name})
+
+        document_result = campaign_document_collection.delete_one({"name": campaign_name})
+
+        # Determine results
+        campaign_responses_result = campaign_responses_collection.delete_many({"campaign_name": campaign_name})
+
+        # Determine results
+        if (
+            campaign_result.deleted_count > 0 or
+            document_result.deleted_count > 0 or
+            campaign_responses_result.deleted_count > 0
+        ):
+            return jsonify({
+                "message": f"Campaign '{campaign_name}' and all related documents deleted successfully.",
+                "deleted_from": {
+                    "final_campaign_response": campaign_result.deleted_count,
+                    "campaign_document": document_result.deleted_count,
+                    "third_collection": campaign_responses_result.deleted_count
+                }
+            }), 200
+        else:
+            return jsonify({
+                "message": f"No campaign or related documents found for '{campaign_name}'."
+            }), 404
+
+    except Exception as e:
+        current_app.logger.error(f"Error deleting campaign: {e}")
+        return jsonify({"message": "Error deleting campaign.", "error": str(e)}), 500
+    
+
 # FIXME 
 @bp.route('/campaign_details/<campaign_name>')
 @jwt_required()
@@ -378,6 +429,7 @@ def send_campaign_messages():
         "scheduled_date_local":scheduled_date_local,  
         "selected_campaign": selected_campaign,
         "template_json": template_json,
+        "template_name": selected_template,
         "variables": variables,
         "campaign_name": campaign_name,
         "media_id": media_id if media_id else 0 
@@ -862,60 +914,60 @@ def update_auto_reply_message():
 #     return response
 
 
-@bp.route('/dynamic_redirect', methods=['GET'])
-@jwt_required()
-@role_required(['admin', 'user'])
-def dynamic_redirect():
-#     # Create a new token or get the existing one
-    current_identity = get_jwt_identity()  # Get the current user's identity
-    token = create_access_token(identity=current_identity,expires_delta=timedelta(hours=1))    # Create a new token with the same identity
-    agent_server_url = os.getenv('CHAT_AGENT_SERVER_URL_PRODUCTION')
-
-    session_configs = get_session_foundation_config()
-    foundation_name = session_configs.get('foundation_name')
-
-    redirect_url = f"{agent_server_url}?foundation_name={foundation_name}"
-    logger.info(f"redirecting to {redirect_url}")
-
-
-#     logger.info(f"redirecting to {agent_server_url}")
-    response = make_response(redirect(redirect_url))
-    response.set_cookie(
-        'jwt_token', 
-        token, 
-        httponly=False, 
-        secure=True, 
-        samesite='None', 
-        domain='.omnichanneltv.com'
-    )
-    return response
-
-
 # @bp.route('/dynamic_redirect', methods=['GET'])
 # @jwt_required()
 # @role_required(['admin', 'user'])
 # def dynamic_redirect():
-#     # Create a new token or get the existing one
-#     current_identity = get_jwt_identity()  
-#     token = create_access_token(identity=current_identity,expires_delta=timedelta(hours=1))  
-
-
-#     agent_server_url = os.getenv('CHAT_AGENT_SERVER_URL_DEVELOPMENT')
-
+# #     # Create a new token or get the existing one
+#     current_identity = get_jwt_identity()  # Get the current user's identity
+#     token = create_access_token(identity=current_identity,expires_delta=timedelta(hours=1))    # Create a new token with the same identity
+#     agent_server_url = os.getenv('CHAT_AGENT_SERVER_URL_PRODUCTION')
 
 #     session_configs = get_session_foundation_config()
 #     foundation_name = session_configs.get('foundation_name')
-
-
-#     agent_server_url = os.getenv('CHAT_AGENT_SERVER_URL_DEVELOPMENT')
-
 
 #     redirect_url = f"{agent_server_url}?foundation_name={foundation_name}"
 #     logger.info(f"redirecting to {redirect_url}")
 
 
+# #     logger.info(f"redirecting to {agent_server_url}")
 #     response = make_response(redirect(redirect_url))
-#     response.set_cookie('jwt_token',token, httponly=False, secure=True, samesite='Strict')
+#     response.set_cookie(
+#         'jwt_token', 
+#         token, 
+#         httponly=False, 
+#         secure=True, 
+#         samesite='None', 
+#         domain='.omnichanneltv.com'
+#     )
+#     return response
+
+
+@bp.route('/dynamic_redirect', methods=['GET'])
+@jwt_required()
+@role_required(['admin', 'user'])
+def dynamic_redirect():
+    # Create a new token or get the existing one
+    current_identity = get_jwt_identity()  
+    token = create_access_token(identity=current_identity,expires_delta=timedelta(hours=1))  
+
+
+    agent_server_url = os.getenv('CHAT_AGENT_SERVER_URL_DEVELOPMENT')
+
+
+    session_configs = get_session_foundation_config()
+    foundation_name = session_configs.get('foundation_name')
+
+
+    agent_server_url = os.getenv('CHAT_AGENT_SERVER_URL_DEVELOPMENT')
+
+
+    redirect_url = f"{agent_server_url}?foundation_name={foundation_name}"
+    logger.info(f"redirecting to {redirect_url}")
+
+
+    response = make_response(redirect(redirect_url))
+    response.set_cookie('jwt_token',token, httponly=False, secure=True, samesite='Strict')
 
     
-#     return response
+    return response

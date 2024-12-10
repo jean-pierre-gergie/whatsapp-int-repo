@@ -28,6 +28,7 @@ async def start_campaign_task(request: Request):
                 'scheduled_date_local':payload['scheduled_date_local'],
                 'selected_campaign': payload['selected_campaign'],
                 'template_json': payload['template_json'],
+                'template_name':payload['template_name'],
                 'variables': payload['variables'],
                 'campaign_name': payload['campaign_name'],
                 'media_id': payload.get('media_id', 0),

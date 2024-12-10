@@ -65,7 +65,18 @@ celery_app.conf.beat_schedule = {
 }
 
 @celery_app.task(bind=True)
-def send_message_campaign(self, foundation_name, campaign_timing, scheduled_date,scheduled_date_local, selected_campaign, template_json, variables, campaign_name, media_id=None,campaign_id_db =None):
+def send_message_campaign(self,
+                          foundation_name,
+                          campaign_timing, 
+                          scheduled_date,
+                          scheduled_date_local, 
+                          selected_campaign, 
+                          template_json, 
+                          template_name,
+                          variables,
+                          campaign_name, 
+                          media_id=None,
+                          campaign_id_db =None):
 
     logger = get_task_logger(__name__)
 
@@ -305,6 +316,7 @@ def submit_task(task_args=None, start_immediately=True, scheduled_time=None):
                 'status': "Pending Start Time",
                 'campaign': task_args['selected_campaign'],
                 'campaign_name': task_args['campaign_name'],
+                'template_name':task_args['template_name'],
                 'campaign_submitted_at': datetime.now(),
                 'campaign_scheduled': False,  # Immediate campaign, so not scheduled
                 'total_members': total_members
@@ -326,6 +338,7 @@ def submit_task(task_args=None, start_immediately=True, scheduled_time=None):
                 'status': "Pending Start Time",
                 'campaign': task_args['selected_campaign'],
                 'campaign_name': task_args['campaign_name'],
+                'template_name':task_args['template_name'],
                 'campaign_submitted_at': datetime.now(),
                 'campaign_scheduled': True,
                 'campaign_scheduled_at': task_args['scheduled_date'],
