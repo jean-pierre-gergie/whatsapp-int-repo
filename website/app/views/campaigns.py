@@ -429,6 +429,7 @@ def send_campaign_messages():
         "scheduled_date_local":scheduled_date_local,  
         "selected_campaign": selected_campaign,
         "template_json": template_json,
+        "template_name": selected_template,
         "variables": variables,
         "campaign_name": campaign_name,
         "media_id": media_id if media_id else 0 
