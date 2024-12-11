@@ -32,7 +32,7 @@ def update_foundations_api_keys(foundations_api_keys,logger):
         logger.error(f"An error occurred while updating API keys: {e}", exc_info=True)
 
 
-def refresh_api_key(logger):
+def webhook_refresh_api_key(logger):
     """
     Refreshes the API keys for all foundations by retrieving updated API keys 
     and applying them to the database.

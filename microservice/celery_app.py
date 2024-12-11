@@ -17,7 +17,7 @@ from utils.chat_rooms_helper import WhatsAppChatCampaignHandler
 from utils.manage_founadtion_session import get_dependencies_by_foundation
 from utils.webhook_jwt_refresh_helper import refresh_jwt
 from utils.init_system import init_system
-from utils.webhook_api_key_refresh_helper import refresh_api_key
+from utils.webhook_api_key_refresh_helper import webhook_refresh_api_key
 from dateutil import parser
 import asyncio
 
@@ -56,11 +56,13 @@ celery_app = Celery(
 celery_app.conf.beat_schedule = {
     'refresh-webhook-jwt-token': {
         'task': 'tasks.refresh_webhook_jwt_token',
-        'schedule': crontab(hour='1'),  
+        'schedule': crontab(hour='*/6', minute=0), 
+        'options': {'catchup': False},
     },
     'refresh-api-key-weekly': {
         'task': 'tasks.refresh_api_key',
-        'schedule': crontab(hour='1'),  
+        'schedule':  crontab(hour=0, minute=0),
+        'options': {'catchup': False},    
     },
 }
 
@@ -263,7 +265,7 @@ def refresh_api_key(self):
     logger = get_task_logger(__name__)
     logger.setLevel(logging.DEBUG)
     logger.info(f"BEAT --- Refreshing API KEY")
-    refresh_api_key(logger)
+    webhook_refresh_api_key(logger)
     logger.info(f"BEAT --- Done  updating API KEY")
 
 
