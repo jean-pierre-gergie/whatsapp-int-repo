@@ -221,6 +221,57 @@ def campaigns():
     return render_template('campaigns_page.html', campaigns=campaigns,foundation_name=foundation_name)
 
 
+@bp.route('/delete_campaign/<campaign_name>', methods=['DELETE'])
+@jwt_required()
+@role_required(['admin'])  # Restrict deletion to admins
+def delete_campaign_by_name(campaign_name):
+    """
+    Deletes a campaign by its name.
+    """
+    try:
+        # Retrieve session configs for the current foundation
+        session_configs = get_session_foundation_config()
+
+        # Get the appropriate database and collection
+        whatsapp_data_db = session_configs.get('whatsapp_data_db')
+        foundation_name = session_configs.get('foundation_name')
+        final_campaign_response_collection = whatsapp_data_db.final_campaign_response
+        campaign_document_collection  = whatsapp_data_db.campaign_name
+        campaign_responses_collection = whatsapp_data_db.campaign_responses
+
+
+        # Attempt to delete the campaign by its name
+        campaign_result = final_campaign_response_collection.delete_one({"campaign_name": campaign_name})
+
+        document_result = campaign_document_collection.delete_one({"name": campaign_name})
+
+        # Determine results
+        campaign_responses_result = campaign_responses_collection.delete_many({"campaign_name": campaign_name})
+
+        # Determine results
+        if (
+            campaign_result.deleted_count > 0 or
+            document_result.deleted_count > 0 or
+            campaign_responses_result.deleted_count > 0
+        ):
+            return jsonify({
+                "message": f"Campaign '{campaign_name}' and all related documents deleted successfully.",
+                "deleted_from": {
+                    "final_campaign_response": campaign_result.deleted_count,
+                    "campaign_document": document_result.deleted_count,
+                    "third_collection": campaign_responses_result.deleted_count
+                }
+            }), 200
+        else:
+            return jsonify({
+                "message": f"No campaign or related documents found for '{campaign_name}'."
+            }), 404
+
+    except Exception as e:
+        current_app.logger.error(f"Error deleting campaign: {e}")
+        return jsonify({"message": "Error deleting campaign.", "error": str(e)}), 500
+    
+
 # FIXME 
 @bp.route('/campaign_details/<campaign_name>')
 @jwt_required()
@@ -378,6 +429,7 @@ def send_campaign_messages():
         "scheduled_date_local":scheduled_date_local,  
         "selected_campaign": selected_campaign,
         "template_json": template_json,
+        "template_name": selected_template,
         "variables": variables,
         "campaign_name": campaign_name,
         "media_id": media_id if media_id else 0 

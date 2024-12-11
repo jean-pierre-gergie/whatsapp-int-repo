@@ -32,8 +32,9 @@ class AutoReplyHandler:
                     return
                 
             auto_reply_message = self.get_auto_reply_message()
+            api_key = self.get_api_key()
 
-            send_message_to_users_through_360(room_id, auto_reply_message,self.api_key_360,logger = self.logger)
+            send_message_to_users_through_360(room_id, auto_reply_message,api_key,logger = self.logger)
             # Call `_handle_chat_room` and handle the chat room without updating `last_auto_reply`
             await self._handle_chat_room(room_id, auto_reply_message ,timestamp=datetime.utcnow())
 
@@ -116,4 +117,29 @@ class AutoReplyHandler:
             return auto_reply_message
         except Exception as e:
             self.logger.error(f"Error fetching auto-reply message for {self.foundation_name}: {e}", exc_info=True)
+            raise
+    def get_api_key(self):
+        """
+        Fetches the API key for the foundation using the foundation name.
+        """
+        try:
+            self.logger.debug(f"Fetching API key for foundation: {self.foundation_name}")
+            # Find the document in the collection matching the foundation name
+            foundation_doc = self.foundations_collection.find_one({"foundation": self.foundation_name})
+
+            if not foundation_doc:
+                self.logger.warning(f"No document found for foundation: {self.foundation_name}")
+                return None
+
+            # Extract the API key
+            api_key = foundation_doc.get("api_key")
+            if not api_key:
+                self.logger.warning(f"No API key found for foundation: {self.foundation_name}")
+                return None
+
+            self.logger.info(f"API key for {self.foundation_name}: {api_key}")
+            return api_key
+
+        except Exception as e:
+            self.logger.error(f"Error fetching API key for {self.foundation_name}: {e}", exc_info=True)
             raise

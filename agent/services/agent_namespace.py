@@ -35,10 +35,10 @@ def create_dynamic_namespaces(socketio, foundation_names):
     for foundation_name in foundation_names:
         namespace_path = f"/agent/agent_namespace/{foundation_name}"
         logger.info(f"Creating namespace: {namespace_path}")
-        chat_rooms_collection , api_key = get_foundation_dependencies(foundation_name)
+        chat_rooms_collection , _ = get_foundation_dependencies(foundation_name)
         socketio.on_namespace(DynamicNamespace(namespace_path))
 
         register_socketio_events(socketio=socketio,
                                  active_agent_namespace=namespace_path,
                                  chat_rooms_collection=chat_rooms_collection,
-                                 api_key=api_key)
+                                 foundation_name=foundation_name)

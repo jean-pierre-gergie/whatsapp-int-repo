@@ -8,9 +8,12 @@ import os
 from utils.logging_config import configure_logging
 from utils.jwt_helper import verify_jwt
 from utils.init_foundations_helper import get_all_foundation_names
+from utils.db_helper import get_mongo_client
 
 from services.agent_namespace import create_dynamic_namespaces
 from dotenv import load_dotenv
+from tenacity import retry, wait_fixed, stop_after_attempt, RetryError
+
 
 
 
@@ -26,9 +29,40 @@ logger = configure_logging()
 socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet', logger=True)
 # socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 
-founsation_names = get_all_foundation_names()
-create_dynamic_namespaces(socketio=socketio,
-                          foundation_names=founsation_names)
+
+
+mongo_client = get_mongo_client()
+foundations_collection = mongo_client['foundations_db']['foundations']
+
+EXPECTED_DOCUMENT_COUNT = int(os.getenv('EXPECTED_DOCUMENT_COUNT',1))
+
+@retry(wait=wait_fixed(3), stop=stop_after_attempt(100))
+def check_mongo_collection_ready():
+    """Check if the MongoDB collection has the required number of documents."""
+    attempt_number = check_mongo_collection_ready.retry.statistics.get('attempt_number', 0) + 1
+    logger.info(f"Attempt {attempt_number}: Checking MongoDB collection...")
+    document_count = foundations_collection.count_documents({})
+    if document_count < EXPECTED_DOCUMENT_COUNT:
+        raise Exception(f"Collection foundations has {document_count} documents. Waiting for {EXPECTED_DOCUMENT_COUNT}.")
+    logger.info(f"Collection foundations is ready with {document_count} documents.")
+
+
+try:
+    logger.info("Checking MongoDB collection readiness...")
+    check_mongo_collection_ready()
+
+    # Fetch foundation names and create dynamic namespaces
+    foundation_names = get_all_foundation_names()
+    create_dynamic_namespaces(socketio=socketio, foundation_names=foundation_names)
+    logger.info("Dynamic namespaces created successfully.")
+
+except RetryError:
+    logger.error("MongoDB collection did not reach the required number of documents in time. Exiting...")
+    raise RuntimeError("MongoDB initialization failed")
+
+except Exception as e:
+    logger.error(f"Error during initialization: {e}")
+    raise RuntimeError("Initialization error")
 
 
 @app.route('/agent_server')

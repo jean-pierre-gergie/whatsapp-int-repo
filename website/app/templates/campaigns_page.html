@@ -69,6 +69,7 @@
                               {{ campaign.status }}
                           </span>
                                     </p>
+                                    <p><strong>Template Name:                 </strong> <span class="template-name">{{ campaign.template_name }}</span></p>
                                     <p><strong>Campaign Submitted At (Local): </strong> <span class="campaign-submitted-at">{{ campaign.campaign_submitted_at }}</span></p>
                                     <p><strong>Campaign Scheduled At (Local): </strong> <span class="campaign-scheduled-at">{{ campaign.campaign_scheduled_at }}</span></p>
                                     <p><strong>Campaign Started At (Local): </strong> <span class="campaign-started-at">{{ campaign.campaign_started_at }}</span></p>
@@ -81,6 +82,7 @@
                                     <p><strong>Failed Percentage:</strong> {{ campaign.failed_percentage }}</p>
 
                                     <a href="{{ url_for('campaigns.campaign_details', campaign_name=campaign.campaign_name) }}" class="btn btn-primary mt-3">View Details</a>
+                                    <button class="btn btn-danger mt-3 delete-campaign-btn" data-campaign="{{ campaign.campaign_name }}">Delete Campaign</button>
                                 </div>
                             </div>
                         </div>
@@ -92,6 +94,7 @@
             </section>
          </div>       
     </div>
+    
     <script>
 
         
@@ -154,6 +157,29 @@
                 const localTime = convertToLocal(utcTime);
                 console.log('Campaign Finished At - Original UTC:', utcTime, "=> Converted Local:", localTime);
                 element.textContent = localTime;
+            });
+
+            document.querySelectorAll('.delete-campaign-btn').forEach(button => {
+                button.addEventListener('click', function () {
+                    const campaignName = this.dataset.campaign;
+                    if (confirm(`Are you sure you want to delete the campaign "${campaignName}"?`)) {
+                        fetch(`/delete_campaign/${campaignName}`, {
+                            method: 'DELETE',
+                        })
+                        .then(response => {
+                            if (response.ok) {
+                                alert(`Campaign "${campaignName}" has been deleted.`);
+                                this.closest('.col-md-4').remove(); // Remove the campaign card from the DOM
+                            } else {
+                                alert(`Failed to delete the campaign "${campaignName}".`);
+                            }
+                        })
+                        .catch(error => {
+                            console.error('Error deleting campaign:', error);
+                            alert('An error occurred while trying to delete the campaign.');
+                        });
+                    }
+                });
             });
         });
     </script>

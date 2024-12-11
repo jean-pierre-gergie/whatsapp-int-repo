@@ -62,31 +62,45 @@ class WhatsAppDataHandler:
             
             sender_phone = message.get('from')
             message_body = message.get('text', {}).get('body', '')
+            reaction = message.get('reaction',{}).get('emoji','')
             time_stamp = message.get('timestamp')
+
 
             self.logger.info("Handling Chat Room...")
             await self._handle_chat_room(sender_phone=sender_phone,
                                    wa_mid=wa_mid,
                                    message_body=message_body,
+                                   reaction = reaction,
                                    timestamp=datetime.utcnow())
             
             await self.auto_reply_handler.auto_reply(sender_phone)
             
 
-    async def _handle_chat_room(self, sender_phone, wa_mid, message_body, timestamp, sender_type="user"):
+    async def _handle_chat_room(self, sender_phone, wa_mid, message_body, reaction ,  timestamp, sender_type="user"):
         if sender_phone:
             existing_room = self.chat_rooms_collection.find_one({'room_id': sender_phone})
 
             open_discussion = True if sender_type == "user" else False
             timestamp = timestamp.isoformat() if isinstance(timestamp, datetime) else timestamp
-
-            message_data = {
-                "wa_mid": wa_mid,
-                "sender": sender_type,
-                "timestamp": timestamp,
-                "body": message_body,
-                "info": "unread"
-            }
+            
+            if reaction is not '':
+                self.logger.info(f"reaction{reaction}")
+                message_data = {
+                                    "wa_mid": wa_mid,
+                                    "sender": sender_type,
+                                    "timestamp": timestamp,
+                                    "body":f"**REACTION** : {reaction}",
+                                    "info": "unread"
+                                }
+                message_body = f"**REACTION** : {reaction}"
+            else:
+                message_data = {
+                    "wa_mid": wa_mid,
+                    "sender": sender_type,
+                    "timestamp": timestamp,
+                    "body": message_body,
+                    "info": "unread"
+                }
 
             if not existing_room:
                 # Set 'last_message_time' as the current message timestamp for a new room

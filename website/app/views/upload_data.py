@@ -151,9 +151,9 @@ def map_columns():
 
             # Combine the stats into a single message
             stats_message = (
-                f"Total rows: {stats['total_rows']}<br>"
-                f"Duplicate rows: {stats['num_duplicates']}<br>"
-                f"Invalid phone numbers: {stats['num_invalid_numbers']}<br>"
+                f"Total rows: {stats['total_rows']} --- "
+                f"Duplicate rows: {stats['num_duplicates']} --- "
+                f"Invalid phone numbers: {stats['num_invalid_numbers']} --- "
                 f"Valid rows: {stats['num_proper_rows']}"
             )
 

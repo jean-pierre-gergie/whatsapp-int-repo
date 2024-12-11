@@ -1,4 +1,4 @@
-from pymongo import MongoClient
+from pymongo import MongoClient,errors
 from dotenv import load_dotenv
 import os 
 import logging 
@@ -24,6 +24,21 @@ AGENT_CHAT_DB = 'agent_data'
 ROOMS_COLLECTION = 'rooms'
 
 
+
+load_dotenv()
+
+def get_mongo_client():
+    """Establish MongoDB client connection using environment variables."""
+    try:
+        username = os.getenv('MONGO_INITDB_ROOT_USERNAME')
+        password = os.getenv('MONGO_INITDB_ROOT_PASSWORD')
+        host = os.getenv('MONGO_HOST')
+        port = os.getenv('MONGO_PORT')
+        client = MongoClient(f"mongodb://{username}:{password}@{host}:{port}/")
+        return client
+    except errors.ConnectionError as e:
+        logger.error(f"Could not connect to MongoDB: {e}")
+        raise
 try:
     client = MongoClient(f"mongodb://{username}:{password}@{host}:{port}/")
     logger.info("MongoDB connection established successfully")
