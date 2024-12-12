@@ -3,7 +3,9 @@ version: '3.8'
 services:
 
   website:
-    image: lichaajpg/website:latest
+    build: 
+      context: ./website  # Specifies the directory containing your FastAPI app
+      dockerfile: Dockerfile
     container_name: website_container
     restart: unless-stopped
     ports:
@@ -21,7 +23,9 @@ services:
       - network_internal
 
   webhook_fa:
-    image: lichaajpg/webhook_fa:latest
+    build: 
+      context: ./webhook_fa  # Specifies the directory containing your FastAPI app
+      dockerfile: Dockerfile
     container_name: webhook_fa_container
     restart: unless-stopped
     ports:
