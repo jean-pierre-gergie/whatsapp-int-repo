@@ -63,6 +63,7 @@ class WhatsAppDataHandler:
             sender_phone = message.get('from')
             message_body = message.get('text', {}).get('body', '')
             reaction = message.get('reaction',{}).get('emoji','')
+            button = message.get('button',{}).get('text','')
             time_stamp = message.get('timestamp')
 
 
@@ -71,12 +72,13 @@ class WhatsAppDataHandler:
                                    wa_mid=wa_mid,
                                    message_body=message_body,
                                    reaction = reaction,
+                                   button = button,
                                    timestamp=datetime.utcnow())
             
             await self.auto_reply_handler.auto_reply(sender_phone)
             
 
-    async def _handle_chat_room(self, sender_phone, wa_mid, message_body, reaction ,  timestamp, sender_type="user"):
+    async def _handle_chat_room(self, sender_phone, wa_mid, message_body, reaction ,button ,  timestamp, sender_type="user"):
         if sender_phone:
             existing_room = self.chat_rooms_collection.find_one({'room_id': sender_phone})
 
@@ -93,6 +95,17 @@ class WhatsAppDataHandler:
                                     "info": "unread"
                                 }
                 message_body = f"**REACTION** : {reaction}"
+            elif button is not '':
+                self.logger.info(f"button{button}")
+                message_data = {
+                                    "wa_mid": wa_mid,
+                                    "sender": sender_type,
+                                    "timestamp": timestamp,
+                                    "body":f"**BUTTON** : {button}",
+                                    "info": "unread"
+                                }
+                message_body = f"**BUTTON** : {button}"
+
             else:
                 message_data = {
                     "wa_mid": wa_mid,
