@@ -5,7 +5,7 @@ from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt ,create_a
 from ..utils.decorators import role_required
 from ..utils.helper_functions import send_message, upload_image,get_report,transform_template_json, get_template_details, send_message_campaign,get_all_collections_content
 from ..utils.template_updater import fetch_and_update_templates
-from ..utils.session_config_helper import get_session_foundation_config, get_all_foundations
+from ..utils.session_config_helper import get_session_foundation_config
 
 
 import os
@@ -31,8 +31,11 @@ def inject_foundation_data():
     if not session_configs:
         return {}  # Or handle it gracefully if the data is missing
     foundation_name = session_configs.get('foundation_name')
-    all_foundations = get_all_foundations()
-    return dict(foundation_name=foundation_name, foundations=all_foundations)
+    granted_foundations = session_configs.get('granted_foundations')
+    granted_foundations=[{'foundation': foundation} for foundation in granted_foundations]
+    logger.debug(f"GRANTED FOUNDATIONS ---  { granted_foundations}")
+    
+    return dict(foundation_name=foundation_name, foundations=granted_foundations)
 
 
 
@@ -914,60 +917,60 @@ def update_auto_reply_message():
 #     return response
 
 
-@bp.route('/dynamic_redirect', methods=['GET'])
-@jwt_required()
-@role_required(['admin', 'user'])
-def dynamic_redirect():
-#     # Create a new token or get the existing one
-    current_identity = get_jwt_identity()  # Get the current user's identity
-    token = create_access_token(identity=current_identity,expires_delta=timedelta(hours=1))    # Create a new token with the same identity
-    agent_server_url = os.getenv('CHAT_AGENT_SERVER_URL_PRODUCTION')
-
-    session_configs = get_session_foundation_config()
-    foundation_name = session_configs.get('foundation_name')
-
-    redirect_url = f"{agent_server_url}?foundation_name={foundation_name}"
-    logger.info(f"redirecting to {redirect_url}")
-
-
-#     logger.info(f"redirecting to {agent_server_url}")
-    response = make_response(redirect(redirect_url))
-    response.set_cookie(
-        'jwt_token', 
-        token, 
-        httponly=False, 
-        secure=True, 
-        samesite='None', 
-        domain='.omnichanneltv.com'
-    )
-    return response
-
-
 # @bp.route('/dynamic_redirect', methods=['GET'])
 # @jwt_required()
 # @role_required(['admin', 'user'])
 # def dynamic_redirect():
-#     # Create a new token or get the existing one
-#     current_identity = get_jwt_identity()  
-#     token = create_access_token(identity=current_identity,expires_delta=timedelta(hours=1))  
-
-
-#     agent_server_url = os.getenv('CHAT_AGENT_SERVER_URL_DEVELOPMENT')
-
+# #     # Create a new token or get the existing one
+#     current_identity = get_jwt_identity()  # Get the current user's identity
+#     token = create_access_token(identity=current_identity,expires_delta=timedelta(hours=1))    # Create a new token with the same identity
+#     agent_server_url = os.getenv('CHAT_AGENT_SERVER_URL_PRODUCTION')
 
 #     session_configs = get_session_foundation_config()
 #     foundation_name = session_configs.get('foundation_name')
-
-
-#     agent_server_url = os.getenv('CHAT_AGENT_SERVER_URL_DEVELOPMENT')
-
 
 #     redirect_url = f"{agent_server_url}?foundation_name={foundation_name}"
 #     logger.info(f"redirecting to {redirect_url}")
 
 
+# #     logger.info(f"redirecting to {agent_server_url}")
 #     response = make_response(redirect(redirect_url))
-#     response.set_cookie('jwt_token',token, httponly=False, secure=True, samesite='Strict')
+#     response.set_cookie(
+#         'jwt_token', 
+#         token, 
+#         httponly=False, 
+#         secure=True, 
+#         samesite='None', 
+#         domain='.omnichanneltv.com'
+#     )
+#     return response
+
+
+@bp.route('/dynamic_redirect', methods=['GET'])
+@jwt_required()
+@role_required(['admin', 'user'])
+def dynamic_redirect():
+    # Create a new token or get the existing one
+    current_identity = get_jwt_identity()  
+    token = create_access_token(identity=current_identity,expires_delta=timedelta(hours=1))  
+
+
+    agent_server_url = os.getenv('CHAT_AGENT_SERVER_URL_DEVELOPMENT')
+
+
+    session_configs = get_session_foundation_config()
+    foundation_name = session_configs.get('foundation_name')
+
+
+    agent_server_url = os.getenv('CHAT_AGENT_SERVER_URL_DEVELOPMENT')
+
+
+    redirect_url = f"{agent_server_url}?foundation_name={foundation_name}"
+    logger.info(f"redirecting to {redirect_url}")
+
+
+    response = make_response(redirect(redirect_url))
+    response.set_cookie('jwt_token',token, httponly=False, secure=True, samesite='Strict')
 
     
-#     return response
+    return response

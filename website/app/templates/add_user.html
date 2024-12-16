@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+
+    <link rel="preconnect" href="https://fonts.gstatic.com">
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="./static/css/bootstrap.css">
+
+    <link rel="stylesheet" href="./static/vendors/iconly/bold.css">
+    <link rel="stylesheet" href="./static/vendors/perfect-scrollbar/perfect-scrollbar.css">
+    <link rel="stylesheet" href="./static/vendors/bootstrap-icons/bootstrap-icons.css">
+    <link rel="stylesheet" href="./static/css/app.css">
+    <link rel="stylesheet" href="./static/css/sidebar.css">
+    <link rel="shortcut icon" href="./static/images/favicon.svg" type="image/x-icon">
+</head>
+
+<body>
+    <div id="app">
+        {% include 'sidebar.html' %}
+        <div class="container mt-5">
+            <h2>Add New User</h2>
+            <form id="addUserForm" method="POST" action="/add_user">
+                <div class="mb-3">
+                    <label for="username" class="form-label">Username</label>
+                    <input type="text" class="form-control" id="username" name="username" required>
+                </div>
+                <div class="mb-3">
+                    <label for="password" class="form-label">Password</label>
+                    <input type="password" class="form-control" id="password" name="password" required>
+                </div>
+                <div class="mb-3">
+                    <label for="confirmPassword" class="form-label">Confirm Password</label>
+                    <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" required>
+                    <div id="passwordHelp" class="form-text text-danger d-none">Passwords do not match!</div>
+                </div>
+                <div class="mb-3">
+                    <label for="role" class="form-label">Role</label>
+                    <select class="form-select" id="role" name="role" required>
+                        <option value="admin">Admin</option>
+                        <option value="user">User</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="foundations" class="form-label">Foundations</label>
+                    <select class="form-select" id="foundations" name="foundations" multiple required>
+                        <!-- Foundations will be dynamically populated -->
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="defaultFoundation" class="form-label">Default Foundation</label>
+                    <select class="form-select" id="defaultFoundation" name="defaultFoundation" required>
+                        <!-- Default Foundation will be dynamically populated -->
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">Create User</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const foundationsSelect = document.getElementById('foundations');
+            const defaultFoundationSelect = document.getElementById('defaultFoundation');
+            const passwordInput = document.getElementById('password');
+            const confirmPasswordInput = document.getElementById('confirmPassword');
+            const passwordHelp = document.getElementById('passwordHelp');
+            const form = document.getElementById('addUserForm');
+    
+            // Fetch the list of foundations and populate the dropdowns
+            fetch('/get_foundations')
+                .then(response => response.json())
+                .then(data => {
+                    data.foundations.forEach(foundation => {
+                        const option = document.createElement('option');
+                        option.value = foundation;
+                        option.textContent = foundation;
+                        foundationsSelect.appendChild(option);
+                    });
+                    updateDefaultFoundationOptions();
+                })
+                .catch(error => console.error('Error fetching foundations:', error));
+    
+            // Update "Default Foundation" dropdown based on selected foundations
+            function updateDefaultFoundationOptions() {
+                const selectedFoundations = Array.from(foundationsSelect.selectedOptions).map(option => option.value);
+                defaultFoundationSelect.innerHTML = '';
+                selectedFoundations.forEach(foundation => {
+                    const option = document.createElement('option');
+                    option.value = foundation;
+                    option.textContent = foundation;
+                    defaultFoundationSelect.appendChild(option);
+                });
+                if (!selectedFoundations.includes(defaultFoundationSelect.value)) {
+                    defaultFoundationSelect.value = '';
+                }
+            }
+    
+            foundationsSelect.addEventListener('change', updateDefaultFoundationOptions);
+    
+            // Password validation
+            function validatePasswords() {
+                if (passwordInput.value !== confirmPasswordInput.value) {
+                    passwordHelp.classList.remove('d-none');
+                    return false;
+                } else {
+                    passwordHelp.classList.add('d-none');
+                    return true;
+                }
+            }
+    
+            // Add event listener to validate passwords on form submission
+            form.addEventListener('submit', function (event) {
+                if (!validatePasswords()) {
+                    event.preventDefault(); // Prevent form submission if passwords do not match
+                    alert('Please ensure passwords match.');
+                }
+            });
+    
+            // Add real-time validation for password confirmation
+            confirmPasswordInput.addEventListener('input', validatePasswords);
+        });
+    </script>
+
+    <script src="./static/vendors/perfect-scrollbar/perfect-scrollbar.min.js"></script>
+    <script src="./static/js/bootstrap.bundle.min.js"></script>
+    <script src="./static/vendors/apexcharts/apexcharts.js"></script>
+    <script src="./static/js/pages/dashboard.js"></script>
+    <script src="./static/js/main.js"></script>
+</body>
+
+</html>

@@ -10,19 +10,27 @@ from termcolor import colored
 jwt = JWTManager()
 
 # Initialize the logger
+def setup_logging():
+    """Set up centralized logging for the application."""
+    # Get the root logger
+    root_logger = logging.getLogger()
+    root_logger.setLevel(logging.DEBUG)
+
+    # Check if handlers already exist to prevent duplicates
+    if not root_logger.hasHandlers():
+        # Console handler
+        console_handler = logging.StreamHandler()
+        console_handler.setLevel(logging.DEBUG)
+        formatter = logging.Formatter('- %(name)s - %(levelname)s - %(message)s')
+        console_handler.setFormatter(formatter)
+        root_logger.addHandler(console_handler)
+
+# Call this function during app initialization
+setup_logging()
+
+
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
 
-# Create a stream handler to log messages to the console (stdout)
-console_handler = logging.StreamHandler()
-console_handler.setLevel(logging.DEBUG)
-
-# Define the log message format
-formatter = logging.Formatter('- %(name)s - %(levelname)s - %(message)s')
-console_handler.setFormatter(formatter)
-
-# Add the handler to the logger
-logger.addHandler(console_handler)
 
 def create_app():
     # Logging initialization
