@@ -4,7 +4,7 @@ services:
 
   website:
     build: 
-      context: ./website  # Specifies the directory containing your FastAPI app
+      context: ./website  
       dockerfile: Dockerfile
     container_name: website_container
     restart: unless-stopped
@@ -24,7 +24,7 @@ services:
 
   webhook_fa:
     build: 
-      context: ./webhook_fa  # Specifies the directory containing your FastAPI app
+      context: ./webhook_fa  
       dockerfile: Dockerfile
     container_name: webhook_fa_container
     restart: unless-stopped
