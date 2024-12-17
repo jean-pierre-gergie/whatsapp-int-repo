@@ -310,34 +310,45 @@ def signup():
 @jwt_required()
 @role_required(['admin']) 
 def add_user():
+    logger.info("ADDING USER --- Method: %s", request.method)
+
     if request.method == 'GET':
+        logger.info("Rendering add_user.html template")
         return render_template('add_user.html')
 
     if request.method == 'POST':
         username = request.form.get('username')
         password = request.form.get('password')  # Get the password from the form
         role = request.form.get('role')
-        foundations = request.form.getlist('foundations')
+        foundations = request.form.get('foundations', '').split(',')
         default_foundation = request.form.get('defaultFoundation')
+
+        logger.info("Received form data - Username: %s, Role: %s, Foundations: %s, Default Foundation: %s",
+                    username, role, foundations, default_foundation)
 
         # Check if default foundation is in the selected foundations
         if default_foundation not in foundations:
+            logger.warning("Default foundation not in the list of granted foundations")
             flash('Default foundation must be one of the selected foundations', 'error')
             return redirect(url_for('auth.add_user'))
 
         # Connect to the MongoDB collection
         user_credentials_collection = current_app.mongo['user_credentials_db']['user_credentials']
+        logger.info("Connected to user_credentials collection")
 
         # Check if the username already exists
         if user_credentials_collection.find_one({'username': username}):
+            logger.warning("Username '%s' already exists", username)
             flash('Username already exists', 'error')
             return redirect(url_for('auth.add_user'))
 
         # Hash the password
+        logger.info("Hashing password for user: %s", username)
         hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
 
         # Generate a new user ID
         new_user_id = user_credentials_collection.count_documents({}) + 1
+        logger.info("Generated new user_id: %d", new_user_id)
 
         # Create the new user document
         new_user = {
@@ -351,9 +362,17 @@ def add_user():
         }
 
         # Insert the new user into the database
-        user_credentials_collection.insert_one(new_user)
-        flash('User created successfully', 'success')
+        try:
+            user_credentials_collection.insert_one(new_user)
+            logger.info("User '%s' successfully inserted into the database", username)
+            flash('User created successfully', 'success')
+        except Exception as e:
+            logger.error("Error inserting user '%s': %s", username, str(e))
+            flash('An error occurred while creating the user', 'error')
+        
         return redirect(url_for('auth.add_user'))
+
+
 @bp.route('/get_foundations', methods=['GET'])
 @jwt_required()
 @role_required(['admin']) 
