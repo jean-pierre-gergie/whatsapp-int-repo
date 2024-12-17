@@ -60,7 +60,7 @@ def get_session_foundation_config():
                 }
             except KeyError as e:
                 logger.error(f"GET SESSION CONFIG --- Missing key in foundation configuration: {str(e)}")
-                flash("Configuration error. Please log in again.", "error")
+                # flash("Configuration error. Please log in again.", "error")
                 return {}
             except Exception as e:
                 logger.error(f"GET SESSION CONFIG --- Unexpected error accessing MongoDB: {str(e)}")
@@ -69,7 +69,7 @@ def get_session_foundation_config():
         else:
             # Log and flash error if session configurations are missing
             logger.error("GET SESSION CONFIG --- Foundation or user configuration not found in session.")
-            flash("Configuration error. Please log in again.", "error")
+            # flash("Configuration error. Please log in again.", "error")
             return {}
 
     except Exception as e:
