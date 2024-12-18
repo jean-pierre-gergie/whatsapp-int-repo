@@ -3,10 +3,7 @@ from dotenv import load_dotenv
 import os 
 import logging
 
-logging.basicConfig(
-    level=logging.DEBUG,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+from logger_setup.logger_setup import logger
 
 # Create a logger that dynamically takes the module's name
 

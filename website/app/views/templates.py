@@ -7,14 +7,8 @@ from ..utils.session_config_helper import get_session_foundation_config
 import requests
 import json
 from app.config import Config  
-import logging
+logger = current_app.logger 
 
-
-logging.basicConfig(level=logging.DEBUG, 
-                    format='- %(name)s - %(levelname)s - %(message)s')
-
-
-logger = logging.getLogger(__name__)
 
 bp = Blueprint('templates', __name__)
 

@@ -4,12 +4,10 @@ from flask_socketio import emit, disconnect
 import logging
 import jwt
 import os
-
+from logger_setup.logger_setup import LoggerSetup
 SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'default_secret')
 
-logger = logging.getLogger('wrapper_functions_jwt')
-# for wbesite logger.setLevel(logging.DEBUG)
-logger.setLevel(logging.DEBUG)
+logger = LoggerSetup(__name__).get_logger()
 
 
 def verify_jwt(f):

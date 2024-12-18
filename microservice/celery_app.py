@@ -20,12 +20,12 @@ from utils.init_system import init_system
 from utils.webhook_api_key_refresh_helper import webhook_refresh_api_key
 from dateutil import parser
 import asyncio
+from logger_setup.logger_setup import celery_logger
 
 
 
-logger = get_task_logger(__name__)
+logger = celery_logger
 
-logger.setLevel(logging.DEBUG)
 
 
 # Load environment variables from .env

@@ -9,17 +9,14 @@ import copy
 from flask import Flask, current_app
 from pymongo import MongoClient
 import threading
-import logging
+from ..logger_setup.logger_setup import LoggerSetup
+
+logger = current_app.logger
 
 
-logging.basicConfig(level=logging.DEBUG, 
-                    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 
-
-logger = logging.getLogger(__name__)
-
-pymongo_logger = logging.getLogger("pymongo")
-pymongo_logger.setLevel(logging.ERROR) 
+# pymongo_logger = logging.getLogger("pymongo")
+# pymongo_logger.setLevel(logging.ERROR) 
 
 
 def fetch_and_update_templates(api_key_360, whatsapp_data_db):

@@ -10,12 +10,7 @@ from tenacity import retry, wait_exponential, stop_after_attempt, RetryError
 from utils.helper_functions import WhatsAppDataHandler
 from utils.auto_reply_helper import AutoReplyHandler
 
-logging.basicConfig(
-    level=logging.DEBUG,
-    format="- %(name)s - %(levelname)s - %(message)s",
-    handlers=[logging.StreamHandler()]
-)
-logger = logging.getLogger(__name__)
+from logger_setup.logger_setup import logger
 
 
 def get_mongo_client():

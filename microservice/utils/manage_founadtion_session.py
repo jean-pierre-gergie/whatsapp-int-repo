@@ -1,9 +1,6 @@
 
 from utils.send_campaigns_helpers import get_mongo_client
-import logging 
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+from logger_setup.logger_setup import logger
 
 
 

@@ -1,11 +1,12 @@
 import logging
 from functools import wraps
-from flask import jsonify
+from flask import jsonify,current_app
 from flask_jwt_extended import get_jwt_identity
 
 # Set up logging
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
+from ..logger_setup.logger_setup import LoggerSetup
+
+logger = current_app.logger
 
 def role_required(roles):
     def decorator(f):

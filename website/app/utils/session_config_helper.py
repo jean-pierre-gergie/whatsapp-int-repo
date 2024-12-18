@@ -1,7 +1,8 @@
 from flask import session, current_app, flash, redirect, url_for
 import logging
+from ..logger_setup.logger_setup import LoggerSetup
 
-logger = logging.getLogger(__name__)
+logger =current_app.logger
 
 
 def get_session_foundation_config():
@@ -29,9 +30,11 @@ def get_session_foundation_config():
         foundation_config = session.get('foundation_configs')
         user_configs = session.get('user_configs')
         
-        logger.debug(f"GET SESSION CONFIG --- Current foundation configuration from session: {foundation_config}")
-        logger.debug(f"GET SESSION CONFIG --- Current user configuration from session: {user_configs}")
-
+        logger.debug(f"GET SESSION CONFIG --- Current foundation configuration from session: ")
+        logger.debug(foundation_config)
+        logger.debug(f"GET SESSION CONFIG --- Current user configuration from session: ")
+        logger.debug(user_configs)
+        
         if foundation_config and user_configs:
             try:
                 # Extract foundation configuration details
@@ -136,8 +139,10 @@ def set_session_foundation_config(user_name,
     logger.info(f"User session configurations set for user: {user_name}, role: {user_role}")
 
     # Log the final session state for foundation and user configs
-    logger.debug(f"SETTING SESSION CONFIGS --- Final session state for foundation_configs: {session['foundation_configs']}")
-    logger.debug(f"SETTING SESSION CONFIGS --- Final session state for user_configs: {session['user_configs']}")
+    logger.debug(f"SETTING SESSION CONFIGS --- Final session state for foundation_configs: ")
+    logger.debug(f"{session['foundation_configs']}")
+    logger.debug(f"SETTING SESSION CONFIGS --- Final session state for user_configs: ")
+    logger.debug(f"{session['user_configs']}")
 
 
 

@@ -6,10 +6,10 @@ from datetime import datetime
 import requests
 import time 
 from bson import ObjectId
+from logger_setup.logger_setup import celery_logger
 
 
-
-logger = get_task_logger(__name__)
+logger = celery_logger
 
 logger.setLevel(logging.DEBUG)
 

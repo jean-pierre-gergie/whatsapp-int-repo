@@ -10,25 +10,16 @@ import uuid
 bp = Blueprint('auth', __name__)
 
 
-# Initialize logger for this module
-logger = logging.getLogger(__name__)
-
-logging.basicConfig(level=logging.DEBUG, 
-                    format='- %(name)s - %(levelname)s - %(message)s')
 
 
-# @bp.app_context_processor
-# def inject_foundation_data():
-#     session_configs = get_session_foundation_config()
-#     foundation_name = session_configs.get('foundation_name')
-#     all_foundations = get_all_foundations()
-#     return dict(foundation_name=foundation_name, foundations=all_foundations)
 
+logger = current_app.logger
 
 
 # TODO : add a function in session_config_helper to set the session configs
 @bp.route('/', methods=['GET', 'POST'])
 def login():
+    
     user_credentials_collection = current_app.mongo['user_credentials_db']['user_credentials']
 
     if request.method == 'POST':

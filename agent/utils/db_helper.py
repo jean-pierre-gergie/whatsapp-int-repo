@@ -3,14 +3,9 @@ from dotenv import load_dotenv
 import os 
 import logging 
 from datetime import datetime 
+from logger_setup.logger_setup import LoggerSetup
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger('AGENT-HANDLE-ROOM')
-
-
+logger = LoggerSetup(__name__).get_logger()
 
 
 load_dotenv()

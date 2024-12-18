@@ -14,12 +14,7 @@ from io import StringIO
 from bson import ObjectId
 import requests
 
-import logging
-
-logging.basicConfig(level=logging.DEBUG, 
-                    format='- %(name)s - %(levelname)s - %(message)s')
-
-logger = logging.getLogger(__name__)
+logger = current_app.logger
 
 
 bp = Blueprint('campaigns', __name__)

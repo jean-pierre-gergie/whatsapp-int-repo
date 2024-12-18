@@ -1,5 +1,5 @@
 from utils.mongo_db_helper import get_mongo_client ,create_collection_if_not_exists,populate_collection_from_json,create_index
-from logger.set_logger import get_logger
+from logger_setup.logger_setup import logger
 
 
 

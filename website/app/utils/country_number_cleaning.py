@@ -5,9 +5,11 @@ import re
 import logging
 import os 
 
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+from flask import current_app
 
 
+
+logger = current_app.logger
 
 def load_dict(json_file):
     with open(json_file, 'r') as f:

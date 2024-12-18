@@ -9,12 +9,9 @@ from ..utils.helper_functions import check_df_validity
 from ..utils.country_number_cleaning import is_valid_phone_number
 from ..utils.session_config_helper import get_session_foundation_config
 from werkzeug.utils import secure_filename
-import logging
 
-logging.basicConfig(level=logging.DEBUG, 
-                    format='- %(name)s - %(levelname)s - %(message)s')
 
-logger = logging.getLogger(__name__)
+logger = current_app.logger
 
 bp = Blueprint('upload_data', __name__)
 

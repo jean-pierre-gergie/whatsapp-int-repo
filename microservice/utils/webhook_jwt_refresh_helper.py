@@ -5,19 +5,12 @@ import logging
 import requests
 import datetime
 import jwt
-
+from logger_setup.logger_setup import logger
 
 # Load environment variables
 load_dotenv()
 
 
-
-logging.basicConfig(
-    level=logging.DEBUG,
-    format="- %(name)s - %(levelname)s - %(message)s",
-    handlers=[logging.StreamHandler()]
-)
-logger = logging.getLogger(__name__)
 
 
 

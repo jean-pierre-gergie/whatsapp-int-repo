@@ -3,22 +3,11 @@ import os
 from dotenv import load_dotenv
 from pymongo import MongoClient
 import logging
+from .logger_setup.logger_setup import LoggerSetup
 
-# Load environment variables from .env file
+logger = LoggerSetup(__name__).get_logger()
 load_dotenv()
 
-# Initialize logger for this module
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.INFO)
-
-if not logger.hasHandlers():
-    console_handler = logging.StreamHandler()
-    console_handler.setLevel(logging.INFO)
-    formatter = logging.Formatter('- %(name)s - %(levelname)s - %(message)s')
-    console_handler.setFormatter(formatter)
-    logger.addHandler(console_handler)
-
-logger.propagate = False  # Prevent log propagation to the root logger
 
 
 class Config:

@@ -1,9 +1,9 @@
 from datetime import datetime
 import logging
-from celery.utils.log import get_task_logger
+from logger_setup.logger_setup import celery_logger
 
 
-logger = get_task_logger(__name__)
+logger = celery_logger
 
 logger.setLevel(logging.DEBUG)
 

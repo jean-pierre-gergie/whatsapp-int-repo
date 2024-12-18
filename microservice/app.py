@@ -2,9 +2,8 @@ from fastapi import FastAPI ,Request
 from celery_app import celery_app , submit_task
 import time 
 import logging
+from logger_setup.logger_setup import logger
 
-logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.DEBUG)  # Set the logging level
 
 
 pymongo_logger = logging.getLogger("pymongo")

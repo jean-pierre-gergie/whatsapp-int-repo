@@ -14,16 +14,12 @@ from datetime import datetime
 from .country_number_cleaning import is_valid_phone_number
 
 
-formatter = logging.Formatter('%(levelname)s - FUNCTION: %(funcName)s - %(message)s')
-handler = logging.StreamHandler()
-handler.setFormatter(formatter)
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-logger.addHandler(handler)
 
-pymongo_logger = logging.getLogger("pymongo")
-pymongo_logger.setLevel(logging.ERROR) 
+logger = current_app.logger
+
+# pymongo_logger = logging.getLogger("pymongo")
+# pymongo_logger.setLevel(logging.ERROR) 
 
 
 

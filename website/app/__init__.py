@@ -1,3 +1,4 @@
+from .logger_setup.logger_setup import LoggerSetup
 import logging
 from flask import Flask
 from flask_jwt_extended import JWTManager
@@ -5,36 +6,23 @@ from pymongo import MongoClient
 from .config import Config
 from art import text2art ,art
 from termcolor import colored
+from .logger_setup.logger_setup import LoggerSetup
+
 
 
 jwt = JWTManager()
 
 # Initialize the logger
-def setup_logging():
-    """Set up centralized logging for the application."""
-    # Get the root logger
-    root_logger = logging.getLogger()
-    root_logger.setLevel(logging.DEBUG)
-
-    # Check if handlers already exist to prevent duplicates
-    if not root_logger.hasHandlers():
-        # Console handler
-        console_handler = logging.StreamHandler()
-        console_handler.setLevel(logging.DEBUG)
-        formatter = logging.Formatter('- %(name)s - %(levelname)s - %(message)s')
-        console_handler.setFormatter(formatter)
-        root_logger.addHandler(console_handler)
-
-# Call this function during app initialization
-setup_logging()
 
 
-logger = logging.getLogger(__name__)
 
 
 def create_app():
-    # Logging initialization
-    logger.debug("Starting create_app()")
+    logger = LoggerSetup(__name__).get_logger()
+
+    logger.debug("Starting create_app()...")
+    
+
 
 
 
@@ -78,18 +66,22 @@ def create_app():
         app.register_blueprint(upload_data.bp)  
         logger.debug("Blueprints registered.")
 
+    app.logger = logger
+
     return app
 
 def get_mongo_client():
+    logger = LoggerSetup(__name__).get_logger()
     logger.debug(f"Connecting to MongoDB with URI: {Config.MONGODB_URI}")
     return MongoClient(Config.MONGODB_URI)
 
 
 def log_config():
     """Logs the app configuration settings in a structured format, including a blue and grey ASCII logo."""
+    logger = LoggerSetup(__name__).get_logger()
     
     # Generate the ASCII art logo
-    ascii_logo = text2art("OC MYMADA", font='starwars')
+    ascii_logo = text2art("omni-CHANNEL", font='starwars')
     # ascii_logo = art("OCMYMADA", "random-medium")
     # 
     # Print the logo in blue and grey shades
@@ -103,7 +95,7 @@ def log_config():
     logger.info(f"SECRET_KEY: {'[HIDDEN]' if Config.SECRET_KEY else '[NOT SET]'}")
     logger.info(f"JWT_SECRET_KEY: {'[HIDDEN]' if Config.JWT_SECRET_KEY else '[NOT SET]'}")
     logger.info(f"JWT_ACCESS_TOKEN_EXPIRES: {Config.JWT_ACCESS_TOKEN_EXPIRES}")
-    logger.info(f"MONGODB_URI: {Config.MONGODB_URI}")
+    logger.info(f"MONGODB_URI: {'[HIDDEN]' if Config.MONGODB_URI else '[NOT SET]'}")
     logger.info(f"MICROSERVICE_BASE_URL: {Config.MICROSERVICE_BASE_URL}")
 
     # Foundation-specific configurations
