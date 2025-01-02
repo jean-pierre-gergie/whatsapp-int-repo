@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from dateutil import parser
 from flask_jwt_extended import jwt_required, get_jwt_identity, get_jwt ,create_access_token
 from ..utils.decorators import role_required
-from ..utils.helper_functions import send_message, upload_image,get_report,transform_template_json, get_template_details, send_message_campaign,get_all_collections_content
+from ..utils.helper_functions import send_message, save_uploaded_file,get_report,transform_template_json, get_template_details, send_message_campaign,get_all_collections_content,upload_media
 from ..utils.template_updater import fetch_and_update_templates
 from ..utils.session_config_helper import get_session_foundation_config
 
@@ -162,7 +162,7 @@ def send_single_message():
     if file:
         file_path = f"./{file.filename}"
         file.save(file_path)
-        media_id = upload_image(file_path)
+        media_id = upload_media(file_path)
         print('The media ID is:', media_id)
 
     response = send_message(
@@ -401,37 +401,40 @@ def send_campaign_messages():
     template_json = transform_template_json(template_details)
 
     file = request.files.get('file')
+    logger.debug(f"FILE FORM {file}")
+    video_file = request.files.get('video_file')
+    logger.debug(f"VIDEO FORM {video_file}")
     media_id = None
+    video_media_id = None
+
     if file:
-        # Define the upload directory
-        upload_dir = './uploaded_assets'
+        file_path = save_uploaded_file(file)  # Save the uploaded image file
+        media_id = upload_media(file_path, api_key_360)  # Use existing upload_image function
+        logger.debug(f"Image Media ID: {media_id}")  # Log the image media ID
 
-        # Check if the directory exists, if not, create it
-        if not os.path.exists(upload_dir):
-            os.makedirs(upload_dir)
-
-        # Save the file in the 'uploaded_assets' directory
-        file_path = os.path.join(upload_dir, file.filename)
-        file.save(file_path)
-
-        # Upload the file and get the media_id (assuming upload_image is a function to upload to a remote service)
-        media_id = upload_image(file_path,api_key_360=api_key_360)
-
+    if video_file:
+        video_path = save_uploaded_file(video_file)  # Save the uploaded video file
+        video_media_id = upload_media(video_path, api_key_360)  # Use upload_image for video
+        logger.debug(f"Video Media ID: {video_media_id}")   # Use upload_image for video
+    
+    
     variables = request.form.getlist('variables[]')
 
     payload = {
-
-        "foundation_name":foundation_name,
+        "foundation_name": foundation_name,
         "campaign_timing": campaign_timing,  
         "scheduled_date": scheduled_date,
-        "scheduled_date_local":scheduled_date_local,  
+        "scheduled_date_local": scheduled_date_local,  
         "selected_campaign": selected_campaign,
         "template_json": template_json,
         "template_name": selected_template,
         "variables": variables,
         "campaign_name": campaign_name,
-        "media_id": media_id if media_id else 0 
+        "media_id": media_id or video_media_id,  # Use media_id or video_media_id based on availability
+        "media_type": "image" if media_id else "video" if video_media_id else None  # Determine the media type
     }
+    
+    logger.debug(f"BE LEVEL Final Media ID Sent: {payload['media_id']}")  # Log the final media ID sent in the payload
 
     microservice_base_url = current_app.config['MICROSERVICE_BASE_URL']
 

@@ -151,7 +151,11 @@ def get_template_text():
 
     texts = get_template_texts(template_name,api_key_360=api_key_360)
     if texts:
-        return jsonify({'success': True, 'texts': texts['text_fields'], 'variable_count': texts['variable_count'], 'has_image': texts['has_image']})
+        return jsonify({'success': True,
+                        'texts': texts['text_fields'],
+                        'variable_count': texts['variable_count'], 
+                        'has_image': texts['has_image'],
+                        'has_video': texts['has_video']})
     else:
         return jsonify({'success': False, 'error': 'Template not found or error retrieving template.'})
 

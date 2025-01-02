@@ -141,36 +141,80 @@ def get_member_data(member, variables):
     return member_data
 
 
-def update_template_components(template_dict, member_data, variables, media_id=None):
+def update_template_components(template_dict, member_data, variables, media_id=None, media_type=None, logger=None):
     """
-    Updates the components of the template based on member data and media ID.
+    Updates the components of the template based on member data, variables, and media type/ID.
 
     Parameters:
     - template_dict: The dictionary containing the template information.
     - member_data: A dictionary containing member-specific data.
     - variables: A list of variable names to map to the template parameters.
-    - media_id: The media ID to be used for updating image components (optional).
+    - media_id: The media ID to be used for updating header components (optional).
+    - media_type: The type of media ('image', 'video', etc.) for the header (optional).
+    - logger: Logger for debugging (optional).
 
     Returns:
     - The updated template dictionary.
     """
-    # Iterate over the components in the template
-    for component in template_dict.get('template', {}).get('components', []):
-        if component['type'] == 'body':
+    # Ensure components array exists
+    if "components" not in template_dict.get("template", {}):
+        template_dict["template"]["components"] = []
+
+    for component in template_dict["template"]["components"]:
+        if component["type"].lower() == "body":
             # Update body text parameters
-            for i, parameter in enumerate(component.get('parameters', [])):
-                if parameter['type'] == 'text' and i < len(variables):
-                    # Update the text with member data or a default variable name
-                    parameter['text'] = str(member_data.get(variables[i], f'Variable_{i+1}'))
+            for i, parameter in enumerate(component.get("parameters", [])):
+                if parameter["type"] == "text" and i < len(variables):
+                    parameter["text"] = str(member_data.get(variables[i], f"Variable_{i+1}"))
 
-        elif component['type'] == 'header' and component.get('parameters', []):
-            # Update header image parameter if media ID is provided
-            if component['parameters'][0].get('type') == 'image' and media_id:
-                component['parameters'][0]['image'] = {'id': media_id}
+        elif component["type"].lower() == "header":
+            if media_id and media_type == "video":
+                # Update header component for video with media_id
+                component["parameters"] = [
+                    {
+                        "type": "video",
+                        "video": {"id": media_id}
+                    }
+                ]
+            elif media_id and media_type == "image":
+                # Update header component for image with media_id
+                component["parameters"] = [
+                    {
+                        "type": "image",
+                        "image": {"id": media_id}
+                    }
+                ]
+            else:
+                raise ValueError("Invalid or missing media_id and media_type for header component.")
 
+    # Add header component if not present
+    if not any(c["type"].lower() == "header" for c in template_dict["template"]["components"]):
+        if media_type == "video" and media_id:
+            template_dict["template"]["components"].append({
+                "type": "header",
+                "parameters": [
+                    {
+                        "type": "video",
+                        "video": {"id": media_id}
+                    }
+                ]
+            })
+        elif media_type == "image" and media_id:
+            template_dict["template"]["components"].append({
+                "type": "header",
+                "parameters": [
+                    {
+                        "type": "image",
+                        "image": {"id": media_id}
+                    }
+                ]
+            })
+
+    logger.debug(f"UPDATE FUNCTION : {template_dict}")
     return template_dict
 
-def send_post_request(dialog_360_message_url, api_key_360, template_dict, number, failed_rows, start_time):
+
+def send_post_request(dialog_360_message_url, api_key_360, template_dict, number, failed_rows, start_time, logger):
     """
     Sends a POST request to the 360 Dialog API and handles response or errors.
 
@@ -194,11 +238,30 @@ def send_post_request(dialog_360_message_url, api_key_360, template_dict, number
         # Send the POST request
         response = requests.post(dialog_360_message_url, headers=headers, json=template_dict)
         response_time = time.time() - start_time
-        logging.debug(f"Response received in {response_time:.2f} seconds with status code {response.status_code}")
+        logger.debug(f"MICROSERVICE HELPER raw response {response}")
+        logger.debug(f"MICROSERVICE HELPER Response received in {response_time:.2f} seconds with status code {response.status_code}")
+
+        # Log the response content for debugging
+        try:
+            response_json = response.json()  # Attempt to parse JSON
+            logger.debug(f"MICROSERVICE HELPER Response Content: {response_json}")
+        except ValueError:
+            logger.debug(f"MICROSERVICE HELPER Response Content (non-JSON): {response.text}")
+
+        # If the response indicates an error, log it
+        if response.status_code != 200:
+            logger.error(f"MICROSERVICE HELPER API Error - Status Code: {response.status_code}, Content: {response.text}")
+            failed_rows.append({
+                'Number': number,
+                'Title': f'HTTP {response.status_code}',
+                'Details': response.text,
+                'Code': response.status_code,
+                'TimeTaken': response_time
+            })
     except requests.RequestException as e:
         # Log the error and append to failed rows
         response_time = time.time() - start_time
-        logging.error(f"Request failed: {e}")
+        logger.error(f"MICROSERVICE HELPER Request failed: {e}")
         failed_rows.append({
             'Number': number,
             'Title': 'Request Error',

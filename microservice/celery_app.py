@@ -78,6 +78,7 @@ def send_message_campaign(self,
                           variables,
                           campaign_name, 
                           media_id=None,
+                          media_type=None,
                           campaign_id_db =None):
 
     logger = get_task_logger(__name__)
@@ -86,7 +87,7 @@ def send_message_campaign(self,
 
     logger.debug(f"Task started with: campaign_timing={campaign_timing}, scheduled_datetime={scheduled_date},scheduled_datetime_local={scheduled_date_local}, "
                  f"selected_campaign={selected_campaign}, template_json={template_json}, variables={variables}, "
-                 f"campaign_name={campaign_name}, media_id={media_id}")
+                 f"campaign_name={campaign_name}, media_id={media_id}, media_type= {media_type}")
     
     logger.debug(f"campaign_id_db: {campaign_id_db}")
 
@@ -154,9 +155,16 @@ def send_message_campaign(self,
         number = member['mobile']
         template_dict['to'] = number
         logger.debug(f"Processing member with number: {number}")
-
+        # logger.debug(f"Updated template: {template_dict}")
         member_data = get_member_data(member, variables)
-        template_dict = update_template_components(template_dict, member_data=member_data, variables=variables, media_id=media_id)
+        template_dict = update_template_components(template_dict, 
+                                                   member_data=member_data, 
+                                                   variables=variables, 
+                                                   media_id=media_id,
+                                                   media_type=media_type,
+                                                   logger=logger
+                                                   )
+        logger.debug(f"Updated template: {template_dict}")
 
         response, response_time = send_post_request(
             dialog_360_message_url=dialog_360_message_url,
@@ -164,7 +172,8 @@ def send_message_campaign(self,
             template_dict=template_dict,
             number=number,
             failed_rows=failed_rows,
-            start_time=start_time)
+            start_time=start_time,
+            logger=logger)
         
         if response:
             data_to_insert = {

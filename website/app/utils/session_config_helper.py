@@ -30,10 +30,10 @@ def get_session_foundation_config():
         foundation_config = session.get('foundation_configs')
         user_configs = session.get('user_configs')
         
-        logger.debug(f"GET SESSION CONFIG --- Current foundation configuration from session: ")
-        logger.debug(foundation_config)
-        logger.debug(f"GET SESSION CONFIG --- Current user configuration from session: ")
-        logger.debug(user_configs)
+        # logger.debug(f"GET SESSION CONFIG --- Current foundation configuration from session: ")
+        # logger.debug(foundation_config)
+        # logger.debug(f"GET SESSION CONFIG --- Current user configuration from session: ")
+        # logger.debug(user_configs)
         
         if foundation_config and user_configs:
             try:
@@ -47,8 +47,8 @@ def get_session_foundation_config():
                 whatsapp_data_db = current_app.mongo[foundation_db_name]
                 agent_data_db = current_app.mongo[agent_db_name]
 
-                logger.debug(f"GET SESSION CONFIG --- Successfully accessed databases: "
-                             f"WhatsApp DB={foundation_db_name}, Agent DB={agent_db_name}")
+                # logger.debug(f"GET SESSION CONFIG --- Successfully accessed databases: "
+                            #  f"WhatsApp DB={foundation_db_name}, Agent DB={agent_db_name}")
 
                 # Return the consolidated configuration
                 return {
@@ -62,7 +62,7 @@ def get_session_foundation_config():
                     "agent_data_db": agent_data_db
                 }
             except KeyError as e:
-                logger.error(f"GET SESSION CONFIG --- Missing key in foundation configuration: {str(e)}")
+                # logger.error(f"GET SESSION CONFIG --- Missing key in foundation configuration: {str(e)}")
                 # flash("Configuration error. Please log in again.", "error")
                 return {}
             except Exception as e:

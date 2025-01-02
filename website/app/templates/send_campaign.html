@@ -97,7 +97,16 @@
                                         <label for="file">Image File</label>
                                         <input type="file" id="file" name="file" class="form-control" accept="image/png, image/jpeg">
                                     </div>
+
                                 </div>
+                                <div class="col-md-6 col-12">
+                                    <div class="form-group" id="video-field" style="display: none;">
+                                        <label for="file">Video File</label>
+                                        <input type="file" id="video_file" name="video_file" class="form-control" accept="video/mp4, video/mkv">
+                                    </div>
+
+                                </div>
+                                
                                 <div class="col-12 d-flex justify-content-end">
                                     <button type="submit" class="btn btn-primary me-1 mb-1">Send Campaign</button>
                                     <button type="reset" class="btn btn-light-secondary me-1 mb-1">Reset</button>
@@ -144,11 +153,14 @@
                 previewContainer.innerHTML = data.texts.join('<br>');
                 updateVariableFields(data.variable_count);
                 toggleImageField(data.has_image);
+                toggleVideoField(data.has_video);
+                console.log(data) ;
                 alignTextBasedOnLanguage(previewContainer);
             } else {
                 previewContainer.textContent = 'Template not found.';
                 updateVariableFields(0);
                 toggleImageField(false);
+                toggleVideoField(false); 
             }
         })
         .catch(error => {
@@ -203,6 +215,14 @@
             imageField.style.display = 'none';
             fileInput.required = false; // Remove the required attribute when the image is not needed
         }
+    }
+
+    function toggleVideoField(hasVideo) {
+        // New function to toggle video upload field
+        const videoField = document.getElementById('video-field');
+        const videoInput = document.getElementById('video_file');
+        videoField.style.display = hasVideo ? 'block' : 'none';
+        videoInput.required = hasVideo;
     }
 
     function alignTextBasedOnLanguage(element) {
