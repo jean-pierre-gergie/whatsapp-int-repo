@@ -103,6 +103,7 @@
 											<select name="header_type" id="header_type" class="form-control" onchange="updateHeaderFields()">
 												<option value="TEXT">Text</option>
 												<option value="IMAGE">Image</option>
+												<option value="VIDEO">Video</option>
 											</select>
 										</div>
 									</div>
@@ -120,6 +121,13 @@
 											<input type="url" id="header_image_url" name="header_image_url" class="form-control" placeholder="Image URL">
 										</div>
 									</div>
+									<!-- Highlighted Change: Add Header Video URL Field -->
+									<div class="col-md-6 col-12" id="header_video_url_field" style="display:none;">
+                                        <div class="form-group">
+                                            <label for="header_video_url">Header Video URL (required for video header)</label>
+                                            <input type="url" id="header_video_url" name="header_video_url" class="form-control" placeholder="Video URL">
+                                        </div>
+                                    </div>
 									<div class="col-md-12 col-12">
 										<div class="form-group">
 											<label for="body_text">Body Text</label>
@@ -299,13 +307,21 @@
 		const headerType = document.getElementById('header_type').value;
 		const headerTextField = document.getElementById('header_text_field');
 		const headerImageUrlField = document.getElementById('header_image_url_field');
-		if(headerType === 'IMAGE') {
-			headerTextField.style.display = 'none';
-			headerImageUrlField.style.display = 'block';
-		} else {
-			headerTextField.style.display = 'block';
-			headerImageUrlField.style.display = 'none';
-		}
+		const headerVideoUrlField = document.getElementById('header_video_url_field'); // Highlighted Change
+
+		if (headerType === 'TEXT') {
+                headerTextField.style.display = 'block';
+                headerImageUrlField.style.display = 'none';
+                headerVideoUrlField.style.display = 'none';
+            } else if (headerType === 'IMAGE') {
+                headerTextField.style.display = 'none';
+                headerImageUrlField.style.display = 'block';
+                headerVideoUrlField.style.display = 'none';
+            } else if (headerType === 'VIDEO') {
+                headerTextField.style.display = 'none';
+                headerImageUrlField.style.display = 'none';
+                headerVideoUrlField.style.display = 'block';
+            }
 	}
 
 	function updateButtonFields(selectElement) {

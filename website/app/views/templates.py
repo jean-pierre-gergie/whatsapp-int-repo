@@ -162,8 +162,8 @@ def get_template_text():
 @role_required(['admin', 'user']) 
 def create_template():
     current_user = get_jwt_identity()
-    logger.debug(f"Current user: {current_user}")
-
+    # logger.debug(f"Current user: {current_user}")
+    logger.debug("Creating template")
     session_configs =get_session_foundation_config()
   
     api_key_360 = session_configs.get('api_key')
@@ -174,6 +174,7 @@ def create_template():
         category = request.form['category']
         language_code = request.form['language']
         header_image_url = request.form.get('header_image_url') 
+        header_video_url = request.form.get('header_video_url')
         header_type = request.form.get('header_type')
         header_text = request.form.get('header_text')
         header_example = request.form.get('header_example')
@@ -225,6 +226,17 @@ def create_template():
                     "header_handle": [
                          header_image_url                 
                      ]
+                }
+            }
+            components.append(header_component)
+        elif header_type == 'VIDEO' and header_video_url:
+            header_component = {
+                "type": "HEADER",
+                "format": "VIDEO",
+                "example": {
+                    "header_handle": [
+                        header_video_url
+                    ]
                 }
             }
             components.append(header_component)

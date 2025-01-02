@@ -1,0 +1,99 @@
+<!-- Frontend Changes Highlighted -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <!-- Meta and Style Links -->
+</head>
+<body>
+    <div id="app">
+        {% include 'sidebar.html' %}
+        <div id="main">
+            <header class="mb-3">
+                <a href="#" class="burger-btn d-block d-xl-none">
+                    <i class="bi bi-justify fs-3"></i>
+                </a>
+            </header>
+            <div class="page-heading">
+                <div class="page-title">
+                    <div class="row">
+                        <div class="col-12 col-md-6">
+                            <h3>Create WhatsApp Template</h3>
+                            <p class="text-subtitle text-muted">Fill in the details to create a new template.</p>
+                        </div>
+                    </div>
+                </div>
+                <section class="section">
+                    <div class="card">
+                        <div class="card-header">
+                            <h4 class="card-title">New Template</h4>
+                        </div>
+                        <div class="card-body">
+                            <form method="POST" action="/create_template" class="form form-horizontal">
+                                <div class="row">
+                                    <!-- Other Fields -->
+                                    <div class="col-md-6 col-12">
+                                        <div class="form-group">
+                                            <label for="header_type">Header Type</label>
+                                            <select name="header_type" id="header_type" class="form-control" onchange="updateHeaderFields()">
+                                                <option value="TEXT">Text</option>
+                                                <option value="IMAGE">Image</option>
+                                                <!-- Highlighted Change: Add VIDEO option -->
+                                                <option value="VIDEO">Video</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <!-- Header Text Field -->
+                                    <div class="col-md-6 col-12" id="header_text_field">
+                                        <div class="form-group">
+                                            <label for="header_text">Header Text (optional)</label>
+                                            <input type="text" id="header_text" name="header_text" class="form-control" placeholder="Header Text">
+                                        </div>
+                                    </div>
+                                    <!-- Header Image URL Field -->
+                                    <div class="col-md-6 col-12" id="header_image_url_field" style="display:none;">
+                                        <div class="form-group">
+                                            <label for="header_image_url">Header Image URL (required for image header)</label>
+                                            <input type="url" id="header_image_url" name="header_image_url" class="form-control" placeholder="Image URL">
+                                        </div>
+                                    </div>
+                                    <!-- Highlighted Change: Add Header Video URL Field -->
+                                    <div class="col-md-6 col-12" id="header_video_url_field" style="display:none;">
+                                        <div class="form-group">
+                                            <label for="header_video_url">Header Video URL (required for video header)</label>
+                                            <input type="url" id="header_video_url" name="header_video_url" class="form-control" placeholder="Video URL">
+                                        </div>
+                                    </div>
+                                    <!-- Rest of the Form -->
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+    <script>
+        function updateHeaderFields() {
+            const headerType = document.getElementById('header_type').value;
+            const headerTextField = document.getElementById('header_text_field');
+            const headerImageUrlField = document.getElementById('header_image_url_field');
+            const headerVideoUrlField = document.getElementById('header_video_url_field'); // Highlighted Change
+
+            // Update visibility based on header type
+            if (headerType === 'TEXT') {
+                headerTextField.style.display = 'block';
+                headerImageUrlField.style.display = 'none';
+                headerVideoUrlField.style.display = 'none';
+            } else if (headerType === 'IMAGE') {
+                headerTextField.style.display = 'none';
+                headerImageUrlField.style.display = 'block';
+                headerVideoUrlField.style.display = 'none';
+            } else if (headerType === 'VIDEO') {
+                headerTextField.style.display = 'none';
+                headerImageUrlField.style.display = 'none';
+                headerVideoUrlField.style.display = 'block';
+            }
+        }
+    </script>
+</body>
+</html>
