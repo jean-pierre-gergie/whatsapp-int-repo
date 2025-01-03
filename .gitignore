@@ -1,3 +1,4 @@
 *.pyc
 */uploaded_assets/
 */celerybeat-schedule
+*/logs-data/

@@ -145,12 +145,56 @@ services:
     networks:
     - network_internal
 
-    
+  ### logging containers
+  loki:
+    image: grafana/loki:3.0.0                       # Specifies the Loki Docker image and version.
+    container_name: loki                            # Names the container for easier management.
+    user: root
+    volumes:
+      - ./lokiconfigs/loki-config.yaml:/mnt/config/loki-config.yaml
+      - ./logs-data:/mnt/data
+    ports:
+      - "3100:3100"                                 # Maps port 3100 on the host to port 3100 in the container.
+    command: -config.file=/mnt/config/loki-config.yaml # Runs Loki with the specified configuration file.
+
+  promtail:
+    image: grafana/promtail:3.0.0                   # Specifies the Promtail Docker image and version.
+    container_name: promtail                        # Names the container for easier management.
+    user: root
+    volumes:
+      - ./promtailconfigs/promtail-config.yaml:/mnt/config/promtail-config.yaml # Mounts the Promtail configuration file.
+      - /var/log:/var/log
+      - /var/lib/docker:/var/lib/docker                          # Mounts the host's log directory.
+      - /var/run/docker.sock:/var/run/docker.sock
+    depends_on:
+      - loki   
+    ports:
+      - "9080:9080"                                    # Ensures Promtail starts after Loki.
+    command: -config.file=/mnt/config/promtail-config.yaml # Runs Promtail with the specified configuration file.
+
+  grafana:
+    image: grafana/grafana:10.0.0                  # Specifies the Grafana Docker image and version.
+    container_name: grafana                        # Names the container for easier management.
+    user: root
+    depends_on:
+      - loki                                       # Ensures Grafana starts after Loki.
+    ports:
+      - "3000:3000"                               # Maps port 3000 on the host to port 3000 in the container.
+    volumes:
+      - ./grafana-provisioning:/etc/grafana/provisioning # Mounts provisioning directory for dashboards and datasources.
+      - ./grafana-data:/var/lib/grafana            # Persists Grafana data.
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin              # Sets the default admin username.
+      - GF_SECURITY_ADMIN_PASSWORD=admin          # Sets the default admin password.
+      - GF_AUTH_ANONYMOUS_ENABLED=true            # Enables anonymous access if required.
+      - GF_AUTH_BASIC_ENABLED=true 
+
 volumes:
   mongo_data:
     driver: local
-  # beat_schedule_data:
-    # driver: local
+  grafana-data:
+  data:
+
 networks:
   network_internal:
     driver: bridge
