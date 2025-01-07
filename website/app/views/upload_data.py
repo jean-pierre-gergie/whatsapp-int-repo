@@ -7,14 +7,11 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from ..utils.decorators import role_required
 from ..utils.helper_functions import check_df_validity
 from ..utils.country_number_cleaning import is_valid_phone_number
-from ..utils.session_config_helper import get_session_foundation_config,get_all_foundations
+from ..utils.session_config_helper import get_session_foundation_config
 from werkzeug.utils import secure_filename
-import logging
 
-logging.basicConfig(level=logging.DEBUG, 
-                    format='- %(name)s - %(levelname)s - %(message)s')
 
-logger = logging.getLogger(__name__)
+logger = current_app.logger
 
 bp = Blueprint('upload_data', __name__)
 
@@ -24,8 +21,11 @@ def inject_foundation_data():
     if not session_configs:
         return {}  # Or handle it gracefully if the data is missing
     foundation_name = session_configs.get('foundation_name')
-    all_foundations = get_all_foundations()
-    return dict(foundation_name=foundation_name, foundations=all_foundations)
+    granted_foundations = session_configs.get('granted_foundations')
+    granted_foundations=[{'foundation': foundation} for foundation in granted_foundations]
+    logger.debug(f"GRANTED FOUNDATIONS ---  { granted_foundations}")
+    
+    return dict(foundation_name=foundation_name, foundations=granted_foundations)
 
 
 

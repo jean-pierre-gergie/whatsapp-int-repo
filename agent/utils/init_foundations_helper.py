@@ -2,16 +2,9 @@
 import os
 from dotenv import load_dotenv
 from pymongo import MongoClient
-import logging 
-
-
-
-logging.basicConfig(
-    level=logging.DEBUG,
-    format="- %(name)s - %(levelname)s - %(message)s",
-    handlers=[logging.StreamHandler()]
-)
-logger = logging.getLogger(__name__)
+import logging
+from logger_setup.logger_setup import LoggerSetup
+logger = LoggerSetup(__name__).get_logger()
 
 pymongo_logger = logging.getLogger("pymongo")
 pymongo_logger.setLevel(logging.ERROR)

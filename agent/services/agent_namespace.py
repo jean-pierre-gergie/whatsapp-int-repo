@@ -6,8 +6,11 @@ import os
 from utils.jwt_helper import socket_io_jwt
 from utils.db_helper import get_foundation_dependencies
 from services.socketio_events import register_socketio_events
+from  logger_setup.logger_setup import LoggerSetup
 
-logger = logging.getLogger('app')
+logger = LoggerSetup(__name__).get_logger()
+
+
 SECRET_KEY = os.getenv('JWT_SECRET_KEY', 'default_secret')
 
 class DynamicNamespace(Namespace):

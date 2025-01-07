@@ -5,7 +5,7 @@ import logging
 from flask import Flask, render_template , request,jsonify
 from flask_socketio import SocketIO, join_room, leave_room, send, emit,Namespace
 import os 
-from utils.logging_config import configure_logging
+
 from utils.jwt_helper import verify_jwt
 from utils.init_foundations_helper import get_all_foundation_names
 from utils.db_helper import get_mongo_client
@@ -13,7 +13,7 @@ from utils.db_helper import get_mongo_client
 from services.agent_namespace import create_dynamic_namespaces
 from dotenv import load_dotenv
 from tenacity import retry, wait_fixed, stop_after_attempt, RetryError
-
+from logger_setup.logger_setup import LoggerSetup
 
 
 
@@ -21,7 +21,7 @@ app = Flask(__name__)
 app.config['SECRET_KEY'] = 'secret!'  
 app.config['PRODUCTION'] = os.getenv('FLASK_ENV') == 'production'
 
-logger = configure_logging()
+logger = LoggerSetup(__name__).get_logger()
 
 
 

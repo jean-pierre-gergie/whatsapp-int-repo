@@ -5,23 +5,7 @@ from dotenv import load_dotenv
 from urllib.parse import urlparse
 import datetime
 import jwt
-
-# Initialize logging
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-
-# Create console handler and set level to debug
-console_handler = logging.StreamHandler()
-console_handler.setLevel(logging.DEBUG)
-
-# Create formatter
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-
-# Add formatter to console handler
-console_handler.setFormatter(formatter)
-
-# Add console handler to logger
-logger.addHandler(console_handler)
+from logger_setup.logger_setup import logger
 
 # Load environment variables
 load_dotenv()

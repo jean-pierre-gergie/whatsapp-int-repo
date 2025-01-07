@@ -3,8 +3,6 @@ import logging
 from fastapi import FastAPI, Request, HTTPException, Header
 from pymongo import MongoClient
 from pydantic import BaseModel
-from init_scripts.init_mongo import create_collections
-from init_scripts.init_webhook_urls import init_webhook_urls
 from typing import Optional, Dict, Any
 from fastapi.responses import JSONResponse
 import os
@@ -18,14 +16,8 @@ from utils.init_webhook_helper import create_handlers_for_all_foundations
 from utils_init.webhook_jwt_wrapper import verify_jwt
 from utils_init.utils_init import get_mongo_client
 from tenacity import retry, wait_exponential, stop_after_attempt, RetryError,wait_fixed
+from logger_setup.logger_setup import logger
 
-# Set up logging
-logging.basicConfig(
-    level=logging.DEBUG,
-    format="- %(name)s - %(levelname)s - %(message)s",
-    handlers=[logging.StreamHandler()]
-)
-logger = logging.getLogger(__name__)
 pymongo_logger = logging.getLogger("pymongo")
 pymongo_logger.setLevel(logging.ERROR)
 

@@ -3,14 +3,9 @@ from dotenv import load_dotenv
 import os 
 import logging
 from utils.db_helper import get_mongo_client
+from logger_setup.logger_setup import LoggerSetup
 
-logging.basicConfig(
-    level=logging.DEBUG,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
-
-# Create a logger that dynamically takes the module's name
-logger = logging.getLogger(__name__)
+logger = LoggerSetup(__name__).get_logger()
 
 load_dotenv()
 

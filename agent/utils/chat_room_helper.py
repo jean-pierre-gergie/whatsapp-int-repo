@@ -1,13 +1,8 @@
 import logging
 
-logging.basicConfig(
-    level=logging.DEBUG,
-    format='%(asctime)s - %(name)s - %(levelname)s ---BACKEND---%(message)s'
-)
+from  logger_setup.logger_setup import LoggerSetup
 
-# Create a logger that dynamically takes the module's name
-logger = logging.getLogger(__name__)
-
+logger = LoggerSetup(__name__).get_logger()
 
 
 

@@ -5,7 +5,7 @@ import os
 import logging 
 
 
-logger = logging.getLogger("JWT Authentication")
+from logger_setup.logger_setup import logger
 
 
 

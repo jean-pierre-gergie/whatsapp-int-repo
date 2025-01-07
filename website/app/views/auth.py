@@ -4,31 +4,23 @@ from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identi
 import bcrypt
 from bson.objectid import ObjectId
 from ..utils.decorators import  role_required
-from ..utils.session_config_helper import get_session_foundation_config,get_all_foundations
+from ..utils.session_config_helper import get_session_foundation_config,set_session_foundation_config
 import uuid
+import re
 
 bp = Blueprint('auth', __name__)
 
 
-# Initialize logger for this module
-logger = logging.getLogger(__name__)
-
-logging.basicConfig(level=logging.DEBUG, 
-                    format='- %(name)s - %(levelname)s - %(message)s')
 
 
-# @bp.app_context_processor
-# def inject_foundation_data():
-#     session_configs = get_session_foundation_config()
-#     foundation_name = session_configs.get('foundation_name')
-#     all_foundations = get_all_foundations()
-#     return dict(foundation_name=foundation_name, foundations=all_foundations)
 
+logger = current_app.logger
 
 
 # TODO : add a function in session_config_helper to set the session configs
 @bp.route('/', methods=['GET', 'POST'])
 def login():
+    
     user_credentials_collection = current_app.mongo['user_credentials_db']['user_credentials']
 
     if request.method == 'POST':
@@ -55,29 +47,29 @@ def login():
 
                     # Fetch the role and foundation from the user document
                     role = user.get('role', 'user')  # Default to 'user' role if not specified
-                    foundation_name = user.get('foundation')
+                    default_foundation = user.get('default_foundation')
 
-                    logger.debug(f"User {username} has role: {role}, foundation: {foundation_name}")
+                    logger.debug(f"User {username} has role: {role}, foundation: {default_foundation}")
 
                     # Fetch foundation-specific details from the database
                     foundations_collection = current_app.mongo['foundations_db']['foundations']
-                    foundation_config = foundations_collection.find_one({"foundation": foundation_name})
+                    foundation_config = foundations_collection.find_one({"foundation": default_foundation})
 
                     
                     if foundation_config:
-                        logger.debug(f"Foundation configuration found for {foundation_name}: {foundation_config}")
+                        set_session_foundation_config(user_name=user.get("username"),
+                                                      user_role=user.get('role'),
+                                                      granted_foundations=user.get("granted_foundations"),
+                                                      default_foundation=user.get('default_foundation'),
+                                                      foundation_name=user.get('default_foundation'),
+                                                      api_key=foundation_config.get('api_key'),
+                                                      whatsapp_data_db=foundation_config.get('whatsapp_data_db'),
+                                                      agent_data_db=foundation_config.get('agent_data_db')
+                                                      )
 
-                        # Clear existing session and set new foundation-specific details
-                        session.clear()
-                        session['foundation'] = {
-                            'foundation_name': foundation_name,
-                            'api_key': foundation_config['api_key'],
-                            'whatsapp_data_db': foundation_config['whatsapp_data_db'],
-                            'agent_data_db': foundation_config['agent_data_db']
-                        }
-                        logger.debug(f"Session updated for foundation {foundation_name}.")
+                        logger.debug(f"Session updated for foundation {default_foundation}.")
                     else:
-                        logger.error(f"Foundation configuration not found for {foundation_name}.")
+                        logger.error(f"Foundation configuration not found for {default_foundation}.")
                         flash("Foundation configuration not found. Please contact support.", "error")
                         return render_template('login.html')
 
@@ -146,9 +138,9 @@ def index():
 
 
     # Fetch all available foundations for the sidebar
-    foundations_collection = current_app.mongo['foundations_db']['foundations']
-    all_foundations = list(foundations_collection.find({}, {'_id': 0, 'foundation': 1}))
-    logger.debug(f"Retrieved available foundations: {[f['foundation'] for f in all_foundations]}")
+    granted_foundations = session_configs.get('granted_foundations')
+    granted_foundations=[{'foundation': foundation} for foundation in granted_foundations]
+    logger.debug(f"Retrieved available foundations: { granted_foundations}")
     
     # Render the index page with user, campaigns, and templates data
     if role == 'admin':
@@ -159,7 +151,7 @@ def index():
                                 templates=templates_data,
                                 is_admin=True,
                                 foundation_name=foundation_name,
-                                foundations=all_foundations)
+                                foundations=granted_foundations)
     else:
         logger.info(f"Rendering index page for user {current_user['username']}.")
         return render_template('index.html',
@@ -168,7 +160,7 @@ def index():
                                templates=templates_data,
                                is_admin=False,
                                foundation_name=foundation_name,
-                               foundations=all_foundations)
+                               foundations=granted_foundations)
 
 
 
@@ -181,15 +173,27 @@ def switch_foundation(foundation_name):
     
     if foundation_config:
         logging.debug(f"Foundation config found: {foundation_config}")
+
+        current_session = get_session_foundation_config()
         
-        session['foundation'] = {
-            'foundation_name': foundation_name,
-            'api_key': foundation_config['api_key'],
-            'whatsapp_data_db': foundation_config['whatsapp_data_db'],
-            'agent_data_db': foundation_config['agent_data_db']
-        }
+        # session['foundation'] = {
+        #     'foundation_name': foundation_name,
+        #     'api_key': foundation_config['api_key'],
+        #     'whatsapp_data_db': foundation_config['whatsapp_data_db'],
+        #     'agent_data_db': foundation_config['agent_data_db']
+        # }
+
+        set_session_foundation_config(user_name=current_session['user_name'],
+                                      user_role=current_session['user_role'],
+                                      granted_foundations=current_session['granted_foundations'],
+                                      default_foundation=current_session['default_foundation'],
+                                      foundation_name=foundation_name,
+                                      api_key=foundation_config['api_key'],
+                                      whatsapp_data_db=foundation_config['whatsapp_data_db'],
+                                      agent_data_db=foundation_config['agent_data_db']
+                                      )
         
-        logging.debug(f"Session updated with foundation: {session['foundation']}")
+        logging.debug(f"Session updated with foundation:{foundation_name}")
     else:
         logging.warning(f"Foundation {foundation_name} not found in the database.")
 
@@ -197,6 +201,20 @@ def switch_foundation(foundation_name):
 
 
 # TODO :
+def is_strong_password(password):
+    """Validate the strength of a password."""
+    if len(password) < 8:
+        return False, "Password must be at least 8 characters long."
+    if not re.search(r'[A-Z]', password):
+        return False, "Password must contain at least one uppercase letter."
+    if not re.search(r'[a-z]', password):
+        return False, "Password must contain at least one lowercase letter."
+    if not re.search(r'[0-9]', password):
+        return False, "Password must contain at least one digit."
+    if not re.search(r'[!@#$%^&*(),.?\":{}|<>]', password):
+        return False, "Password must contain at least one special character."
+    return True, "Password is strong."
+
 @bp.route('/change_password', methods=['GET', 'POST'])
 @jwt_required()
 def change_password():
@@ -213,14 +231,20 @@ def change_password():
             flash('New passwords do not match', 'error')
             return redirect(url_for('auth.change_password'))
 
+        # Validate password strength
+        is_valid, message = is_strong_password(new_password)
+        if not is_valid:
+            flash(message, 'error')
+            return redirect(url_for('auth.change_password'))
+
         current_user = get_jwt_identity()
         username = current_user['username']
 
-        session_configs =get_session_foundation_config()
+        session_configs = get_session_foundation_config()
 
         whatsapp_data_db = session_configs.get('whatsapp_data_db')
         foundation_name = session_configs.get('foundation_name')
-        user_credentials_collection  = current_app.mongo['user_credentials_db']['user_credentials']
+        user_credentials_collection = current_app.mongo['user_credentials_db']['user_credentials']
 
         user = user_credentials_collection.find_one({'username': username})
 
@@ -241,7 +265,7 @@ def change_password():
 
         if result.matched_count > 0:
             # Revoke current JWT token
-            jti = get_jwt()["jti"]  # Get the JWT ID from the current token
+            jti = get_jwt()["jti"]
             whatsapp_data_db.revoked_tokens.insert_one({"jti": jti})
             flash('Password updated successfully. Please log in again.', 'success')
 
@@ -255,9 +279,9 @@ def change_password():
     return render_template('change_password.html')
 
 
-
 # TODO :
 @bp.route('/signup', methods=['GET', 'POST'])
+@jwt_required()
 def signup():
     if request.method == 'POST':
         username = request.form.get('username')
@@ -290,6 +314,85 @@ def signup():
 
     return render_template('signup.html', message='')
 
+
+
+
+@bp.route('/add_user', methods=['GET', 'POST'])
+@jwt_required()
+@role_required(['admin']) 
+def add_user():
+    logger.info("ADDING USER --- Method: %s", request.method)
+
+    if request.method == 'GET':
+        logger.info("Rendering add_user.html template")
+        return render_template('add_user.html')
+
+    if request.method == 'POST':
+        username = request.form.get('username')
+        password = request.form.get('password')  # Get the password from the form
+        role = request.form.get('role')
+        foundations = request.form.get('foundations', '').split(',')
+        default_foundation = request.form.get('defaultFoundation')
+
+        logger.info("Received form data - Username: %s, Role: %s, Foundations: %s, Default Foundation: %s",
+                    username, role, foundations, default_foundation)
+
+        # Check if default foundation is in the selected foundations
+        if default_foundation not in foundations:
+            logger.warning("Default foundation not in the list of granted foundations")
+            flash('Default foundation must be one of the selected foundations', 'error')
+            return redirect(url_for('auth.add_user'))
+
+        # Connect to the MongoDB collection
+        user_credentials_collection = current_app.mongo['user_credentials_db']['user_credentials']
+        logger.info("Connected to user_credentials collection")
+
+        # Check if the username already exists
+        if user_credentials_collection.find_one({'username': username}):
+            logger.warning("Username '%s' already exists", username)
+            flash('Username already exists', 'error')
+            return redirect(url_for('auth.add_user'))
+
+        # Hash the password
+        logger.info("Hashing password for user: %s", username)
+        hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
+
+        # Generate a new user ID
+        new_user_id = user_credentials_collection.count_documents({}) + 1
+        logger.info("Generated new user_id: %d", new_user_id)
+
+        # Create the new user document
+        new_user = {
+            '_id': ObjectId(),
+            'user_id': new_user_id,
+            'username': username,
+            'user_password': hashed_password.decode('utf-8'),  # Save hashed password
+            'role': role,
+            'default_foundation': default_foundation,
+            'granted_foundations': foundations,
+        }
+
+        # Insert the new user into the database
+        try:
+            user_credentials_collection.insert_one(new_user)
+            logger.info("User '%s' successfully inserted into the database", username)
+            flash('User created successfully', 'success')
+        except Exception as e:
+            logger.error("Error inserting user '%s': %s", username, str(e))
+            flash('An error occurred while creating the user', 'error')
+        
+        return redirect(url_for('auth.add_user'))
+
+
+@bp.route('/get_foundations', methods=['GET'])
+@jwt_required()
+@role_required(['admin']) 
+def get_foundations():
+    session_configs = get_session_foundation_config()
+    granted_foundations = session_configs.get('granted_foundations')
+    logger.debug(f"GRANTED FOUNDATIONS ---  { granted_foundations}")
+    
+    return jsonify({'foundations': granted_foundations})
 
 
 # TODO :

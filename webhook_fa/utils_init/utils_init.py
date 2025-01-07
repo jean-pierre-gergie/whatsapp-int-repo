@@ -3,17 +3,8 @@ import logging
 from pymongo import MongoClient, errors, DESCENDING
 from dotenv import load_dotenv
 import os
+from logger_setup.logger_setup import logger
 
-
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-console_handler = logging.StreamHandler()
-console_handler.setLevel(logging.DEBUG)
-
-# Create formatter
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-console_handler.setFormatter(formatter)
-logger.addHandler(console_handler)
 
 
 

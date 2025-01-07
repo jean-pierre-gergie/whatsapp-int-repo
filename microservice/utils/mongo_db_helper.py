@@ -3,10 +3,7 @@ import logging
 from pymongo import MongoClient, errors, DESCENDING
 from dotenv import load_dotenv
 import os
-from logger.set_logger import get_logger
-
-
-logger = get_logger()
+from logger_setup.logger_setup import logger
 
 
 

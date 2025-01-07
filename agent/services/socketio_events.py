@@ -5,9 +5,9 @@ from utils.dialog_360 import send_message_to_users_through_360
 from utils.chat_room_helper import get_opened_closed_discussions
 from utils.jwt_helper import socket_io_jwt
 from datetime import datetime
+from  logger_setup.logger_setup import LoggerSetup
 
-
-logger = logging.getLogger('app')
+logger = LoggerSetup(__name__).get_logger()
 
 
 

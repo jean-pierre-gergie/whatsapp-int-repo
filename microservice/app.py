@@ -2,9 +2,8 @@ from fastapi import FastAPI ,Request
 from celery_app import celery_app , submit_task
 import time 
 import logging
+from logger_setup.logger_setup import logger
 
-logger = logging.getLogger(__name__)
-logging.basicConfig(level=logging.DEBUG)  # Set the logging level
 
 
 pymongo_logger = logging.getLogger("pymongo")
@@ -32,6 +31,7 @@ async def start_campaign_task(request: Request):
                 'variables': payload['variables'],
                 'campaign_name': payload['campaign_name'],
                 'media_id': payload.get('media_id', 0),
+                'media_type':payload.get('media_type', 0),
                 'campaign_id_db': None
             }
     

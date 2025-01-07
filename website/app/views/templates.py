@@ -3,18 +3,12 @@ from flask_jwt_extended import jwt_required, get_jwt_identity
 from ..utils.decorators import role_required
 from ..utils.helper_functions import get_template_texts
 from ..utils.template_updater import fetch_and_update_templates
-from ..utils.session_config_helper import get_session_foundation_config,get_all_foundations
+from ..utils.session_config_helper import get_session_foundation_config
 import requests
 import json
 from app.config import Config  
-import logging
+logger = current_app.logger 
 
-
-logging.basicConfig(level=logging.DEBUG, 
-                    format='- %(name)s - %(levelname)s - %(message)s')
-
-
-logger = logging.getLogger(__name__)
 
 bp = Blueprint('templates', __name__)
 
@@ -22,11 +16,13 @@ bp = Blueprint('templates', __name__)
 def inject_foundation_data():
     session_configs = get_session_foundation_config()
     if not session_configs:
-        return {}  # Or handle it gracefully if the data is missing
+        return {}  
     foundation_name = session_configs.get('foundation_name')
-    all_foundations = get_all_foundations()
-    return dict(foundation_name=foundation_name, foundations=all_foundations)
-
+    granted_foundations = session_configs.get('granted_foundations')
+    granted_foundations=[{'foundation': foundation} for foundation in granted_foundations]
+    logger.debug(f"GRANTED FOUNDATIONS ---  { granted_foundations}")
+    
+    return dict(foundation_name=foundation_name, foundations=granted_foundations)
 @bp.route('/templates')
 @jwt_required()
 @role_required(['admin','user'])
@@ -48,12 +44,10 @@ def templates_list():
         template['_id'] = str(template['_id'])  
     
 
-    all_foundations = get_all_foundations()
-
+   
     return render_template('templates.html',
                            templates=templates,
-                           foundation_name=foundation_name,
-                           foundations=all_foundations)
+                           foundation_name=foundation_name)
 
 @bp.route('/remove_template', methods=['POST'])
 @jwt_required()
@@ -157,7 +151,11 @@ def get_template_text():
 
     texts = get_template_texts(template_name,api_key_360=api_key_360)
     if texts:
-        return jsonify({'success': True, 'texts': texts['text_fields'], 'variable_count': texts['variable_count'], 'has_image': texts['has_image']})
+        return jsonify({'success': True,
+                        'texts': texts['text_fields'],
+                        'variable_count': texts['variable_count'], 
+                        'has_image': texts['has_image'],
+                        'has_video': texts['has_video']})
     else:
         return jsonify({'success': False, 'error': 'Template not found or error retrieving template.'})
 
@@ -168,8 +166,8 @@ def get_template_text():
 @role_required(['admin', 'user']) 
 def create_template():
     current_user = get_jwt_identity()
-    logger.debug(f"Current user: {current_user}")
-
+    # logger.debug(f"Current user: {current_user}")
+    logger.debug("Creating template")
     session_configs =get_session_foundation_config()
   
     api_key_360 = session_configs.get('api_key')
@@ -180,6 +178,7 @@ def create_template():
         category = request.form['category']
         language_code = request.form['language']
         header_image_url = request.form.get('header_image_url') 
+        header_video_url = request.form.get('header_video_url')
         header_type = request.form.get('header_type')
         header_text = request.form.get('header_text')
         header_example = request.form.get('header_example')
@@ -231,6 +230,17 @@ def create_template():
                     "header_handle": [
                          header_image_url                 
                      ]
+                }
+            }
+            components.append(header_component)
+        elif header_type == 'VIDEO' and header_video_url:
+            header_component = {
+                "type": "HEADER",
+                "format": "VIDEO",
+                "example": {
+                    "header_handle": [
+                        header_video_url
+                    ]
                 }
             }
             components.append(header_component)

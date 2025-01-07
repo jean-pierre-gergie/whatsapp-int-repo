@@ -1,6 +1,5 @@
 from utils.mongo_db_helper import get_mongo_client,populate_collection_from_json
-from logger.set_logger import get_logger
-
+from utils.grant_user_access_helper import grant_user_access
 
 
 
@@ -28,6 +27,12 @@ def add_users_to_db(logger):
             '/app/init_data/users.json',
             unique_field='user_id'
         )
+        
+
+        # TODO SET  foundation per user and set default foundation (admin all foundations , user defined )
+
+        grant_user_access(logger=logger)
+
 
         logger.info("Users successfully added to the database.")
     except Exception as e:

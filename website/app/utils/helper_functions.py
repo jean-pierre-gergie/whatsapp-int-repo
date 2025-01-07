@@ -14,16 +14,12 @@ from datetime import datetime
 from .country_number_cleaning import is_valid_phone_number
 
 
-formatter = logging.Formatter('%(levelname)s - FUNCTION: %(funcName)s - %(message)s')
-handler = logging.StreamHandler()
-handler.setFormatter(formatter)
 
-logger = logging.getLogger(__name__)
-logger.setLevel(logging.DEBUG)
-logger.addHandler(handler)
 
-pymongo_logger = logging.getLogger("pymongo")
-pymongo_logger.setLevel(logging.ERROR) 
+logger = current_app.logger
+
+# pymongo_logger = logging.getLogger("pymongo")
+# pymongo_logger.setLevel(logging.ERROR) 
 
 
 
@@ -48,10 +44,16 @@ def get_template_texts(template_name,api_key_360):
             variable_count = 0
             buttons = []
             has_image = False
+            has_video = False
+
             for component in template['components']:
-                if component['type'] == 'HEADER' and component.get('format') == 'IMAGE':
-                    text_fields.append('Image Header')
-                    has_image = True
+                if component['type'] == 'HEADER':
+                    if component.get('format') == 'IMAGE':
+                        text_fields.append('Image Header')
+                        has_image = True
+                    elif component.get('format') == 'VIDEO':  # Check for video
+                        text_fields.append('Video Header')
+                        has_video = True
                 if component['type'] == 'BODY' and 'text' in component:
                     text_fields.append(component['text'])
                     variable_count = max(variable_count, component['text'].count('{{'))
@@ -61,19 +63,96 @@ def get_template_texts(template_name,api_key_360):
                     buttons.extend([f"{button['type']}: {button['text']}" for button in component['buttons']])
             if buttons:
                 text_fields.append(f"Buttons: {', '.join(buttons)}")
-            return {'text_fields': text_fields, 'variable_count': variable_count, 'has_image': has_image}
+            return {
+                'text_fields': text_fields,
+                'variable_count': variable_count,
+                'has_image': has_image,
+                'has_video': has_video  # Include video flag
+            }
     return None
 
 
-def upload_image(file_path,api_key_360):
+
+def upload_media(file_path, api_key_360):
+    _, file_extension = os.path.splitext(file_path.lower())
+
+    if file_extension in ['.jpg', '.jpeg', '.png']:
+        return upload_image(file_path, api_key_360)
+    elif file_extension in ['.mp4']:
+        return upload_video(file_path, api_key_360)
+    else:
+        logger.error(f"Unsupported file type: {file_extension}")
+        return None
+
+def upload_video(file_path, api_key_360):
+    max_file_size_mb = 16  # Max size for videos in MB
+    file_size_mb = os.path.getsize(file_path) / (1024 * 1024)
+
+    if file_size_mb > max_file_size_mb:
+        logger.error(f"Video file too large to upload: {file_size_mb:.2f} MB (max {max_file_size_mb} MB)")
+        return None
+
     api_url = "https://waba-v2.360dialog.io/media"
     headers = {"D360-API-KEY": api_key_360}
     files = {
         "messaging_product": (None, "whatsapp"),
-        "file": (file_path, open(file_path, 'rb'), 'image/jpeg')
+        "file": (file_path, open(file_path, 'rb'), 'video/mp4')  # Ensure proper MIME type for videos
     }
-    response = requests.post(api_url, headers=headers, files=files)
-    return response.json().get('id') if response.status_code == 200 else None
+
+    try:
+        response = requests.post(api_url, headers=headers, files=files)
+        if response.status_code == 200:
+            media_id = response.json().get('id')
+            logger.debug(f"Successfully uploaded video. Media ID: {media_id}")
+            return media_id
+        else:
+            logger.error(f"Failed to upload video. Status Code: {response.status_code}, Response: {response.text}")
+            return None
+    except Exception as e:
+        logger.error(f"Exception occurred while uploading video: {str(e)}")
+        return None
+    
+def upload_image(file_path, api_key_360):
+    max_file_size_mb = 5  # Max size for images in MB
+    file_size_mb = os.path.getsize(file_path) / (1024 * 1024)
+
+    if file_size_mb > max_file_size_mb:
+        logger.error(f"Image file too large to upload: {file_size_mb:.2f} MB (max {max_file_size_mb} MB)")
+        return None
+
+    api_url = "https://waba-v2.360dialog.io/media"
+    headers = {"D360-API-KEY": api_key_360}
+    files = {
+        "messaging_product": (None, "whatsapp"),
+        "file": (file_path, open(file_path, 'rb'), 'image/jpeg')  # Ensure proper MIME type for images
+    }
+
+    try:
+        response = requests.post(api_url, headers=headers, files=files)
+        if response.status_code == 200:
+            media_id = response.json().get('id')
+            logger.debug(f"Successfully uploaded image. Media ID: {media_id}")
+            return media_id
+        else:
+            logger.error(f"Failed to upload image. Status Code: {response.status_code}, Response: {response.text}")
+            return None
+    except Exception as e:
+        logger.error(f"Exception occurred while uploading image: {str(e)}")
+        return None
+
+def save_uploaded_file(file):
+    upload_dir = './uploaded_assets'
+    try:
+        if not os.path.exists(upload_dir):
+            os.makedirs(upload_dir)
+            logger.debug(f"Created upload directory at: {upload_dir}")
+        file_path = os.path.join(upload_dir, file.filename)
+        file.save(file_path)
+        logger.debug(f"File saved to: {file_path}")
+        return file_path
+    except Exception as e:
+        logger.error(f"Exception occurred while saving file: {str(e)}")
+        return None
 
 
 def get_template_details(template_name,api_key_360):
