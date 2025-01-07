@@ -1,4 +1,5 @@
 *.pyc
 */uploaded_assets/
 */celerybeat-schedule
-*/logs-data/
+*grafana-data/
+*logs-data/
