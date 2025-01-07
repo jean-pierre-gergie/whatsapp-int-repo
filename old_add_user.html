@@ -21,62 +21,58 @@
 <body>
     <div id="app">
         {% include 'sidebar.html' %}
-
-        <div id="main">
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    <div class="container mt-3">
-                        {% for category, message in messages %}
-                            <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show" role="alert">
-                                {{ message }}
-                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                            </div>
-                        {% endfor %}
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="container mt-3">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ 'success' if category == 'success' else 'danger' }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                     </div>
-                {% endif %}
+                {% endfor %}
+                </div>
+            {% endif %}
             {% endwith %}
-
-            <div class="container mt-5">
-                <h2>Add New User</h2>
-                <form id="addUserForm" method="POST" action="/add_user">
-                    <div class="mb-3">
-                        <label for="username" class="form-label">Username</label>
-                        <input type="text" class="form-control" id="username" name="username" autocomplete="off" required>
+        <div class="container mt-5">
+            <h2>Add New User</h2>
+            <form id="addUserForm" method="POST" action="/add_user">
+                <div class="mb-3">
+                    <label for="username" class="form-label">Username</label>
+                    <input type="text" class="form-control" id="username" name="username" autocomplete="off" required>
+                </div>
+                <div class="mb-3">
+                    <label for="password" class="form-label">Password</label>
+                    <input type="password" class="form-control" id="password" name="password" autocomplete="new-password" required>
+                </div>
+                <div class="mb-3">
+                    <label for="confirmPassword" class="form-label">Confirm Password</label>
+                    <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" autocomplete="new-password" required>
+                    <span id="passwordError" class="text-danger" style="display: none; font-size: 0.9em;">
+                        Passwords do not match.
+                    </span>
+                </div>
+                <div class="mb-3">
+                    <label for="role" class="form-label">Role</label>
+                    <select class="form-select" id="role" name="role" required>
+                        <option value="admin">Admin</option>
+                        <option value="user">User</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Foundations</label>
+                    <div id="foundationsContainer" class="d-flex flex-wrap gap-2">
+                        <!-- Buttons for foundations will be dynamically populated here -->
                     </div>
-                    <div class="mb-3">
-                        <label for="password" class="form-label">Password</label>
-                        <input type="password" class="form-control" id="password" name="password" autocomplete="new-password" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="confirmPassword" class="form-label">Confirm Password</label>
-                        <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" autocomplete="new-password" required>
-                        <span id="passwordError" class="text-danger" style="display: none; font-size: 0.9em;">
-                            Passwords do not match.
-                        </span>
-                    </div>
-                    <div class="mb-3">
-                        <label for="role" class="form-label">Role</label>
-                        <select class="form-select" id="role" name="role" required>
-                            <option value="admin">Admin</option>
-                            <option value="user">User</option>
-                        </select>
-                    </div>
-                    <div class="mb-3">
-                        <label class="form-label">Foundations</label>
-                        <div id="foundationsContainer" class="d-flex flex-wrap gap-2">
-                            <!-- Buttons for foundations will be dynamically populated here -->
-                        </div>
-                        <input type="hidden" id="selectedFoundations" name="foundations">
-                    </div>
-                    <div class="mb-3">
-                        <label for="defaultFoundation" class="form-label">Default Foundation</label>
-                        <select class="form-select" id="defaultFoundation" name="defaultFoundation" required>
-                            <!-- Default Foundation options will be dynamically populated -->
-                        </select>
-                    </div>
-                    <button type="submit" class="btn btn-primary">Create User</button>
-                </form>
-            </div>
+                    <input type="hidden" id="selectedFoundations" name="foundations">
+                </div>
+                <div class="mb-3">
+                    <label for="defaultFoundation" class="form-label">Default Foundation</label>
+                    <select class="form-select" id="defaultFoundation" name="defaultFoundation" required>
+                        <!-- Default Foundation options will be dynamically populated -->
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">Create User</button>
+            </form>
         </div>
     </div>
 
@@ -87,7 +83,7 @@
             const selectedFoundationsInput = document.getElementById('selectedFoundations');
             const passwordInput = document.getElementById('password');
             const confirmPasswordInput = document.getElementById('confirmPassword');
-            const passwordError = document.getElementById('passwordError');
+            const passwordError = document.getElementById('passwordError'); // Password error message span
             const form = document.getElementById('addUserForm');
 
             let selectedFoundations = [];
@@ -142,22 +138,22 @@
             function checkPasswordsMatch() {
                 if (confirmPasswordInput.value.length > 0) {
                     if (passwordInput.value !== confirmPasswordInput.value) {
-                        passwordError.classList.remove('d-none');
+                        passwordError.classList.remove('d-none'); // Show error
                     } else {
-                        passwordError.classList.add('d-none');
+                        passwordError.classList.add('d-none'); // Hide error
                     }
                 } else {
-                    passwordError.classList.add('d-none');
+                    passwordError.classList.add('d-none'); // Hide error when confirm password is empty
                 }
             }
 
             // Password validation for form submission
             function validatePasswords() {
                 if (passwordInput.value !== confirmPasswordInput.value) {
-                    passwordError.classList.remove('d-none');
+                    passwordError.classList.remove('d-none'); // Show error
                     return false;
                 } else {
-                    passwordError.classList.add('d-none');
+                    passwordError.classList.add('d-none'); // Hide error
                     return true;
                 }
             }

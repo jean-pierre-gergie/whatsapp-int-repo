@@ -6,6 +6,7 @@ from bson.objectid import ObjectId
 from ..utils.decorators import  role_required
 from ..utils.session_config_helper import get_session_foundation_config,set_session_foundation_config
 import uuid
+import re
 
 bp = Blueprint('auth', __name__)
 
@@ -200,6 +201,20 @@ def switch_foundation(foundation_name):
 
 
 # TODO :
+def is_strong_password(password):
+    """Validate the strength of a password."""
+    if len(password) < 8:
+        return False, "Password must be at least 8 characters long."
+    if not re.search(r'[A-Z]', password):
+        return False, "Password must contain at least one uppercase letter."
+    if not re.search(r'[a-z]', password):
+        return False, "Password must contain at least one lowercase letter."
+    if not re.search(r'[0-9]', password):
+        return False, "Password must contain at least one digit."
+    if not re.search(r'[!@#$%^&*(),.?\":{}|<>]', password):
+        return False, "Password must contain at least one special character."
+    return True, "Password is strong."
+
 @bp.route('/change_password', methods=['GET', 'POST'])
 @jwt_required()
 def change_password():
@@ -216,14 +231,20 @@ def change_password():
             flash('New passwords do not match', 'error')
             return redirect(url_for('auth.change_password'))
 
+        # Validate password strength
+        is_valid, message = is_strong_password(new_password)
+        if not is_valid:
+            flash(message, 'error')
+            return redirect(url_for('auth.change_password'))
+
         current_user = get_jwt_identity()
         username = current_user['username']
 
-        session_configs =get_session_foundation_config()
+        session_configs = get_session_foundation_config()
 
         whatsapp_data_db = session_configs.get('whatsapp_data_db')
         foundation_name = session_configs.get('foundation_name')
-        user_credentials_collection  = current_app.mongo['user_credentials_db']['user_credentials']
+        user_credentials_collection = current_app.mongo['user_credentials_db']['user_credentials']
 
         user = user_credentials_collection.find_one({'username': username})
 
@@ -244,7 +265,7 @@ def change_password():
 
         if result.matched_count > 0:
             # Revoke current JWT token
-            jti = get_jwt()["jti"]  # Get the JWT ID from the current token
+            jti = get_jwt()["jti"]
             whatsapp_data_db.revoked_tokens.insert_one({"jti": jti})
             flash('Password updated successfully. Please log in again.', 'success')
 
@@ -256,7 +277,6 @@ def change_password():
             flash('Error updating password', 'error')
 
     return render_template('change_password.html')
-
 
 
 # TODO :
