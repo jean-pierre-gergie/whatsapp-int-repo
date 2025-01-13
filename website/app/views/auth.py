@@ -10,10 +10,6 @@ import re
 
 bp = Blueprint('auth', __name__)
 
-
-
-
-
 logger = current_app.logger
 
 
@@ -100,7 +96,7 @@ def login():
             return render_template('login.html')
 
         # If login fails
-        flash("Invalid username or password", "error")
+        return jsonify({"msg": "Invalid username or password"}), 401 
         logger.debug(f"Rendering login page due to invalid login for user {username}.")
         return render_template('login.html')
 

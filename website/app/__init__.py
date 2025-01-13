@@ -1,6 +1,6 @@
 from .logger_setup.logger_setup import LoggerSetup
 import logging
-from flask import Flask
+from flask import Flask, redirect, url_for, flash
 from flask_jwt_extended import JWTManager
 from pymongo import MongoClient
 from .config import Config
@@ -44,7 +44,11 @@ def create_app():
         jti = jwt_payload['jti']
         token_in_db = app.mongo['DEFAULT_DB'].revoked_tokens.find_one({'jti': jti})
         return token_in_db is not None
-
+    
+    @jwt.expired_token_loader
+    def expired_token_callback(jwt_header, jwt_payload):
+        flash("Your session has expired. Please log in again.", "warning")
+        return redirect(url_for('auth.login'))  
     # # Initialize MongoDB
     try:
         client = get_mongo_client()
