@@ -254,6 +254,8 @@ def create_template():
             if num_variables > 0:
                 examples = [body_examples[i:i + num_variables] for i in range(0, len(body_examples), num_variables)]
                 examples = [example for example in examples if len(example) == num_variables]
+                if not examples:
+                    raise ValueError("Provided body examples do not match the number of variables in BODY text")
             
             body_component = {
                 "type": "BODY",
