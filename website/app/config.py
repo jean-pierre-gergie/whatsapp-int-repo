@@ -11,6 +11,7 @@ load_dotenv()
 
 
 class Config:
+    
     SECRET_KEY = os.getenv('SECRET_KEY')
     JWT_SECRET_KEY = os.getenv('JWT_SECRET_KEY')
     JWT_ACCESS_TOKEN_EXPIRES = timedelta(hours=int(os.getenv('JWT_ACCESS_TOKEN_EXPIRES_HOURS', 1)))
@@ -50,7 +51,8 @@ class Config:
             if not api_keys:
                 logger.warning("No API keys found in 'foundations' collection.")
         except Exception as e:
-            logger.error(f"An error occurred while fetching API keys: {e}")
+
+            logger.error(f"An error occurred while fetching API keys:")
 
         return api_keys
 

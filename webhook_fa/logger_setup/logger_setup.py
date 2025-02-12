@@ -1,12 +1,18 @@
 import logging
 import json
+import os 
+
 
 class LoggerSetup:
-    def __init__(self, logger_name, level=logging.DEBUG):
+    def __init__(self, logger_name):
         self.logger = logging.getLogger(logger_name)
+        self.environment = os.getenv("MODE", "development")  # Default to development
+        
+        # Set log level based on environment
+        level = logging.DEBUG if self.environment == "development" else logging.INFO
         self.logger.setLevel(level)
-        self._setup_handler()
 
+        self._setup_handler(level)
     def _setup_handler(self):
         # Avoid adding duplicate handlers
         if not self.logger.handlers:
@@ -56,8 +62,3 @@ class JsonOrTextFormatter(logging.Formatter):
         formatted_msg = record.msg.replace("\n", "\n " + " " * (len(record.time) + len(record.filename) + 6))
 
         return f"[{record.time}] [{record.filename}] {formatted_msg}"
-    
-
-
-
-logger = LoggerSetup(__name__).get_logger()

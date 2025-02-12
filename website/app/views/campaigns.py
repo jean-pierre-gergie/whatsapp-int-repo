@@ -438,8 +438,8 @@ def send_campaign_messages():
 
     microservice_base_url = current_app.config['MICROSERVICE_BASE_URL']
 
-    logger.info(f"BE LEVEL Payload details at BE LEVEL: {payload}")
-    logger.info(f"BE LEVEL Micro Service Base url {microservice_base_url}")
+    logger.debug(f"BE LEVEL Payload details at BE LEVEL: {payload}")
+    logger.debug(f"BE LEVEL Micro Service Base url {microservice_base_url}")
 
     try:
         # Send the request to submit the job
@@ -449,7 +449,7 @@ def send_campaign_messages():
             # Extract the task_id from the response
             task_id = response.json().get("task_id")
             logger.info(f"Task started with ID: {task_id}")
-
+            logger.debug(f"Task started with ID: {task_id}")
             # Add campaign name and task_id to the campaign_name collection
             campaign_name_collection.insert_one({
                 "foundation_name":foundation_name,
@@ -482,8 +482,8 @@ def get_campaign_status(campaign_name):
 
     whatsapp_data_db = session_configs.get('whatsapp_data_db')
 
-    logger.debug("Polling for campaign status.")
-    logger.debug(f"Polling status for campaign: {campaign_name}")
+    logger.info("Polling for campaign status.")
+    logger.info(f"Polling status for campaign: {campaign_name}")
 
     try:
         campaign_collection = whatsapp_data_db.campaign_name  # MongoDB collection name is campaign_name
@@ -512,7 +512,7 @@ def get_campaign_status(campaign_name):
 
         microservice_data = response.json()
 
-        logger.info (f"MICROSERVICE_DATA--- \n  {microservice_data}")
+        logger.debug (f"MICROSERVICE_DATA--- \n  {microservice_data}")
 
         if microservice_data.get('status') == 'PENDING':
 
@@ -609,9 +609,9 @@ def get_campaign_status(campaign_name):
 @role_required(['admin', 'user']) 
 def download_file(filename):
     path = os.path.join(os.getcwd(), 'output_files', filename)
-    print(f"Attempting to send file: {path}")
+    logger.info(f"Attempting to send file: {path}")
     if not os.path.exists(path):
-        print(f"Error: File not found: {path}")
+        logger.info(f"Error: File not found: {path}")
         return jsonify(error="File not found"), 404
     return send_file(path, as_attachment=True)
 
@@ -804,16 +804,16 @@ def change_auto_reply_message():
         # Fetch session configurations
         session_configs = get_session_foundation_config()
         foundation_name = session_configs.get("foundation_name", "")
-        logger.info(f"Session configuration retrieved: {foundation_name}")
+        logger.debug(f"Session configuration retrieved: {foundation_name}")
 
         # Access the database
         foundation_collection = current_app.mongo['foundations_db']['foundations']
         foundation_doc = foundation_collection.find_one({"foundation": foundation_name})
         # logger.info(f"Database query executed for foundation: {foundation_name}")
-        logger.info(foundation_doc)
+        logger.debug(foundation_doc)
         # Check if foundation exists and retrieve auto-reply message
         auto_reply_message = foundation_doc.get("auto_reply_message", "") 
-        logger.info(f"Auto-reply message to render: {auto_reply_message}")
+        logger.debug(f"Auto-reply message to render: {auto_reply_message}")
 
         # Render the HTML template and pass the auto-reply message to the frontend
         return render_template(
@@ -928,8 +928,9 @@ def dynamic_redirect():
     foundation_name = session_configs.get('foundation_name')
 
     redirect_url = f"{agent_server_url}?foundation_name={foundation_name}"
-    logger.info(f"redirecting to {redirect_url}")
-
+    logger.info("Redicrecting ---")
+    logger.debug(f"redirecting to {redirect_url}")
+    
 
 #     logger.info(f"redirecting to {agent_server_url}")
     response = make_response(redirect(redirect_url))

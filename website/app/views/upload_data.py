@@ -127,7 +127,7 @@ def map_columns():
                 logger.error(f"File not found at path: {temp_file_path}")
                 return redirect(url_for('upload_data.upload_file'))
 
-            logger.info(f"Reading CSV file from: {temp_file_path}")
+            logger.debug(f"Reading CSV file from: {temp_file_path}")
             df = pd.read_csv(temp_file_path, keep_default_na=False)
 
             if df.empty:

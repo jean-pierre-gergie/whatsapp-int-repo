@@ -7,6 +7,7 @@ from .config import Config
 from art import text2art ,art
 from termcolor import colored
 from .logger_setup.logger_setup import LoggerSetup
+import os 
 
 
 
@@ -59,6 +60,9 @@ def create_app():
 
     app.mongo = client
     app.default_db = client[app.config['DEFAULT_DB']]
+    MODE = os.getenv('MODE', 'production').lower()
+    DEBUG = True if MODE == 'developement' else False
+    app.debug_ = DEBUG
     
 
     # # Register blueprints
@@ -76,9 +80,8 @@ def create_app():
 
 def get_mongo_client():
     logger = LoggerSetup(__name__).get_logger()
-    logger.debug(f"Connecting to MongoDB with URI: {Config.MONGODB_URI}")
+    logger.debug("Connecting to MongoDB with URI: [HIDDEN]")  # Hide credentials in logs
     return MongoClient(Config.MONGODB_URI)
-
 
 def log_config():
     """Logs the app configuration settings in a structured format, including a blue and grey ASCII logo."""

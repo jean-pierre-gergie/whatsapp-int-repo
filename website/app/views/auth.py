@@ -97,8 +97,8 @@ def login():
 
         # If login fails
         return jsonify({"msg": "Invalid username or password"}), 401 
-        logger.debug(f"Rendering login page due to invalid login for user {username}.")
-        return render_template('login.html')
+        # logger.debug(f"Rendering login page due to invalid login for user {username}.")
+        # return render_template('login.html')
 
     # GET request, render the login page
     logger.debug("Rendering login page (GET request).")
@@ -317,7 +317,8 @@ def signup():
 @jwt_required()
 @role_required(['admin']) 
 def add_user():
-    logger.info("ADDING USER --- Method: %s", request.method)
+    logger.debug("ADDING USER --- Method: %s", request.method)
+    logger.info("ADDING USER ---")
 
     if request.method == 'GET':
         logger.info("Rendering add_user.html template")
@@ -330,7 +331,7 @@ def add_user():
         foundations = request.form.get('foundations', '').split(',')
         default_foundation = request.form.get('defaultFoundation')
 
-        logger.info("Received form data - Username: %s, Role: %s, Foundations: %s, Default Foundation: %s",
+        logger.debug("Received form data - Username: %s, Role: %s, Foundations: %s, Default Foundation: %s",
                     username, role, foundations, default_foundation)
 
         # Check if default foundation is in the selected foundations
@@ -350,12 +351,12 @@ def add_user():
             return redirect(url_for('auth.add_user'))
 
         # Hash the password
-        logger.info("Hashing password for user: %s", username)
+        logger.debug("Hashing password for user: %s", username)
         hashed_password = bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt())
 
         # Generate a new user ID
         new_user_id = user_credentials_collection.count_documents({}) + 1
-        logger.info("Generated new user_id: %d", new_user_id)
+        logger.debug("Generated new user_id: %d", new_user_id)
 
         # Create the new user document
         new_user = {
@@ -371,7 +372,8 @@ def add_user():
         # Insert the new user into the database
         try:
             user_credentials_collection.insert_one(new_user)
-            logger.info("User '%s' successfully inserted into the database", username)
+            logger.debug("User '%s' successfully inserted into the database", username)
+            logger.info("User  successfully inserted into the database")
             flash('User created successfully', 'success')
         except Exception as e:
             logger.error("Error inserting user '%s': %s", username, str(e))

@@ -186,7 +186,7 @@ services:
     environment:
       - GF_SECURITY_ADMIN_USER=admin              # Sets the default admin username.
       - GF_SECURITY_ADMIN_PASSWORD=admin          # Sets the default admin password.
-      - GF_AUTH_ANONYMOUS_ENABLED=true            # Enables anonymous access if required.
+      - GF_AUTH_ANONYMOUS_ENABLED=false            # Enables anonymous access if required.
       - GF_AUTH_BASIC_ENABLED=true 
       - GF_SERVER_ROOT_URL=%(protocol)s://%(domain)s:%(http_port)s/logs/  # Set root URL for reverse proxy
       - GF_SERVER_SERVE_FROM_SUB_PATH=true  # Enable serving from subpath

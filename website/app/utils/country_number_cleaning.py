@@ -99,12 +99,12 @@ def get_abbrev_from_country_code(country_code):
 
 def is_valid_phone_number(number):
     try:
-        logging.info(f"Received phone number: {number}")
+        logger.info(f"Received phone number: {number}")
         
         number = str(number)
         # Strip leading non-digits and remove leading 00
         number = strip_leading_non_digits_and_remove_00(number)
-        logging.debug(f"Processed number after stripping: {number}")
+        logger.debug(f"Processed number after stripping: {number}")
 
         # Load digit mappings
         one_digits, two_digits, three_digits, four_digits, five_digits = load_digits_mapping()
@@ -112,30 +112,30 @@ def is_valid_phone_number(number):
 
         # Get country code from digits
         country_code = get_country_code_from_digits(number, one_digits, two_digits, three_digits, four_digits, five_digits)
-        logging.debug(f"Extracted country code: {country_code}")
+        logger.debug(f"Extracted country code: {country_code}")
 
         # Get country abbreviation from country code
         country_abbr = get_abbrev_from_country_code(country_code)
-        logging.debug(f"Country abbreviation: {country_abbr}")
+        logger.debug(f"Country abbreviation: {country_abbr}")
 
         # Parse the phone number using the country abbreviation
         parsed_number = phonenumbers.parse(number, country_abbr)
-        logging.debug(f"Parsed phone number: {parsed_number}")
+        logger.debug(f"Parsed phone number: {parsed_number}")
 
         # Check if the number is valid
         if not phonenumbers.is_valid_number(parsed_number):
-            logging.warning(f"Invalid phone number: {number}")
+            logger.info(f"Invalid phone number: {number}")
             return None
 
         # Format the number to international format
         formatted_number = phonenumbers.format_number(parsed_number, phonenumbers.PhoneNumberFormat.E164).replace("+", "")
-        logging.info(f"Formatted phone number: {formatted_number}")
+        logger.info(f"Formatted phone number: {formatted_number}")
 
         # Return the formatted number
         return formatted_number
 
     except phonenumbers.NumberParseException as e:
-        logging.error(f"Error parsing phone number {number}: {str(e)}")
+        logger.error(f"Error parsing phone number {number}: {str(e)}")
         return None
 
 
