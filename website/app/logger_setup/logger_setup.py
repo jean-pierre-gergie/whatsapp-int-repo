@@ -13,7 +13,7 @@ class LoggerSetup:
         self.logger.setLevel(level)
 
         self._setup_handler(level)
-    def _setup_handler(self):
+    def _setup_handler(self,level):
         # Avoid adding duplicate handlers
         if not self.logger.handlers:
             # Create a console handler
