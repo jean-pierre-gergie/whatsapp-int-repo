@@ -54,7 +54,8 @@ def get_token(logger):
         return token
 
     except Exception as e:
-        logger.error(f"An error occurred: {e}")
+        logger.debug(f"An error occurred: {e}")
+        logger.debug(f"An error occurred...")
         raise
 
 def get_channelID(logger):
@@ -84,7 +85,8 @@ def get_channelID(logger):
                 foundations_channel_ids[foundation_name] = foundation_channel_id
                 logger.debug(f"Mapped channel ID: {key} to foundation: {foundation_name}")
     except Exception as e:
-        logger.error(f"An unexpected error occurred while processing channel IDs: {e}")
+        logger.debug(f"An unexpected error occurred while processing channel IDs: {e}")
+        logger.debug(f"An unexpected error occurred while processing channel IDs")
         raise
 
     if not foundations_channel_ids:
@@ -126,11 +128,13 @@ def get_api_keys(logger):
                 logger.info(f"API key successfully generated for foundation: {foundation}")
                 foundations_api_keys[foundation] = response.json().get('api_key')
             else:
-                logger.error(f"Failed to generate API key for foundation: {foundation}. "
+                logger.debug(f"Failed to generate API key for foundation: {foundation}. "
                              f"HTTP Status: {response.status_code}, Response: {response.text}")
+                logger.error(f"Failed to generate API key for foundation: {foundation}. ")
 
         return foundations_api_keys
 
     except Exception as e:
-        logger.error(f"An error occurred while generating API keys: {e}")
+        logger.debug(f"An error occurred while generating API keys: {e}")
+        logger.erroe(f"An error occurred while generating API keys...")
         raise

@@ -7,7 +7,9 @@ from logger_setup.logger_setup import logger
 def get_dependencies_by_foundation(foundation_name, mongo_url):
     try:
         # Connect to MongoDB
-        logger.info(f"Connecting to MongoDB at {mongo_url}")
+        logger.debug(f"Connecting to MongoDB at {mongo_url}")
+        logger.info (f"Connecting to MongoDB...")
+        
         mongo_client = get_mongo_client(mongo_url)
         
         # Access the 'foundations' collection in 'foundations_db'

@@ -9,7 +9,7 @@ from logger_setup.logger_setup import logger
 pymongo_logger = logging.getLogger("pymongo")
 pymongo_logger.setLevel(logging.WARNING)
 
-app = FastAPI()
+app = FastAPI(docs_url=None,redoc_url=None)
 
 
 @app.post("/start_campaign_task/")

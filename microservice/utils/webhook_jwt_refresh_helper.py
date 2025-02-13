@@ -46,7 +46,8 @@ def get_webhook_url():
 
         return webhook_base_url
     except Exception as e:
-        logger.error(f"Error loading environment variables: {e}", exc_info=True)
+        logger.debug(f"Error loading environment variables: {e}", exc_info=True)
+        logger.error(f"Error loading environment variables: ", exc_info=True)
         raise
 
 
@@ -151,8 +152,8 @@ def refresh_jwt(logger):
     try:
         secret_key = os.getenv("JWT_SECRET_KEY")
         webhook_url = get_webhook_url()
-        logger.info(f"webhook url : {webhook_url}")
-
+        logger.debug(f"webhook url : {webhook_url}")
+        logger.info ("Refreshing JWT ...")
         if not secret_key:
             logger.error("JWT_SECRET_KEY is not set in environment variables.")
             return
@@ -169,7 +170,7 @@ def refresh_jwt(logger):
 
         for foundation_name in foundations_names:
             try:
-                logger.info(f"Processing foundation: {foundation_name}")
+                logger.debug(f"Processing foundation: {foundation_name}")
                 foundation_doc = foundations_collection.find_one({"foundation": foundation_name})
 
                 if not foundation_doc:
@@ -200,20 +201,21 @@ def refresh_jwt(logger):
                     webhook_base_url=webhook_url,
                     jwt_token=new_jwt_token
                 )
-                logger.info(f"Webhook updated for foundation: {foundation_name}")
+                logger.debug(f"Webhook updated for foundation: {foundation_name}")
 
                 # Update the foundations collection with the new JWT
                 foundations_collection.update_one(
                     {"foundation": foundation_name},
                     {"$set": {"jwt": new_jwt_token}}
                 )
-                logger.info(f"JWT token refreshed for foundation: {foundation_name}")
+                logger.debug(f"JWT token refreshed for foundation: {foundation_name}")
             except Exception as e:
                 logger.error(f"Error processing foundation {foundation_name}: {e}")
 
         logger.info("JWT refresh process completed.")
     except Exception as e:
-        logger.error(f"Critical error in refresh_jwt: {e}")
+        logger.error(f"Critical error in refresh_jwt...")
+        logger.debug(f"Critical error in refresh_jwt: {e}")
         
     
 

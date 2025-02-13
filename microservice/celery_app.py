@@ -370,7 +370,8 @@ def submit_task(task_args=None, start_immediately=True, scheduled_time=None):
     else:
         raise ValueError("Either 'start_immediately' must be True or 'scheduled_time' must be provided.")
 
-    logger.info(f"Task submitted with ID: {result.id}")
+    logger.debug(f"Task submitted with ID: {result.id}")
+    logger.info ("Task Submitted...")
     return result.id
 
 

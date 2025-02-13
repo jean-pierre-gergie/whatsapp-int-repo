@@ -85,7 +85,7 @@ class WhatsAppDataHandler:
             open_discussion = True if sender_type == "user" else False
             timestamp = timestamp.isoformat() if isinstance(timestamp, datetime) else timestamp
             
-            if reaction is not '':
+            if reaction != '':
                 self.logger.info(f"reaction{reaction}")
                 message_data = {
                                     "wa_mid": wa_mid,
@@ -95,7 +95,7 @@ class WhatsAppDataHandler:
                                     "info": "unread"
                                 }
                 message_body = f"**REACTION** : {reaction}"
-            elif button is not '':
+            elif button != '':
                 self.logger.info(f"button{button}")
                 message_data = {
                                     "wa_mid": wa_mid,
@@ -140,7 +140,7 @@ class WhatsAppDataHandler:
                 )
 
                 if wa_mid_exists:
-                    self.logger.info(f"Message with wa_mid {wa_mid} already exists for room_id: {sender_phone}")
+                    self.logger.debug(f"Message with wa_mid {wa_mid} already exists for room_id: {sender_phone}")
                     return
                 else:
                     # Update the existing room with the new message and update 'last_message_time'
@@ -196,17 +196,20 @@ class WhatsAppDataHandler:
                 {'id': wa_mid},
                 {'$set': message}
             )
-            self.logger.info(f"Updated user-to-business record with id: {wa_mid}, modified count: {update_result.modified_count}")
+            self.logger.debug(f"Updated user-to-business record with id: {wa_mid}, modified count: {update_result.modified_count}")
+            self.logger.debug(f"Updated user-to-business record...")
         else:
             # Insert new record
             latest_result = self.user_to_business_collection.insert_one(message)
-            self.logger.info(f"New user-to-business message inserted with id: {latest_result.inserted_id}")
+            self.logger.debug(f"New user-to-business message inserted with id: {latest_result.inserted_id}")
+            self.logger.debug(f"New user-to-business message inserted...")
 
     async def emit_event(self, event_name,name_space,data,room=None):
         """Emit an event using the connected Socket.IO client."""
         try:
             self.sio.emit(event_name, data, name_space)
-            self.logger.info(f"Emitted event '{event_name}' with data: {data}")
+            self.logger.debug(f"Emitted event '{event_name}' with data: {data}")
+            self.logger.info(f"Emitted event '{event_name}'...")
         except Exception as e:
             self.logger.error(f"Failed to emit event '{event_name}': {e}")
 

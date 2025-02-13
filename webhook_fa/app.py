@@ -1,5 +1,6 @@
 import json
 import logging
+import fastapi
 from fastapi import FastAPI, Request, HTTPException, Header
 from pymongo import MongoClient
 from pydantic import BaseModel
@@ -21,7 +22,9 @@ from logger_setup.logger_setup import logger
 pymongo_logger = logging.getLogger("pymongo")
 pymongo_logger.setLevel(logging.ERROR)
 
-app = FastAPI()
+app = FastAPI(docs_url=None,redoc_url=None)
+
+logger.info(f"Running FastAPI version : {fastapi.__version__}")
 
 
 mongo_client = get_mongo_client()
@@ -117,4 +120,4 @@ async def webhook(request: Request, foundation_name: str, authorization: Optiona
 if __name__ == '__main__':
     import uvicorn
     logger.info("Starting FastAPI server...")
-    uvicorn.run(app, host="0.0.0.0", port=5000, log_level="debug")
+    uvicorn.run(app, host="0.0.0.0", port=5000, log_level="info")

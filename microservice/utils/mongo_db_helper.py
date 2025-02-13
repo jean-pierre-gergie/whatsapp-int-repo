@@ -33,7 +33,8 @@ def populate_collection_from_json(collection, json_path, unique_field=None):
         if data:
             for document in data:
                 if unique_field and collection.find_one({unique_field: document.get(unique_field)}):
-                    logger.info(f"Document with '{unique_field}'={document.get(unique_field)} already exists. Skipping insertion.")
+                    logger.debug(f"Document with '{unique_field}'={document.get(unique_field)} already exists. Skipping insertion.")
+                    logger.info(f"Document with already exists. Skipping insertion.")
                 else:
                     collection.insert_one(document)
                     # logger.info(f"Inserted document into '{collection.name}' collection.")
@@ -64,7 +65,8 @@ def create_index(collection, field_name, index_name, order=DESCENDING):
     """Create an index on a specified field in the collection."""
     try:
         collection.create_index([(field_name, order)], name=index_name)
-        logger.info(f"Index '{index_name}' created on '{field_name}' in '{collection.name}' collection.")
+        logger.debug(f"Index '{index_name}' created on '{field_name}' in '{collection.name}' collection.")
+        logger.info("Index Created...")
     except Exception as e:
         logger.error(f"An error occurred while creating index '{index_name}': {e}")
 

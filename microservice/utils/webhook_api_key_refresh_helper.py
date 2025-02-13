@@ -57,6 +57,7 @@ def webhook_refresh_api_key(logger):
         logger.info("API key refresh process completed successfully.")
 
     except Exception as e:
-        logger.error(f"An error occurred while refreshing API keys: {e}", exc_info=True)
+        logger.debug(f"An error occurred while refreshing API keys: {e}", exc_info=True)
+        logger.error(f"An error occurred while refreshing API keys:", exc_info=True)
 
 

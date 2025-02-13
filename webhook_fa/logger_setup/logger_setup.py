@@ -13,7 +13,7 @@ class LoggerSetup:
         self.logger.setLevel(level)
 
         self._setup_handler(level)
-    def _setup_handler(self):
+    def _setup_handler(self,level):
         # Avoid adding duplicate handlers
         if not self.logger.handlers:
             # Create a console handler
@@ -62,3 +62,4 @@ class JsonOrTextFormatter(logging.Formatter):
         formatted_msg = record.msg.replace("\n", "\n " + " " * (len(record.time) + len(record.filename) + 6))
 
         return f"[{record.time}] [{record.filename}] {formatted_msg}"
+logger = LoggerSetup(__name__).get_logger()

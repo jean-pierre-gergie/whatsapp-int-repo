@@ -112,7 +112,7 @@ class AutoReplyHandler:
                 self.logger.warning(f"No document found for foundation: {self.foundation_name}")
             
             auto_reply_message = foundation_doc.get("auto_reply_message", "default auto reply")
-            self.logger.info(f"Auto-reply message for {self.foundation_name}: {auto_reply_message}")
+            self.logger.debug(f"Auto-reply message for {self.foundation_name}: {auto_reply_message}")
             
             return auto_reply_message
         except Exception as e:
@@ -137,7 +137,7 @@ class AutoReplyHandler:
                 self.logger.warning(f"No API key found for foundation: {self.foundation_name}")
                 return None
 
-            self.logger.info(f"API key for {self.foundation_name}: {api_key}")
+            self.logger.debug(f"API key for {self.foundation_name}: {api_key}")
             return api_key
 
         except Exception as e:
