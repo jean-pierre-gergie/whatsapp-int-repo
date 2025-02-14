@@ -18,7 +18,8 @@ from logger_setup.logger_setup import LoggerSetup
 
 
 app = Flask(__name__)
-app.config['SECRET_KEY'] = 'secret!'  
+
+app.config['SECRET_KEY'] = os.getenv('SECRET_KEY')
 app.config['PRODUCTION'] = os.getenv('FLASK_ENV') == 'production'
 
 logger = LoggerSetup(__name__).get_logger()
@@ -26,7 +27,7 @@ logger = LoggerSetup(__name__).get_logger()
 
 
 # Initialize SocketIO with eventlet
-socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet', logger=True)
+socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet', logger=False)
 # socketio = SocketIO(app, cors_allowed_origins="*", async_mode='eventlet')
 
 
@@ -44,7 +45,7 @@ def check_mongo_collection_ready():
     document_count = foundations_collection.count_documents({})
     if document_count < EXPECTED_DOCUMENT_COUNT:
         raise Exception(f"Collection foundations has {document_count} documents. Waiting for {EXPECTED_DOCUMENT_COUNT}.")
-    logger.info(f"Collection foundations is ready with {document_count} documents.")
+    logger.debug(f"Collection foundations is ready with {document_count} documents.")
 
 
 try:
@@ -70,7 +71,7 @@ except Exception as e:
 def index():
     # Get the foundation name from the query parameters
     foundation_name = request.args.get('foundation_name')
-    logger.info(f"Received request with foundation_name: {foundation_name}")
+    logger.debug(f"Received request with foundation_name: {foundation_name}")
 
     # Construct the namespace dynamically
     name_space = f"/agent/agent_namespace/{foundation_name}"
@@ -78,22 +79,22 @@ def index():
 
     # Dynamically set the base path
     base_path = '/agent' if app.config.get('PRODUCTION', False) else ''
-    logger.info(f"Determined base path: {base_path}")
+    logger.debug(f"Determined base path: {base_path}")
 
     # Determine the environment
     flask_env = os.getenv('FLASK_ENV', 'development')  # Default to 'development' if not set
-    logger.info(f"Environment detected: {flask_env}")
+    logger.debug(f"Environment detected: {flask_env}")
 
     # Dynamically select the socket URL based on the environment
     if flask_env == 'production':
         socket_url = os.getenv('SOCKET_URL_PRODUCTION', 'https://www.omnichanneltv.com/agent/socket.io/')
     else:
         socket_url = os.getenv('SOCKET_URL_DEVELOPMENT', 'http://localhost:5001/socket.io/')
-    logger.info(f"Selected socket URL: {socket_url}")
+    logger.debug(f"Selected socket URL: {socket_url}")
 
     # Render the template and log the final configuration
-    logger.info(f"Rendering template with base_path: {base_path}, socket_url: {socket_url}, name_space: {name_space}")
-    logger.info(f"Foundation Name {foundation_name}")
+    logger.debug(f"Rendering template with base_path: {base_path}, socket_url: {socket_url}, name_space: {name_space}")
+    logger.debug(f"Foundation Name {foundation_name}")
     return render_template(
         'index.html',
         socket_url=socket_url,
@@ -104,4 +105,8 @@ def index():
 
 if __name__ == '__main__':  
     logger.info("Starting Flask-SocketIO server")
-    socketio.run(app, debug=True, host='0.0.0.0', port=5001)
+    MODE = os.getenv('MODE', 'production').lower()
+    DEBUG = True if MODE == 'developement' else False
+    logger.info(f"MODE: {MODE.upper()}, DEBUG: {DEBUG}")
+
+    socketio.run(app, debug=DEBUG, host='0.0.0.0', port=5001)

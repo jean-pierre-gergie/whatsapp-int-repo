@@ -51,19 +51,19 @@ def socket_io_jwt(f):
         token = None
         if request.args.get('token'):
             token = request.args.get('token')
-            logger.info("Token found in URL args.")
+            logger.debug("Token found in URL args.")
         elif 'Authorization' in request.headers:
             token = request.headers.get('Authorization').replace('Bearer ', '')
-            logger.info("Token found in Authorization header.")
+            logger.debug("Token found in Authorization header.")
         elif 'jwt_token' in request.cookies:
             token = request.cookies.get('jwt_token')
-            logger.info("Token found in cookies.")
+            logger.debug("Token found in cookies.")
         elif 'auth' in kwargs and isinstance(kwargs['auth'], dict) and 'token' in kwargs['auth']:
             token = kwargs['auth']['token']
-            logger.info("Token found in auth parameter.")
+            logger.debug("Token found in auth parameter.")
 
         # Log the token extraction result
-        logger.info(f"Extracted token: {token}")
+        logger.debug(f"Extracted token: {token}")
 
         # If no token was found, emit an error and disconnect
         if not token:

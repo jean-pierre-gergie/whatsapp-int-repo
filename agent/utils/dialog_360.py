@@ -34,7 +34,7 @@ def get_api_key(foundation_name):
                 logger.warning(f"No API key found for foundation: {foundation_name}")
                 return None
 
-            logger.info(f"API key for {foundation_name}: {api_key}")
+            logger.debug(f"API key for {foundation_name}: {api_key}")
             return api_key
 
         except Exception as e:

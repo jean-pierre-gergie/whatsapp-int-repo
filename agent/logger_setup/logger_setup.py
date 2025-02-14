@@ -2,7 +2,7 @@ import logging
 import json
 
 class LoggerSetup:
-    def __init__(self, logger_name, level=logging.DEBUG):
+    def __init__(self, logger_name, level=logging.INFO):
         self.logger = logging.getLogger(logger_name)
         self.logger.setLevel(level)
         self._setup_handler()
