@@ -19,7 +19,7 @@ def get_token(logger):
             raise ValueError("Username or password environment variable is missing or empty.")
 
         # Log credentials (for debugging purposes only, do not use in production)
-        logger.debug(f"Fetched credentials: username={username}, password={password}")
+        logger.debug(f"Fetched credentials: username={username}, password=[HIDDEN]")
 
         # Prepare API request
         url = "https://hub.360dialog.io/api/v2/token"
