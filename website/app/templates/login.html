@@ -9,6 +9,7 @@
     <link rel="stylesheet" href="./static/css/app.css">
     <link rel="stylesheet" href="./static/css/sidebar.css"> 
     <link rel="shortcut icon" href="./static/images/favicon.svg" type="image/x-icon">
+    <script src="https://www.google.com/recaptcha/api.js?render=6LcBZ-sqAAAAAMG1MFBcXRerkZRikAfuwlF5bJvF"></script>
 </head>
 <body>
     <div id="auth" class="container">
@@ -37,28 +38,49 @@
     </div>
 
     <script>
-        document.getElementById('loginForm').addEventListener('submit', async function(event) {
+        document.getElementById('loginForm').addEventListener('submit', function(event) {
             event.preventDefault(); // Prevent default form submission
+            console.log("[Frontend] Login form submit event fired.");
+
             const username = document.getElementById('username').value;
             const password = document.getElementById('password').value;
 
-            try {
-                const response = await fetch('/', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: new URLSearchParams({ username, password })
-                });
+            grecaptcha.ready(async function() {
+                // Execute reCAPTCHA with 'login' as the action (you can rename 'login' if desired)
+                const token = await grecaptcha.execute('6LcBZ-sqAAAAAMG1MFBcXRerkZRikAfuwlF5bJvF', {action: 'login'});
 
-                if (response.redirected) {
-                    window.location.href = response.url;
-                } else {
-                    const data = await response.json();
-                    document.getElementById('error-message').textContent = data.msg || 'Login failed';
+                if (!token) {
+                    console.log("[Frontend] No reCAPTCHA token; stopping submission.");
+                    document.getElementById('error-message').textContent = 'Please complete the reCAPTCHA.';
+                    return;
                 }
-            } catch (error) {
-                console.error('Error:', error);
-                document.getElementById('error-message').textContent = 'An error occurred. Please try again.';
-            }
+                // console.log("[Frontend] reCAPTCHA token received:", token);
+
+                try {
+                    const response = await fetch('/', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: new URLSearchParams({
+                            username,
+                            password,
+                            'g-recaptcha-response': token // Include the v3 token
+                        })
+                    });
+                    // console.log("[Frontend] Response from backend:", response);
+
+                    if (response.redirected) {
+                        // console.log("[Frontend] Response indicates redirect to:", response.url);
+                        window.location.href = response.url;
+                    } else {
+                        // console.log("[Frontend] JSON response from backend:", data);
+                        const data = await response.json();
+                        document.getElementById('error-message').textContent = data.msg || 'Login failed';
+                    }
+                } catch (error) {
+                    console.error('Error:', error);
+                    document.getElementById('error-message').textContent = 'An error occurred. Please try again.';
+                }
+            });
         });
     </script>
 </body>

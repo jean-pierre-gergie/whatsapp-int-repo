@@ -7,6 +7,7 @@ from ..utils.decorators import  role_required
 from ..utils.session_config_helper import get_session_foundation_config,set_session_foundation_config
 import uuid
 import re
+import requests
 
 bp = Blueprint('auth', __name__)
 
@@ -24,6 +25,36 @@ def login():
         password = request.form['password'].encode('utf-8')
 
         logger.debug(f"Attempting login for username: {username}")
+        recaptcha_response = request.form.get('g-recaptcha-response')
+        if not recaptcha_response:
+            logger.info("No reCAPTCHA token provided.")
+            return jsonify({"msg": "Please complete the reCAPTCHA"}), 401
+        
+
+        recaptcha_secret = "6LcBZ-sqAAAAAD-F7vIc-47Hq_02Tynks60FqDpa"
+        recaptcha_verify_url = "https://www.google.com/recaptcha/api/siteverify"
+
+        # Verify the token with Google
+        try:
+            # logger.info(f"Sending reCAPTCHA verification request to {recaptcha_verify_url}.")
+            verification_response = requests.post(
+                recaptcha_verify_url,
+                data={"secret": recaptcha_secret, "response": recaptcha_response}
+            )
+            verification_result = verification_response.json()
+
+            # logger.info(f"reCAPTCHA verification result: {verification_result}")
+            # For reCAPTCHA v3, check both success and score. Adjust score threshold to your preference.
+            if (
+                not verification_result.get("success") or
+                verification_result.get("score", 0) < 0.5
+            ):
+                logger.warning("Invalid or low-score reCAPTCHA token.")
+                return jsonify({"msg": "Invalid reCAPTCHA. Please try again."}), 401
+        except Exception as e:
+            logger.error(f"Error verifying reCAPTCHA: {str(e)}")
+            return jsonify({"msg": "Error verifying reCAPTCHA."}), 401
+        
 
         try:
             # Fetch user from the database
