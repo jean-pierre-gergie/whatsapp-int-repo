@@ -298,7 +298,7 @@ def insert_message_response(campaign_responses_collection, data_to_insert):
 
 def process_response(response, number, response_time, success_rows, failed_rows):
     """
-    Processes the API response and appends results to success or failed rows.
+    Processes the API response and appends or updates results in success or failed rows.
 
     Parameters:
     - response: The HTTP response object from the API request.
@@ -311,13 +311,27 @@ def process_response(response, number, response_time, success_rows, failed_rows)
         try:
             # Try to parse the successful JSON response
             response_json = response.json()
+
             for contact, message in zip(response_json.get('contacts', []), response_json.get('messages', [])):
-                success_rows.append({
-                    'Number': contact.get('input', 'N/A'),
-                    'MessageID': message.get('id', 'N/A'),
-                    'MessageStatus': message.get('message_status', 'N/A'),
-                    'TimeTaken': response_time
-                })
+                phone = contact.get('input', 'N/A')
+
+                # -- CHANGED: Check if this phone already exists in success_rows
+                existing_entry = next((row for row in success_rows if row['Number'] == phone), None)
+
+                if existing_entry:
+                    # -- CHANGED: Update the existing entry
+                    existing_entry['MessageID'] = message.get('id', 'N/A')
+                    existing_entry['MessageStatus'] = message.get('message_status', 'N/A')
+                    existing_entry['TimeTaken'] = response_time
+                else:
+                    # -- CHANGED: Otherwise, append a new entry
+                    success_rows.append({
+                        'Number': phone,
+                        'MessageID': message.get('id', 'N/A'),
+                        'MessageStatus': message.get('message_status', 'N/A'),
+                        'TimeTaken': response_time
+                    })
+
         except json.JSONDecodeError:
             # Handle case when the response is not valid JSON
             failed_rows.append({
@@ -346,7 +360,9 @@ def process_response(response, number, response_time, success_rows, failed_rows)
             'TimeTaken': response_time
         })
 
-    logging.debug(f"Processed response for number {number}. Success rows: {len(success_rows)}, Failed rows: {len(failed_rows)}")
+    logging.debug(f"Processed response for number {number}. "
+                  f"Success rows: {len(success_rows)}, Failed rows: {len(failed_rows)}")
+
 
 def update_final_campaign_data(campaign_id, final_campaign_response_collection, final_update,success_rows_len,failed_rows_len):
     """
