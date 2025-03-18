@@ -56,7 +56,7 @@ celery_app = Celery(
 celery_app.conf.beat_schedule = {
     'refresh-webhook-jwt-token': {
         'task': 'tasks.refresh_webhook_jwt_token',
-        'schedule': crontab(minute=0, hour='*/6'),  # Every 6 hours
+        'schedule': crontab(minute=0, hour=0, day_of_week=0),  # Every 6 hours
         'options': {'catchup': False},
     },
     'refresh-api-key-weekly': {

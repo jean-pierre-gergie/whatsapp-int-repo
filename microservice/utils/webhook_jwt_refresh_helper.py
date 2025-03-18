@@ -101,7 +101,7 @@ def generate_jwt_token(secret_key, expiration_hours=12):
 
 def set_webhook_config(foundation_name, api_key, webhook_base_url, jwt_token, max_attempts=2):
     try:
-
+        #TODO update to new v2 url 
         url = 'http://waba.360dialog.io/v1/configs/webhook'
         secret_key = os.getenv('JWT_SECRET_KEY')
         
