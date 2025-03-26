@@ -15,24 +15,34 @@ def init_foundations_dbs(foundations_api_keys,logger):
         foundations_collection = foundations_db['foundations']
 
         for foundation_name, api_key in foundations_api_keys.items():
-            auto_reply_message = f"Default auto-reply message for {foundation_name}"
-            document = {
-                "foundation": foundation_name,
-                "api_key": api_key,
-                "whatsapp_data_db": f"whatsapp_data_{foundation_name}",
-                "agent_data_db": f"agent_data_{foundation_name}",
-                "auto_reply_message": auto_reply_message
-            }
+            default_auto_reply_message = f"Default auto-reply message for {foundation_name}"
+            
+            existing_document = foundations_collection.find_one({"foundation": foundation_name})
 
-            if not foundations_collection.find_one({"foundation": foundation_name}):
-                foundations_collection.insert_one(document)
+            if not existing_document:
+                new_document = {
+                        "foundation": foundation_name,
+                        "api_key": api_key,
+                        "whatsapp_data_db": f"whatsapp_data_{foundation_name}",
+                        "agent_data_db": f"agent_data_{foundation_name}",
+                        "auto_reply_message": default_auto_reply_message
+                    }
+                # Insert the new doc if foundation doesn't exist
+                foundations_collection.insert_one(new_document)
                 # logger.info(f"Inserted document for foundation '{foundation_name}'.")
             else:
-                foundations_collection.update_one(
-                    {"foundation": foundation_name},
-                    {"$set": {"auto_reply_message": auto_reply_message}}
-                )
-                # logger.info(f"Updated document for foundation '{foundation_name}'.")
+                auto_reply_message = existing_document.get("auto_reply_message", default_auto_reply_message)
+                new_document = {
+
+                                "_id": existing_document["_id"],
+                                "foundation": foundation_name,
+                                "api_key": api_key,
+                                "whatsapp_data_db": f"whatsapp_data_{foundation_name}",
+                                "agent_data_db": f"agent_data_{foundation_name}",
+                                "auto_reply_message": auto_reply_message
+                            }
+                foundations_collection.replace_one({"_id": existing_document["_id"]}, new_document)
+
 
         for prefix in foundations_api_keys:
             databases = {

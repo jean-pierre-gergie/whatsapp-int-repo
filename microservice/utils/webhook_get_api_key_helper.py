@@ -54,7 +54,7 @@ def get_token(logger):
         return token
 
     except Exception as e:
-        logger.debug(f"An error occurred: {e}")
+        logger.debug(f"An error occurred while creating ** 360 TOKEN **: {e}")
         logger.debug(f"An error occurred...")
         raise
 

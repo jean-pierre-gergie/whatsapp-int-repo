@@ -21,7 +21,7 @@ from utils.webhook_api_key_refresh_helper import webhook_refresh_api_key
 from dateutil import parser
 import asyncio
 from logger_setup.logger_setup import celery_logger
-
+from datetime import timedelta
 
 
 logger = celery_logger
@@ -56,12 +56,16 @@ celery_app = Celery(
 celery_app.conf.beat_schedule = {
     'refresh-webhook-jwt-token': {
         'task': 'tasks.refresh_webhook_jwt_token',
-        'schedule': crontab(minute=0, hour=0, day_of_week=0),  # Every 6 hours
+        # 'schedule': crontab(minute=0, hour='*'),
+        # 'schedule': timedelta(days=1),
+        'schedule': timedelta(minutes=20),
         'options': {'catchup': False},
     },
     'refresh-api-key-weekly': {
         'task': 'tasks.refresh_api_key',
-        'schedule': crontab(minute=0, hour=0, day_of_week=0),  # Every 1 week (Sunday at midnight)
+        # 'schedule': crontab(minute=15, hour='*'),
+        # 'schedule': timedelta(weeks=1),
+        'schedule': timedelta(minutes=30),
         'options': {'catchup': False},    
     },
 }

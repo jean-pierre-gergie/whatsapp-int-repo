@@ -2,7 +2,7 @@
 from utils.webhook_get_api_key_helper import get_api_keys
 from utils.init_foundations_dbs import init_foundations_dbs
 from utils.add_users_to_db import add_users_to_db
-from utils.webhook_jwt_refresh_helper import refresh_jwt
+from utils.webhook_jwt_refresh_helper import set_jwt_token_wh
 
 def init_system(logger):
     """
@@ -35,8 +35,8 @@ def init_system(logger):
 
 
         logger.debug("Setting JWT Token for webhook...")
-        refresh_jwt(logger)
-        logger.debug("JWT  refreshed  successfully")
+        set_jwt_token_wh(logger)
+        logger.debug("JWT  SETTING FOR WEBHOOK  INIT   successfully")
 
         logger.info("System initialization completed successfully.")
 
