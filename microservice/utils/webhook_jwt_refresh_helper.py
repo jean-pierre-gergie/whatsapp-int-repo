@@ -6,7 +6,7 @@ import requests
 import datetime
 import jwt
 from logger_setup.logger_setup import logger
-
+import time
 # Load environment variables
 load_dotenv()
 
@@ -135,7 +135,7 @@ def set_webhook_config(foundation_name, api_key, webhook_base_url, jwt_token, ma
             logger.debug(f"Response URL: {current_url}")
             logger.debug(response.text)
             logger.debug(f"\n{'='*12}")
-
+            time.sleep(30)
             # Check if the current URL matches the expected URL
             if current_url == expected_url:
                 logger.info(f"Webhook for {foundation_name} set successfully. Attempt no. {attempt}")
