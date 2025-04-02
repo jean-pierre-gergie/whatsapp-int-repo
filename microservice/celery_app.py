@@ -58,14 +58,14 @@ celery_app.conf.beat_schedule = {
         'task': 'tasks.refresh_webhook_jwt_token',
         # 'schedule': crontab(minute=0, hour='*'),
         # 'schedule': timedelta(days=1),
-        'schedule': timedelta(minutes=50),
+        'schedule': crontab(minute=0, hour='*/6'), 
         'options': {'catchup': False},
     },
     'refresh-api-key-weekly': {
         'task': 'tasks.refresh_api_key',
         # 'schedule': crontab(minute=15, hour='*'),
         # 'schedule': timedelta(weeks=1),
-        'schedule': timedelta(minutes=55),
+        'schedule': crontab(minute=0, hour=0, day_of_week=0),
         'options': {'catchup': False},    
     },
 }
