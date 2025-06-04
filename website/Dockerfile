@@ -5,17 +5,26 @@ WORKDIR /app
 
 ENV PYTHONDONTWRITEBYTECODE=1
 
-# Copy application files
-COPY . /app/
+
 
 # Install necessary system dependencies
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends gcc libmariadb-dev pkg-config && \
-    rm -rf /var/lib/apt/lists/* && \
-    pip install --no-cache-dir --upgrade pip
+RUN set -eux; \
+    apt-get update; \
+    # upgrade EVERYTHING first
+    apt-get dist-upgrade -y --no-install-recommends; \
+    # then install the few build deps you really need
+    apt-get install -y --no-install-recommends gcc libmariadb-dev pkg-config; \
+    # minimise the image
+    apt-get autoremove -y; \
+    apt-get clean; rm -rf /var/lib/apt/lists/*
+
+# RUN groupadd -r appuser && useradd -r -g appuser appuser
+# USER appuser
 
 # Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
+COPY . /app/
+RUN pip install --no-cache-dir --upgrade pip \
+ && pip install --no-cache-dir -r requirements.txt
 
 # Expose Flask app port
 EXPOSE 1313

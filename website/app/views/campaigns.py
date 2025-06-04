@@ -438,15 +438,38 @@ def send_campaign_messages():
 
     microservice_base_url = current_app.config['MICROSERVICE_BASE_URL']
 
+    from urllib.parse import urlparse                               ### ▸ SEC
+    parsed = urlparse(microservice_base_url)                        ### ▸ SEC
+    if parsed.hostname not in {"microservice"}:                     ### ▸ SEC
+        logger.warning("Blocked outbound request to %s",            ### ▸ SEC
+                       microservice_base_url)                       ### ▸ SEC
+        return jsonify({"success": False,                           ### ▸ SEC
+                        "error": "Unapproved target host"}), 403    ### ▸ SEC
+    
+
+
     logger.debug(f"BE LEVEL Payload details at BE LEVEL: {payload}")
     logger.debug(f"BE LEVEL Micro Service Base url {microservice_base_url}")
 
     try:
         # Send the request to submit the job
-        response = requests.post(f"{microservice_base_url}/start_campaign_task", json=payload)
+        response = requests.post(
+            f"{microservice_base_url}/start_campaign_task",
+            json=payload,
+            allow_redirects=False                                   ### ▸ SEC
+        )
 
         if response.status_code == 200:
             # Extract the task_id from the response
+            import re                                              ### ▸ SEC
+            if not task_id or not re.fullmatch(r"[A-Za-z0-9_-]{1,64}",
+                                               str(task_id)):      ### ▸ SEC
+                logger.error("Suspicious task_id returned: %s",    ### ▸ SEC
+                            task_id)                                ### ▸ SEC
+                return jsonify({"success": False,                  ### ▸ SEC
+                                "error": "Invalid task ID"}), 500  ### ▸ SEC
+            
+            
             task_id = response.json().get("task_id")
             logger.info(f"Task started with ID: {task_id}")
             logger.debug(f"Task started with ID: {task_id}")
