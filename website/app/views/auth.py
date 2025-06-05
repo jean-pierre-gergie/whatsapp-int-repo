@@ -8,11 +8,20 @@ from ..utils.session_config_helper import get_session_foundation_config,set_sess
 import uuid
 import re
 import requests
+from urllib.parse import urlparse, urljoin 
+
 
 bp = Blueprint('auth', __name__)
 
 logger = current_app.logger
 
+
+
+def is_safe_url(target):                           # + helper
+    host_url = urlparse(request.host_url)
+    redirect_url = urlparse(urljoin(request.host_url, target))
+    return (redirect_url.scheme in ('http', 'https') and
+            host_url.netloc == redirect_url.netloc)
 
 # TODO : add a function in session_config_helper to set the session configs
 @bp.route('/', methods=['GET', 'POST'])
@@ -104,15 +113,24 @@ def login():
                     access_token = create_access_token(identity={'username': user['username'], 'role': role})
                     logger.debug(f"JWT created for user {username} with role {role}.")
 
-                    # Set the JWT in the cookie
-                    response = make_response(redirect(url_for('auth.index')))
+                    next_param = request.args.get('next') or url_for('auth.index')
+                    if not is_safe_url(next_param):
+                        next_param = url_for('auth.index')
+
+                    resp_body = {
+                        "next": next_param,
+                        "msg": "Login successful"
+                    }
+
+                    response = make_response(jsonify(resp_body), 200)   # + JSON not 302
                     response.set_cookie(
-                        'access_token_cookie', 
-                        access_token, 
-                        httponly=True, 
-                        secure=True, 
+                        'access_token_cookie',
+                        access_token,
+                        httponly=True,
+                        secure=True,
                         samesite='None'
                     )
+                    
 
                     logger.info(f"Login successful for user {username}. Redirecting to /index.")
                     return response
