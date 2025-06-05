@@ -68,14 +68,20 @@
                     });
                     // console.log("[Frontend] Response from backend:", response);
 
-                    if (response.redirected) {
-                        // console.log("[Frontend] Response indicates redirect to:", response.url);
-                        window.location.href = response.url;
-                    } else {
-                        // console.log("[Frontend] JSON response from backend:", data);
-                        const data = await response.json();
-                        document.getElementById('error-message').textContent = data.msg || 'Login failed';
-                    }
+                    const data = await response.json();    // + now always parse JSON
+                    const SAME_ORIGIN = window.location.origin;
+
+                    if (response.ok) {                                   // data.next is guaranteed now
+                        const target = new URL(data.next || '/index', SAME_ORIGIN);
+                      if (target.origin === SAME_ORIGIN) {
+                          window.location.assign(target.pathname + target.search + target.hash);
+                      } else {
+                          console.warn('Blocked cross-origin redirect:', target.href);
+                          document.getElementById('error-message').textContent = 'Unexpected redirect – please try again.';
+                      }
+                  } else {                               // + error path
+                      document.getElementById('error-message').textContent = data.msg || 'Login failed';
+                  }
                 } catch (error) {
                     console.error('Error:', error);
                     document.getElementById('error-message').textContent = 'An error occurred. Please try again.';
